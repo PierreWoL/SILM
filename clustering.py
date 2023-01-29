@@ -60,7 +60,7 @@ def create_or_find_indexes(data_path):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader)
         pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
-    return [ name_index,format_index,value_index, distribution_index,embeddingIndex]#name_index,format_index,
+    return [name_index, distribution_index,value_index,embeddingIndex]#format_index,
 
 
 
@@ -79,7 +79,7 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
         qe = QueryEngine(*indexes)
 
         Neighbours = qe.table_query(table=dataloader.read_table(table_name=t),
-                                    aggregator=None, k=30)
+                                    aggregator=None, k=3)
 
         for n in Neighbours:  # index
             (name, similarities) = n  # 'car', [1.0, 0.4, 0.4, 0.0]
@@ -164,12 +164,11 @@ def compute_rand_score(clusters_list,file):
 
     return rand_score
 
-#WDCFilePath = "C:/Users/1124a/OneDrive - The University of Manchester/CurrentDataset-main/WDC/CPA_Validation/Validation/Table/"
-T2DV2Path = "C:/Users/1124a/OneDrive - The University of Manchester/CurrentDataset-main/T2DV2/"
-samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/CurrentDataset-main/T2DV2/Test/"
+T2DV2Path = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/"
+samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/Test/"
 #get_random_train_data(T2DV2Path, samplePath, 0.2)
 #Concepts = get_concept(WDCFilePath)
-T2DV2GroundTruth = "C:/Users/1124a/OneDrive - The University of Manchester/CurrentDataset-main/T2DV2/extended_instance_goldstandard/classes_GS.csv"
+T2DV2GroundTruth = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/extended_instance_goldstandard/classes_GS.csv"
 f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
 gt_CSV = pd.read_csv(f, header=None)
 GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
@@ -182,7 +181,7 @@ print(len(ground_t),ground_t)
 print(len(truth),truth)
 groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
 #print(groundTruthWDCTest)
-samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/CurrentDataset-main/T2DV2/Test/"
+samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/Test/"
 indexes = create_or_find_indexes(samplePath)
 #indexes = create_or_find_indexes(ed.WDCsamplePath)
 parameters = dbscan_param_search(samplePath, indexes)

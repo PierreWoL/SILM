@@ -194,11 +194,12 @@ class GloveTransformer:
         model_file = self._download_model(model_name=model_name, if_exists=if_exists)
         embedding_model = {}
         print("Loading embeddings. This may take a few minutes ...")
-        with open(model_file, 'r') as f:
+        with open(model_file, errors='ignore',mode ='r') as f:
             for line in f:
                 values = line.split()
                 word = values[0]
-                vector = np.asarray(values[1:], "float32")
+                vector = np.asarray(values[1:], "float32")#
+
                 embedding_model[word] = vector
 
         return embedding_model
