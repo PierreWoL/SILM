@@ -7,7 +7,6 @@ from dateutil.parser import parse
 import pandas as pd
 from typing import Iterable, Any
 
-
 def shingles(value: str) -> Iterable[str]:
     """
     Generate multi-word tokens delimited by punctuation.
@@ -27,7 +26,7 @@ def shingles(value: str) -> Iterable[str]:
         yield re.sub(r"\s+", " ", shingle.strip().lower())
 
 def is_empty(text: str) -> bool:
-    empty_representation = ['-', 'NA', 'na', 'n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
+    empty_representation = ['-', 'NA', 'na', 'nan','n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
     if text in empty_representation:
         return True
     return False
@@ -84,6 +83,7 @@ def is_number(s):
         pass
 
     return False
+
 def is_date_expression(string, fuzzy=False):
     """
     Return whether the string can be interpreted as a date.
@@ -99,13 +99,58 @@ def is_date_expression(string, fuzzy=False):
     except ValueError:
         return False
 
+
+
+
+def is_acronym(text:str)-> bool:
+    """
+    todo: I don't think this cover all kinds of cases, so need to update later
+    Return whether the string can be a acronym.
+    :param string: str, string to check for acronym
+    REFERENCE: https://stackoverflow.com/questions/47734900/detect-abbreviations-in-the-text-in-python
+    NOTE: the expression -- r"\b[A-Z\.]{2,}\b" tests if this string contain constant upper case characters
+    \b(?:[a-z]*[A-Z][a-z]*){2,} at least two upper/lower case
+    """
+    rmoveUpper = re.sub(r"\b[A-Z\\.]{2,}\b", "", text)
+    removePunc = rmoveUpper.translate(str.maketrans('', '', string.punctuation))
+    if removePunc == "":
+        return True
+    else:
+        return False
+
+
+def is_id(text: str) -> bool:
+    """
+    todo: I don't think this cover all kinds of cases, so need to update later
+    Return whether the string can be a acronym.
+    :param string: str, string to check for acronym
+    REFERENCE: https://stackoverflow.com/questions/47734900/detect-abbreviations-in-the-text-in-python
+    NOTE: the expression -- r"\b[A-Z\.]{2,}\b" tests if this string contain constant upper case characters
+    \b(?:[a-z]*[A-Z][a-z]*){2,} at least two upper/lower case
+    """
+    if is_number(text) is False:
+            rmoveCharacter = re.sub(r"[a-zA-Z]+", "", text)
+            removePunc = rmoveCharacter.translate(str.maketrans('', '', string.punctuation))
+            if is_number(removePunc) is True:
+                return True
+            else:
+                return False
+    else:
+        #print("this is number!")
+        return False
 def tokenize(text: str)-> str:
     delimiterPattern = re.compile(r"[^\w\s\-_@&]+")
-    ele = re.sub(r"\s+", " ", text.translate(str.maketrans('', '', string.punctuation)).strip().lower())
+    textRemovePuc = text.translate(str.maketrans('', '', string.punctuation)).strip()
+    textRemovenumber = textRemovePuc.translate(str.maketrans('', '', string.digits)).strip()
+    ele = re.sub(r"\s+", " ", textRemovenumber)
     return ele
 
 
-
+def tokenize_with_number(text: str)-> str:
+    delimiterPattern = re.compile(r"[^\w\s\-_@&]+")
+    textRemovePuc = text.translate(str.maketrans('', '', string.punctuation)).strip()
+    ele = re.sub(r"\s+", " ", textRemovePuc)
+    return ele
 def pickle_python_object(obj: Any, object_path: str):
     """
     Save the given Python object to the given path.
