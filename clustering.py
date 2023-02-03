@@ -164,24 +164,26 @@ def compute_rand_score(clusters_list,file):
 
     return rand_score
 
-T2DV2Path = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/"
-samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/Test/"
+T2DV2Path = os.getcwd()+"/T2DV2/"
+samplePath = os.getcwd()+"/T2DV2/test/"
 #get_random_train_data(T2DV2Path, samplePath, 0.2)
 #Concepts = get_concept(WDCFilePath)
-T2DV2GroundTruth = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/extended_instance_goldstandard/classes_GS.csv"
+T2DV2GroundTruth = os.getcwd()+"/T2DV2/extended_instance_goldstandard/classes_GS.csv"
 f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
 gt_CSV = pd.read_csv(f, header=None)
+
 GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
-gt_clusters,ground_t,truth = ed.get_concept_files(ed.get_files(T2DV2Path),GroundTruth)
+print(GroundTruth)
+gt_clusters,ground_t,truth = ed.get_concept_files(ed.get_files(samplePath),GroundTruth)
 gt_cluster=gt_CSV[1].unique()
-for key in gt_clusters:
-    shutil.copy(T2DV2Path + key+".csv", samplePath)
+#for key in gt_clusters:
+ #   shutil.copy(samplePath + key+".csv", samplePath)
 print(len(gt_clusters),gt_clusters)
 print(len(ground_t),ground_t)
 print(len(truth),truth)
 groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
 #print(groundTruthWDCTest)
-samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/Test/"
+samplePath = os.getcwd()+"/T2DV2/Test/"
 indexes = create_or_find_indexes(samplePath)
 #indexes = create_or_find_indexes(ed.WDCsamplePath)
 parameters = dbscan_param_search(samplePath, indexes)

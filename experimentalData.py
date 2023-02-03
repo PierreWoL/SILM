@@ -106,10 +106,10 @@ def get_random_train_data(data_path,train_path, portion):
 
 
 
-WDCFilePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/WDC/CPA_Validation/Validation/Table/"
-T2DV2Path = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/"
-samplePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/T2DV2/Test/"
-WDCsamplePath = "C:/Users/1124a/OneDrive - The University of Manchester/BaselineCode/CurrentDataset/WDC/CPA_Validation/Validation/Table/Test/"
+WDCFilePath = os.getcwd()+"/WDC/CPA_Validation/Validation/Table/"
+T2DV2Path = os.getcwd()+"/T2DV2/"
+samplePath = os.getcwd()+"/T2DV2/test/"
+WDCsamplePath = os.getcwd()+"/WDC/CPA_Validation/Validation/Table/test/"
 #get_random_train_data(T2DV2Path, samplePath, 0.9)
 #get_random_train_data(WDCFilePath, WDCsamplePath, 0.1)
 
