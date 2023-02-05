@@ -29,6 +29,8 @@ def is_empty(text: str) -> bool:
     empty_representation = ['-', 'NA', 'na', 'nan','n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
     if text in empty_representation:
         return True
+    if pd.isna(text):
+        return True
     return False
 
 def is_numeric(values: Iterable[Any]) -> bool:

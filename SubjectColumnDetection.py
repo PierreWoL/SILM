@@ -13,13 +13,17 @@ from enum import Enum
 import regex
 import fasttext
 
+
 class columnType(Enum):
+    Invalid = -1
     long_text = 0
     named_entity = 1
     number = 2
     date_expression = 3
     empty = 4
     other = 5
+
+
 '''
 Used in read tables
 
@@ -57,8 +61,13 @@ Used in read tables
         return self.tables
 
 '''
-#class tableColumnAnotate():
-    #def __init__(self, table: pd.DataFrame)
+
+
+class tableColumnAnotate():
+    def __init__(self, table: pd.DataFrame):
+        self.table = table
+    #   todo TBC
+
 
 class columnDetection():
 
@@ -66,8 +75,24 @@ class columnDetection():
         if not isinstance(values, pd.Series):
             values = pd.Series(values)
         self.column = values
+        self.col_type = columnType.Invalid
+        '''
+        feature used in the subject column detection
+        emc: fraction of empty cells
+        uc: fraction of cells with unique content 
+        ac: if over 50% cells contain acronym or id
+        df: distance from the first NE-column
+        cm: context match score
+        ws: web search score
+        '''
+        self.emc = 0
+        self.uc = 0
+        self.ac = 0
+        self.df = 0
+        self.cm = 0
+        self.ws = 0
 
-    def column_type_judge(self) -> int:
+    def column_type_judge(self):
         """
         Check the type of given column's data type.
 
@@ -109,16 +134,15 @@ class columnDetection():
                 break
             print(element)
             # if it is int type
-            if isinstance(element,int):
+            if isinstance(element, int):
                 type_count[columnType.number.value] = type_count[columnType.number.value] + 1
                 continue
-            if func.is_empty(element) or pd.isna(element):
+            if func.is_empty(element) :#or pd.isna(element)
                 type_count[columnType.empty.value] = type_count[columnType.empty.value] + 1
                 continue
             else:
                 # judge string type
-
-                #print(token, token_with_number)
+                # print(token, token_with_number)
                 if len(element.split(" ")) == 1:
                     # Judge if it is a null value
                     # TODO : need to mark this empty cell and calculate how many empty cells exist
@@ -162,9 +186,10 @@ class columnDetection():
                             type_count[columnType.number.value] = type_count[columnType.number.value] + 1
                             continue
                         if func.is_date_expression(func.tokenize_with_number(element)):
-                            type_count[columnType.date_expression.value] = type_count[columnType.date_expression.value] + 1
+                            type_count[columnType.date_expression.value] = type_count[
+                                                                               columnType.date_expression.value] + 1
                             continue
-                    if len(token) <3:
+                    if len(token) < 3:
                         acronym = True
                         for i in token:
                             if func.is_acronym(i) is False:
@@ -175,24 +200,31 @@ class columnDetection():
                     else:
                         total_token_number = total_token_number + len(token)
                         temp_count_text_cell = temp_count_text_cell + 1
+        self.col_type = columnType(col_type).name
+        #return col_type
 
+    def emc_cal(self):
+        empty_cell_count = 0
+        for ele in self.column:
+            if func.is_empty(ele):
+                empty_cell_count = empty_cell_count+1
+        self.emc = empty_cell_count/len(self.column)
 
-        return col_type
-
+    def uc_cal(self):
+        column_tmp = self.column
+        column_tmp.drop_duplicates()
+        self.uc = len(column_tmp)/len(self.column)
+        
 
 data_path = os.getcwd() + "/T2DV2/test/"
 
-
-
-
 # print(subject.tables[0].iloc[:,0])
-example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/2066887_0_746204117268168398.csv'
+example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/3887681_0_7938589465814037992.csv'
 tableExample = pd.read_csv(example)
-detection = columnDetection(tableExample.iloc[:, 1])
+detection = columnDetection(tableExample.iloc[:, 4])
 typeTest = detection.column_type_judge()
-print(columnType(typeTest).name)
-
-
+# print(columnType(typeTest).name)
+print(detection.col_type)
 
 '''
 This is random test for the column-detection
