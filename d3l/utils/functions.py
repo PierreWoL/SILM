@@ -153,6 +153,10 @@ def tokenize_with_number(text: str)-> str:
     textRemovePuc = text.translate(str.maketrans('', '', string.punctuation)).strip()
     ele = re.sub(r"\s+", " ", textRemovePuc)
     return ele
+
+
+def has_numbers(input_string):
+    return bool(re.search(r'\d', input_string))
 def pickle_python_object(obj: Any, object_path: str):
     """
     Save the given Python object to the given path.

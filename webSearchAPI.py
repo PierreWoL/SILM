@@ -23,13 +23,12 @@ for j in search(query, tld="co.in", num=2, stop=2, pause=0.1):
 
 
 '''
-my_api_key = "AIzaSyBogbAxNrr0c39ChcCTHliSBiMHVSQ7mog"
-my_cse_id = "87f5671ca9e2242a9"
+
 
 
 class WebSearch:
 
-    def __init__(self, api_key, cse_id):
+    def __init__(self):#, api_key, cse_id
         """
         Init: connect with google custom search api
         Parameters api
@@ -38,10 +37,10 @@ class WebSearch:
         cse_id: id of user's custom search
         """
         try:
-            self.service = build("customsearch", "v1", developerKey=api_key)
+            self.my_api_key = "AIzaSyBogbAxNrr0c39ChcCTHliSBiMHVSQ7mog"
+            my_cse_id = "87f5671ca9e2242a9"
+            self.service = build("customsearch", "v1", developerKey=self.my_api_key)
             self.res = []
-            self.api_key = api_key
-            self.cse_id = cse_id
         except ValueError:
             pass
 
@@ -77,7 +76,7 @@ class WebSearch:
         return self.res
 
 
-web_search = WebSearch(my_api_key, my_cse_id)
+web_search = WebSearch()
 result = web_search.search_result(query, 35)
 
 '''
