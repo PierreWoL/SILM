@@ -8,7 +8,7 @@ import datetime
 import numpy as np
 from typing import Iterator, List, Optional, Tuple, Union, Dict, Any
 from enum import Enum
-import webSearchAPI as Search
+import TableAnnotation as Annotate
 
 
 class ColumnType(Enum):
@@ -19,79 +19,6 @@ class ColumnType(Enum):
     date_expression = 3
     empty = 4
     other = 5
-
-
-class TableColumnAnnotation:
-    def __init__(self, table: pd.DataFrame):
-
-        if isinstance(table, pd.DataFrame):
-            print("input should be dataframe!")
-            pass
-        self.table = table
-        self.annotation = {}
-        # self.vocabulary = []
-        self.NE_table = table
-        self.NE_cols = {}
-        # in the NE_columns() self.NE_table is also updated to store the tokens of cells in named_entity columns
-        self.NE_cols = self.NE_columns()
-        self.vocabulary = self.vocabularySet()
-        # = self.table[list(self.NE_cols.keys())]
-        # df = df.applymap(lambda x: [])
-
-    def annotate_type(self):
-        """
-        Preprocessing part in the TableMiner+ system
-        classifying the cells from each column into one of the types mentioned in
-        the ColumnType
-        Returns -- self.annotation
-        dictionary {header: column type}
-        -------
-
-        """
-        for header in self.table.columns:
-            candidate_type = ColumnDetection(self.table[header]).col_type
-            self.annotation[header] = candidate_type
-
-    def NE_columns(self) -> dict:
-        """
-        Returns the dictionary recording the NE columns header and its index in the table
-        -------
-
-        """
-        key_list = list(self.annotation.keys())
-        for key, value in self.annotation:
-            if value == ColumnType.named_entity:
-                key_list.index(key)
-                self.NE_cols[key] = key_list.index(key)
-
-        self.NE_table = self.table[list(self.NE_cols.keys())]
-        self.NE_table = self.NE_table.applymap(lambda x: str(func.token_stop_word(x)))  # + ":[]"
-        return self.NE_cols
-
-    def vocabularySet(self):
-        if len(self.NE_cols) == 0:
-            self.NE_columns()
-        NE_table = self.table[list(self.NE_cols.keys())]
-        vocabulary_set = set()
-        for index, row in NE_table.iterrows():
-            for cell in row:
-                vocabulary_set.update(func.token_stop_word(cell))
-        self.vocabulary = list(vocabulary_set)
-        return self.vocabulary
-
-    def bow_column(self, column_index, index) -> np.array:
-        """
-        Calculate the bow of each cell in the columns
-        Parameters
-        ----------
-        Returns
-        -------
-
-        """
-        bow = [0] * len(self.vocabulary)
-        for token in self.NE_table[self.NE_cols.keys()[column_index]][index]:
-            bow[self.vocabulary.index(token)] += 1
-        return np.array(bow)
 
 
 class ColumnDetection:
@@ -115,7 +42,7 @@ class ColumnDetection:
         self.df = 0
         self.cm = 0
         self.acronym_id_num = 0
-        self.column_tokens = {}
+        # self.column_tokens = {}
 
     def column_type_judge(self, fraction: int):
         """
@@ -231,7 +158,8 @@ class ColumnDetection:
         self.col_type = ColumnType(col_type).name
         # return col_type
 
-    def column_token(self, annotation_table: TableColumnAnnotation):
+    '''
+        def column_token(self, annotation_table: Annotate.TableColumnAnnotation()):
         """
         return the column tokens that have already calculated in the annotated table
         Parameters
@@ -246,6 +174,7 @@ class ColumnDetection:
         self.column_tokens = \
             {key: [0] * len(annotation_table.vocabularySet())
              for key in annotation_table.NE_table[self.column.name]}
+    '''
 
     def emc_cal(self):
         """
@@ -279,7 +208,7 @@ class ColumnDetection:
         if self.acronym_id_num / len(self.column) > 0.5:
             self.ac = 1
 
-    def df_cal(self, index, annotation_table: TableColumnAnnotation):
+    def df_cal(self, index, NE_cols: dict):
         """
         calculate the df score
         the distance between this NE column and the first NE column
@@ -289,8 +218,8 @@ class ColumnDetection:
             print("Error! This column is not in this table!")
             pass
         else:
-            first_pair = next(iter((annotation_table.NE_cols.items())))
-            self.df = annotation_table.NE_cols.get(self.column.name) - first_pair[1]
+            first_pair = next(iter((NE_cols.items())))
+            self.df = NE_cols.get(self.column.name) - first_pair[1]
             """
             temp_annotation = list(annotation_table.annotation.items())
             # pass the index of this column through parameter
@@ -312,144 +241,36 @@ class ColumnDetection:
         else:
             self.cm = 1
 
-    def ws_cal(self, top_n: int, tableAnnotated: TableColumnAnnotation):
-        """
-        todo: fetch result but still in the progress
-        calculate the context match score:
-        TableMiner+ explanation: the frequency of the column header's composing words in the header's context
-        Returns
-        -------
-        none but update the results self.ws
-        """
 
-        if not tableAnnotated.NE_cols:
-            print("NE columns list are empty! Please first define the columns!")
-            pass
-        else:
-            index_ne = list(tableAnnotated.NE_cols.values())
+def random_table(root_path) -> list:
+    if not os.path.isdir(root_path):
+        raise FileNotFoundError(
+            "The {} root directory was not found locally. "
+            "A CSV loader must have an existing directory associated!".format(
+                root_path
+            )
+        )
 
+    if root_path[-1] != "/":
+        root_path = root_path + "/"
+    tables = []
+    dataloader = CSVDataLoader(root_path=root_path, encoding='latin-1')
+    T = os.listdir(root_path)
+    T = [t[:-4] for t in T if t.endswith('.csv')]
+    T.sort()
 
-def convergence_pair(pair1: tuple, pair2: tuple):
-    # todo CARRY ON HERE
-    return 1
+    for t in T:
+        table = dataloader.read_table(table_name=t)
+        tables.append(table)
+    return tables
 
-
-def ws_table_cal(row: tuple, table_annotated: TableColumnAnnotation, top_K: int):
-
-    # TODO  you forget about the returning value
-    """
-    this function calculates the ws score of each cell in the
-    row
-
-    Parameters
-    ----------
-    table_annotated : annotated table
-    row: row in table.iterrows()
-    index: list of the NE index
-    top_K: number of top searched web pages
-
-    Returns
-    -------
-    should return or update the cells' ws score
-    """
-    # series of all named_entity columns, the index of named entity columns
-    # is obtained when detecting the type of table
-    row_NE_cells = pd.Series([row[1][i] for i in list(table_annotated.NE_cols.values())])
-    # concatenating all the named entity cells in the row as an input query
-    input_query = row_NE_cells.str.cat(sep=",")
-    # results are the returning results in dictionary format of top n web pages
-    # P (webpages) in the paper
-    results = Search.WebSearch().search_result(input_query, top_K)
-    # I_inf(tableAnnotated.table, ws_table_cal, convergence_pair, index=index_ne, top_K=top_n)
-    # the D is collections of data rows Ti, and key value pair as <Tj, ws(Tj)>
-    for cell in row_NE_cells:
-        index_column = row_NE_cells.index(cell)
-        print(index_column)
-        bow = table_annotated.bow_column(index_column,row[0])
-        ws = ws_Tij(cell, results, bow)
-
-
-# 记得搞bow_ij
-
-def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
-    cell_token = func.remove_stopword(cell_text)
-    length = len(cell_token)
-    freq_title, freq_snippet = [] * (length + 1), [] * (length + 1)
-    for webpage in webpages:
-        # todo need to check if there is no return, freq still the same after the function runs
-        freq_count_web_page(cell_token, webpage, freq_title, freq_snippet)
-    countP = freq_title[0] * 2 + freq_snippet[0]
-    countW = countw(freq_title, freq_snippet,bow_cell)
-    return countP + countW
-
-
-def freq_count_web_page(cell_token: list, webpage: dict, freq_title: list, freq_snippet: list):
-    # the frequency of cell in title and snippet
-    freq_title[0] += webpage["title"].count(cell_token[0])
-    freq_snippet[0] += webpage["snippet"].count(cell_token[0])
-    if len(cell_token) == 2:
-        freq_title.pop()
-        freq_snippet.pop()
-    else:
-        for index, token in enumerate(cell_token, 1):
-            freq_title[index] += func.tokenize_str(webpage["title"]).count(token)
-            freq_snippet[index] += func.tokenize_str(webpage["snippet"]).count(token)
-
-
-def countw(freq_title: list, freq_snippet: list, bowTij: np.array):
-    sumW = 0
-    magnitudeW = np.linalg.norm(bowTij)
-    if len(freq_title) > 1:
-        for i in range(1, len(freq_title)):
-            sumW += freq_title[i] * 2 + freq_snippet[i]
-    return sumW / magnitudeW
-
-
-def I_inf(dataset,
-          process,
-          convergence,
-          **kwargs) -> list:
-    """
-    Implement the i-inf algorithm in the TableMiner+
-    Parameters
-    ----------
-    dataset : D in the paper representing datasets
-    process : a function that processes data in the dataset and return the
-    updated <key, value> pair
-    update : insert the new key, value pair into the key,value pair list
-    convergence: judge between the <key,value> pair i-1
-    and <key, value> if the list has convergence
-
-    Returns
-    -------
-    the collections of key value pairs ranked by v
-    """
-    i = 0
-    pairs = {}
-    iters = dataset
-    if type(dataset) is pd.DataFrame:
-        iters = dataset.iterrows()
-    for data in iters:
-        if i == 0:
-            pairs.update(process(data, **kwargs))
-            continue
-        i += 1
-        temp_pair = process(data)
-        # if key in the pairs, update this key value pair, if not, add into key value pairs list
-        pairs.update(temp_pair)
-        if convergence(pairs[i - 1], pairs[i]):
-            break
-    ordered_pairs = sorted(pairs.items(), key=lambda x: x[1], reverse=True)
-    return ordered_pairs
 
 
 data_path = os.getcwd() + "/T2DV2/test/"
-# print(subject.tables[0].iloc[:,0])
 example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/3887681_0_7938589465814037992.csv'
 tableExample = pd.read_csv(example)
 detection = ColumnDetection(tableExample.iloc[:, 4])
 typeTest = detection.column_type_judge(2)
-# print(columnType(typeTest).name)
 print(detection.col_type)
 
 '''
