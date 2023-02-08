@@ -5,10 +5,9 @@ from d3l.input_output.dataloaders import CSVDataLoader
 import d3l.utils.functions as func
 import os
 import datetime
-import numpy as np
-from typing import Iterator, List, Optional, Tuple, Union, Dict, Any
+from typing import Any
 from enum import Enum
-import TableAnnotation as Annotate
+import random
 
 
 class ColumnType(Enum):
@@ -23,6 +22,7 @@ class ColumnType(Enum):
 
 class ColumnDetection:
     def __init__(self, values: Iterable[Any]):
+
         if not isinstance(values, pd.Series):
             values = pd.Series(values)
         self.column = values
@@ -44,7 +44,7 @@ class ColumnDetection:
         self.acronym_id_num = 0
         # self.column_tokens = {}
 
-    def column_type_judge(self, fraction: int):
+    def column_type_judge(self, fraction=3):
         """
         Check the type of given column's data type.
 
@@ -63,10 +63,11 @@ class ColumnDetection:
         total_token_number = 0
         temp_count_text_cell = 0
         try:
-            if not self.column:
+            if len(self.column) == 0:
                 raise ValueError("Column does not exist!")
         except ValueError as e:
-            print("function terminate.", repr(e))
+            print("column_type_judge terminate.",self.column.name, repr(e))
+            pass
 
         # iterate and judge the element belong to which category
         for index, element in self.column.items():
@@ -79,67 +80,77 @@ class ColumnDetection:
                     else:
                         type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + \
                                                                     temp_count_text_cell
-                print(type_count)
+                #print(type_count)
                 col_type = type_count.index(max(type_count))
                 break
-            print(element)
-            # if it is int type
-            if isinstance(element, int):
-                type_count[ColumnType.number.value] = type_count[ColumnType.number.value] + 1
+           #print(element, type(element))
+            # if this cell is empty
+            if func.is_empty(element):
+                type_count[ColumnType.empty.value] += 1
                 continue
-            if func.is_empty(element):  # or pd.isna(element)
-                type_count[ColumnType.empty.value] = type_count[ColumnType.empty.value] + 1
-                continue
+            # if it is int/float type
+            if isinstance(element, int) or isinstance(element, float):
+                if isinstance(element, int) and 1000 <= element <= int(datetime.datetime.today().year):
+                    type_count[ColumnType.date_expression.value] += 1
+                    continue
+                if func.is_empty(str(element)):
+                    type_count[ColumnType.empty.value] += 1
+                    continue
+                else:
+                    type_count[ColumnType.number.value] += 1
+                    continue
+
             else:
                 # judge string type
                 # print(token, token_with_number)
                 if len(element.split(" ")) == 1:
                     # Judge if it is a null value
                     # TODO : need to mark this empty cell and calculate how many empty cells exist
-                    remove_punc_ele = element.translate(str.maketrans('', '', ','))
-                    # Judge if it is a numeric value
                     if func.is_number(element):
                         # There exists special cases: where year could be recognized as number
-                        if element.isdigit() & int(element) >= 1000 & \
-                                int(element) <= int(datetime.datetime.today().year):
-                            type_count[ColumnType.date_expression.value] = type_count[
-                                                                               ColumnType.date_expression.value] + 1
-                        else:
-                            type_count[ColumnType.number.value] = type_count[ColumnType.number.value] + 1
+                        type_count[ColumnType.number.value] += 1
                         continue
-                    if func.is_number(remove_punc_ele):
-                        type_count[ColumnType.number.value] = type_count[ColumnType.number.value] + 1
-                        continue
-
+                    # Judge if it is a numeric value
+                    if ',' in element:
+                        remove_punc_ele = element.translate(str.maketrans('', '', ','))
+                        if func.is_number(remove_punc_ele):
+                            type_count[ColumnType.number.value] += 1
+                            continue
                     # IF non-numeric, judge if it is a date-expression
                     if func.is_date_expression(element):
-                        type_count[ColumnType.date_expression.value] = type_count[ColumnType.date_expression.value] + 1
+                        type_count[ColumnType.date_expression.value] += 1
                         continue
 
                     # judge if it is a single word indicate an entity or a acronym
                     if element.isalpha():
                         # actually this is an acronym type, but this will fixed in the future todo: later add this type
                         if func.is_acronym(element):
-                            type_count[ColumnType.other.value] = type_count[ColumnType.other.value] + 1
+                            type_count[ColumnType.other.value] += 1
                             continue
                         else:
-                            type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + 1
+                            type_count[ColumnType.named_entity.value] += 1
                             continue
                     else:
-                        # maybe id type cell
-                        type_count[ColumnType.other.value] = type_count[ColumnType.other.value] + 1
-                        continue
+                        tokens = func.token_stop_word(element)
+                        judge = False
+                        for token in tokens:
+                            if token.isalpha() is True and func.is_acronym(token) is False:
+                                judge = True
+                                continue
+                        if judge is True:
+                            type_count[ColumnType.named_entity.value] += 1
+                        else:
+                            type_count[ColumnType.other.value] += 1
                 else:
                     token_str = func.tokenize_str(element)
                     token = token_str.split(" ")
                     token_with_number = func.tokenize_with_number(element).split(" ")
                     if len(token_with_number) == 2:
                         if func.is_number(token_with_number[0]):
-                            type_count[ColumnType.number.value] = type_count[ColumnType.number.value] + 1
+                            type_count[ColumnType.number.value] += 1
                             continue
                         if func.is_date_expression(func.tokenize_with_number(element)):
-                            type_count[ColumnType.date_expression.value] = type_count[
-                                                                               ColumnType.date_expression.value] + 1
+                            type_count[ColumnType.date_expression.value] += 1
                             continue
                     if len(token) < 3:
                         acronym = True
@@ -148,7 +159,12 @@ class ColumnDetection:
                                 acronym = False
                                 break
                         if acronym is True:
-                            type_count[ColumnType.other.value] = type_count[ColumnType.other.value] + 1
+                            type_count[ColumnType.other.value] += 1
+                            continue
+                        else:
+                            type_count[ColumnType.named_entity.value] += 1
+                            continue
+
                     else:
                         total_token_number = total_token_number + len(token)
                         temp_count_text_cell = temp_count_text_cell + 1
@@ -156,7 +172,7 @@ class ColumnDetection:
             # stop iteration to the 1/3rd cell and judge what type occupies the most in columns
         self.acronym_id_num = type_count[ColumnType.other.value]
         self.col_type = ColumnType(col_type).name
-        # return col_type
+        return self.col_type
 
     '''
         def column_token(self, annotation_table: Annotate.TableColumnAnnotation()):
@@ -185,7 +201,7 @@ class ColumnDetection:
         empty_cell_count = 0
         for ele in self.column:
             if func.is_empty(ele):
-                empty_cell_count = empty_cell_count + 1
+                empty_cell_count += 1
         self.emc = empty_cell_count / len(self.column)
 
     def uc_cal(self):
@@ -242,7 +258,7 @@ class ColumnDetection:
             self.cm = 1
 
 
-def random_table(root_path) -> list:
+def datasets(root_path) -> list:
     if not os.path.isdir(root_path):
         raise FileNotFoundError(
             "The {} root directory was not found locally. "
@@ -265,13 +281,9 @@ def random_table(root_path) -> list:
     return tables
 
 
+def random_table(table_list: list) -> pd.DataFrame:
+    return random.choice(table_list)
 
-data_path = os.getcwd() + "/T2DV2/test/"
-example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/3887681_0_7938589465814037992.csv'
-tableExample = pd.read_csv(example)
-detection = ColumnDetection(tableExample.iloc[:, 4])
-typeTest = detection.column_type_judge(2)
-print(detection.col_type)
 
 '''
 This is random test for the column-detection
@@ -279,6 +291,14 @@ TODO: write a test function that can randomly choose table 's column and
 detect its type
 if type is invalid(-1) throw exception
 '''
+
+"""
+example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/3887681_0_7938589465814037992.csv'
+tableExample = pd.read_csv(example)
+detection = ColumnDetection(tableExample.iloc[:, 4])
+typeTest = detection.column_type_judge(2)
+print(detection.col_type)
+"""
 
 # print(func.is_long_text(tableExample.iloc[:,2]))
 '''

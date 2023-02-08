@@ -25,10 +25,9 @@ for j in search(query, tld="co.in", num=2, stop=2, pause=0.1):
 '''
 
 
-
 class WebSearch:
 
-    def __init__(self):#, api_key, cse_id
+    def __init__(self):  # , api_key, cse_id
         """
         Init: connect with google custom search api
         Parameters api
@@ -76,10 +75,11 @@ class WebSearch:
         return self.res
 
 
+'''
+
 web_search = WebSearch()
 results = web_search.search_result(query, 35)
 print(results)
-'''
 def google_search(search_term, api_key, cse_id, **kwargs):
     service = build("customsearch", "v1", developerKey=api_key)
     res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()

@@ -9,9 +9,9 @@ import math
 class TableColumnAnnotation:
     def __init__(self, table: pd.DataFrame):
 
-        if isinstance(table, pd.DataFrame):
+        if isinstance(table, pd.DataFrame) is False:
             print("input should be dataframe!")
-            pass
+            return
         self.table = table
         self.annotation = {}
         self.NE_table = table
@@ -28,10 +28,12 @@ class TableColumnAnnotation:
         Returns -- self.annotation
         dictionary {header: column type}
         -------
-
         """
+
         for header in self.table.columns:
-            candidate_type = SCD.ColumnDetection(self.table[header]).col_type
+            column_detection = SCD.ColumnDetection(self.table[header])
+            candidate_type = column_detection.column_type_judge(3)
+            print(header, candidate_type)
             self.annotation[header] = candidate_type
 
     def NE_columns(self) -> dict:
@@ -210,9 +212,9 @@ def I_inf(dataset,
         i += 1
         process(data, pairs, **kwargs)
         # if key in the pairs, update this key value pair, if not, add into key value pairs list
-        if convergence(pairs.iloc[i - 1, ], pairs.iloc[i, ]):
+        if convergence(pairs.iloc[i - 1,], pairs.iloc[i,]):
             break
-        pairs.drop(index=pairs.index[i+1:])
+        pairs.drop(index=pairs.index[i + 1:])
     return pairs
 
 

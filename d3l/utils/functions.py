@@ -81,6 +81,8 @@ def is_number(s):
     :param fuzzy: bool, ignore unknown tokens in string if True
     REFERENCE: https://www.runoob.com/python3/python3-check-is-number.html
     """
+    if "%" in s:
+        s = s.replace("%", "")
     try:
         float(s)
         return True
@@ -97,16 +99,16 @@ def is_number(s):
     return False
 
 
-def is_date_expression(string, fuzzy=False):
+def is_date_expression(text, fuzzy=False):
     """
     Return whether the string can be interpreted as a date.
 
-    :param string: str, string to check for date
+    :param text: str, string to check for date
     :param fuzzy: bool, ignore unknown tokens in string if True
     REFERENCE: https://stackoverflow.com/questions/25341945/check-if-string-has-date-any-format
     """
     try:
-        parse(string, fuzzy=fuzzy)
+        parse(text, fuzzy=fuzzy)
         return True
 
     except ValueError:
@@ -117,10 +119,14 @@ def is_acronym(text: str) -> bool:
     """
     todo: I don't think this cover all kinds of cases, so need to update later
     Return whether the string can be a acronym.
-    :param string: str, string to check for acronym
+    :param text: str, string to check for acronym
     REFERENCE: https://stackoverflow.com/questions/47734900/detect-abbreviations-in-the-text-in-python
     NOTE: the expression -- r"\b[A-Z\.]{2,}\b" tests if this string contain constant upper case characters
     \b(?:[a-z]*[A-Z][a-z]*){2,} at least two upper/lower case
+
+    Parameters
+    ----------
+    text
     """
     rmoveUpper = re.sub(r"\b[A-Z\\.]{2,}\b", "", text)
     removePunc = rmoveUpper.translate(str.maketrans('', '', string.punctuation))
@@ -134,14 +140,14 @@ def is_id(text: str) -> bool:
     """
     todo: I don't think this cover all kinds of cases, so need to update later
     Return whether the string can be a acronym.
-    :param string: str, string to check for acronym
+    :param text: str, string to check for acronym
     REFERENCE: https://stackoverflow.com/questions/47734900/detect-abbreviations-in-the-text-in-python
     NOTE: the expression -- r"\b[A-Z\.]{2,}\b" tests if this string contain constant upper case characters
     \b(?:[a-z]*[A-Z][a-z]*){2,} at least two upper/lower case
     """
     if is_number(text) is False:
-        rmoveCharacter = re.sub(r"[a-zA-Z]+", "", text)
-        removePunc = rmoveCharacter.translate(str.maketrans('', '', string.punctuation))
+        removeCharacter = re.sub(r"[a-zA-Z]+", "", text)
+        removePunc = removeCharacter.translate(str.maketrans('', '', string.punctuation))
         if is_number(removePunc) is True:
             return True
         else:
