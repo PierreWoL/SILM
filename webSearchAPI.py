@@ -38,7 +38,7 @@ class WebSearch:
         """
         try:
             self.my_api_key = "AIzaSyBogbAxNrr0c39ChcCTHliSBiMHVSQ7mog"
-            my_cse_id = "87f5671ca9e2242a9"
+            self.my_cse_id = "87f5671ca9e2242a9"
             self.service = build("customsearch", "v1", developerKey=self.my_api_key)
             self.res = []
         except ValueError:
@@ -64,21 +64,21 @@ class WebSearch:
         iteration = 0
         while top_n - iteration * 10 >= 10:
             # print(start_num, iteration)
-            cur_res = self.service.cse().list(q=search_term, cx=self.cse_id, num=10,
+            cur_res = self.service.cse().list(q=search_term, cx=self.my_cse_id, num=10,
                                               start=start_num, **kwargs).execute()
             self.res = self.res + cur_res['items']
             iteration = iteration + 1
             start_num = 10 * iteration + 1
         # print(top_n - iteration*10, iteration, start_num)
-        other_res = self.service.cse().list(q=search_term, cx=self.cse_id, num=top_n - iteration * 10,
+        other_res = self.service.cse().list(q=search_term, cx=self.my_cse_id, num=top_n - iteration * 10,
                                             start=start_num, **kwargs).execute()
         self.res = self.res + other_res['items']
         return self.res
 
 
 web_search = WebSearch()
-result = web_search.search_result(query, 35)
-
+results = web_search.search_result(query, 35)
+print(results)
 '''
 def google_search(search_term, api_key, cse_id, **kwargs):
     service = build("customsearch", "v1", developerKey=api_key)

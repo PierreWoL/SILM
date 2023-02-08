@@ -6,6 +6,9 @@ import string
 from dateutil.parser import parse
 import pandas as pd
 from typing import Iterable, Any
+from d3l.utils.constants import STOPWORDS
+from nltk.stem import WordNetLemmatizer
+
 
 def shingles(value: str) -> Iterable[str]:
     """
@@ -25,13 +28,15 @@ def shingles(value: str) -> Iterable[str]:
     for shingle in delimiterPattern.split(value):
         yield re.sub(r"\s+", " ", shingle.strip().lower())
 
+
 def is_empty(text: str) -> bool:
-    empty_representation = ['-', 'NA', 'na', 'nan','n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
+    empty_representation = ['-', 'NA', 'na', 'nan', 'n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
     if text in empty_representation:
         return True
     if pd.isna(text):
         return True
     return False
+
 
 def is_numeric(values: Iterable[Any]) -> bool:
     """
@@ -51,9 +56,12 @@ def is_numeric(values: Iterable[Any]) -> bool:
         values = pd.Series(values)
     return pd.api.types.is_numeric_dtype(values.dropna())
 
+
 '''
 check if the string is in date expression 
 '''
+
+
 def strftime_format(format):
     def func(value):
         try:
@@ -61,8 +69,10 @@ def strftime_format(format):
         except ValueError:
             return False
         return True
+
     func.__doc__ = f'should use date format {format}'
     return func
+
 
 def is_number(s):
     """
@@ -86,6 +96,7 @@ def is_number(s):
 
     return False
 
+
 def is_date_expression(string, fuzzy=False):
     """
     Return whether the string can be interpreted as a date.
@@ -102,9 +113,7 @@ def is_date_expression(string, fuzzy=False):
         return False
 
 
-
-
-def is_acronym(text:str)-> bool:
+def is_acronym(text: str) -> bool:
     """
     todo: I don't think this cover all kinds of cases, so need to update later
     Return whether the string can be a acronym.
@@ -131,24 +140,41 @@ def is_id(text: str) -> bool:
     \b(?:[a-z]*[A-Z][a-z]*){2,} at least two upper/lower case
     """
     if is_number(text) is False:
-            rmoveCharacter = re.sub(r"[a-zA-Z]+", "", text)
-            removePunc = rmoveCharacter.translate(str.maketrans('', '', string.punctuation))
-            if is_number(removePunc) is True:
-                return True
-            else:
-                return False
+        rmoveCharacter = re.sub(r"[a-zA-Z]+", "", text)
+        removePunc = rmoveCharacter.translate(str.maketrans('', '', string.punctuation))
+        if is_number(removePunc) is True:
+            return True
+        else:
+            return False
     else:
-        #print("this is number!")
+        # print("this is number!")
         return False
-def tokenize(text: str)-> str:
-    delimiterPattern = re.compile(r"[^\w\s\-_@&]+")
+
+
+def tokenize_str(text: str) -> str:
+    re.compile(r"[^\w\s\-_@&]+")
     textRemovePuc = text.translate(str.maketrans('', '', string.punctuation)).strip()
     textRemovenumber = textRemovePuc.translate(str.maketrans('', '', string.digits)).strip()
     ele = re.sub(r"\s+", " ", textRemovenumber)
     return ele
 
 
-def tokenize_with_number(text: str)-> str:
+def token_stop_word(text: str) -> list:
+    lemmatizer = WordNetLemmatizer()
+    ele = tokenize_str(text)
+    ele_origin = lemmatizer.lemmatize(ele)
+    elements = [i for i in ele_origin.split(" ") if i not in STOPWORDS]
+    return elements
+
+
+def remove_stopword(text: str) -> list:
+    ele = tokenize_str(text)
+    lemmatizer = WordNetLemmatizer()
+    elements = [lemmatizer.lemmatize(i) for i in ele.split(" ") if lemmatizer.lemmatize(i) not in STOPWORDS]
+    return elements
+
+
+def tokenize_with_number(text: str) -> str:
     delimiterPattern = re.compile(r"[^\w\s\-_@&]+")
     textRemovePuc = text.translate(str.maketrans('', '', string.punctuation)).strip()
     ele = re.sub(r"\s+", " ", textRemovePuc)
@@ -157,6 +183,8 @@ def tokenize_with_number(text: str)-> str:
 
 def has_numbers(input_string):
     return bool(re.search(r'\d', input_string))
+
+
 def pickle_python_object(obj: Any, object_path: str):
     """
     Save the given Python object to the given path.
