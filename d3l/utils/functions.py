@@ -29,7 +29,9 @@ def shingles(value: str) -> Iterable[str]:
         yield re.sub(r"\s+", " ", shingle.strip().lower())
 
 
-def is_empty(text: str) -> bool:
+def is_empty(text) -> bool:
+    if isinstance(text, float) and text =="nan":
+        return True
     empty_representation = ['-', 'NA', 'na', 'nan', 'n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
     if text in empty_representation:
         return True
@@ -165,18 +167,20 @@ def tokenize_str(text: str) -> str:
     return ele
 
 
-def token_stop_word(text: str) -> list:
-    lemmatizer = WordNetLemmatizer()
-    ele = tokenize_str(text)
-    ele_origin = lemmatizer.lemmatize(ele)
-    elements = [i for i in ele_origin.split(" ") if i not in STOPWORDS]
+def token_stop_word(text) -> list:
+    elements =[]
+    if not is_empty(text):
+        lemmatizer = WordNetLemmatizer()
+        ele = tokenize_str(text).lower()
+        ele_origin = lemmatizer.lemmatize(ele)
+        elements = [i for i in ele_origin.split(" ") if i not in STOPWORDS]
     return elements
 
 
 def remove_stopword(text: str) -> list:
     ele = tokenize_str(text)
     lemmatizer = WordNetLemmatizer()
-    elements = [lemmatizer.lemmatize(i) for i in ele.split(" ") if lemmatizer.lemmatize(i) not in STOPWORDS]
+    elements = [i for i in ele.split(" ") if lemmatizer.lemmatize(i) not in STOPWORDS]
     return elements
 
 

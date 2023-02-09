@@ -171,7 +171,7 @@ class ColumnDetection:
 
             # stop iteration to the 1/3rd cell and judge what type occupies the most in columns
         self.acronym_id_num = type_count[ColumnType.other.value]
-        self.col_type = ColumnType(col_type).name
+        self.col_type = ColumnType(col_type)
         return self.col_type
 
     '''
