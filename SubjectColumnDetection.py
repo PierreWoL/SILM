@@ -8,6 +8,14 @@ import datetime
 from typing import Any
 from enum import Enum
 import random
+import statistics
+
+"""
+This combines the features to detection subject columns of tables
+both in tableMiner+ and recovering semantics of data on the web
+1. column_type_judge: judge the type of column:
+    named_entity, long_text, number, date_expression, empty, other
+"""
 
 
 class ColumnType(Enum):
@@ -26,23 +34,35 @@ class ColumnDetection:
         if not isinstance(values, pd.Series):
             values = pd.Series(values)
         self.column = values
-        self.col_type = ColumnType.Invalid
+        self.col_type = self.column_type_judge(3)
+
         '''
         feature used in the subject column detection
+       
         emc: fraction of empty cells
         uc: fraction of cells with unique content 
         ac: if over 50% cells contain acronym or id
         df: distance from the first NE-column
-        cm: context match score
+        cm: context match score (doubt this could work)
         ws: web search score
+        
+        additional ones in the recovering semantics of data 
+        on the web
+        
+        tlc: average number of words in each cell
+        vt: variance in the number of data tokens in each cell
         '''
         self.emc = 0
         self.uc = 0
         self.ac = 0
         self.df = 0
         self.cm = 0
+        self.tlc = 0
+        self.vt = 0
         self.acronym_id_num = 0
-        # self.column_tokens = {}
+        self.ws = 0
+
+        # todo don't know if I should add this here
 
     def column_type_judge(self, fraction=3):
         """
@@ -66,7 +86,7 @@ class ColumnDetection:
             if len(self.column) == 0:
                 raise ValueError("Column does not exist!")
         except ValueError as e:
-            print("column_type_judge terminate.",self.column.name, repr(e))
+            print("column_type_judge terminate.", self.column.name, repr(e))
             pass
 
         # iterate and judge the element belong to which category
@@ -80,10 +100,10 @@ class ColumnDetection:
                     else:
                         type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + \
                                                                     temp_count_text_cell
-                #print(type_count)
+                # print(type_count)
                 col_type = type_count.index(max(type_count))
                 break
-           #print(element, type(element))
+            # print(element, type(element))
             # if this cell is empty
             if func.is_empty(element):
                 type_count[ColumnType.empty.value] += 1
@@ -203,6 +223,7 @@ class ColumnDetection:
             if func.is_empty(ele):
                 empty_cell_count += 1
         self.emc = empty_cell_count / len(self.column)
+        return self.emc
 
     def uc_cal(self):
         """
@@ -224,23 +245,25 @@ class ColumnDetection:
         if self.acronym_id_num / len(self.column) > 0.5:
             self.ac = 1
 
-    def df_cal(self, index, NE_cols: dict):
+    def df_cal(self, index: int, NE_table: pd.DataFrame):
         """
         calculate the df score
         the distance between this NE column and the first NE column
         -------
          """
-        if self.column.name not in annotation_table.NE_cols.keys():
-            print("Error! This column is not in this table!")
-            pass
-        else:
-            first_pair = next(iter((NE_cols.items())))
-            self.df = NE_cols.get(self.column.name) - first_pair[1]
-            """
+        if self.col_type == ColumnType.named_entity:
+            first_pair = NE_table.columns[0]
+            self.df = index - int(first_pair)
+        """
             temp_annotation = list(annotation_table.annotation.items())
             # pass the index of this column through parameter
             res = [index for index, pair in enumerate(temp_annotation) if pair[0] == self.col_type]
-            """
+        """
+
+    def ws_cal(self, index: int, NE_table: pd.DataFrame):
+        if self.col_type == ColumnType.named_entity:
+            for item in NE_table[str(index)]:
+                self.ws += item[1]
 
     def cm_cal(self):
         """
@@ -252,10 +275,43 @@ class ColumnDetection:
         -------
         """
         if self.col_type != ColumnType.named_entity or self.col_type != ColumnType.long_text:
-            print("No need to calculate context match score!")
+            # print("No need to calculate context match score!")
             pass
         else:
             self.cm = 1
+
+    def tlc_cal(self):
+        """
+        variance in the number of data tokens in each cell
+        Returns
+        -------
+        """
+        if self.col_type == ColumnType.named_entity:
+            token_list = list(self.column.apply((lambda x: len(func.token_stop_word(x)))))
+            self.tlc = statistics.variance(token_list)
+        #return self.tlc
+
+    def vt_cal(self):
+        self.vt = self.column.apply((lambda x: len(str(x).split(" ")))).sum() / len(self.column)
+        #return self.vt
+
+    def features(self, index: int, NE_table: pd.DataFrame):
+        self.emc_cal()
+        self.uc_cal()
+        self.ac_cal()
+        self.df_cal(index, NE_table)
+        self.ws_cal(index, NE_table)
+        self.cm_cal()
+        self.vt_cal()
+        self.tlc_cal()
+        print("emc: ",self.emc,
+              "\nac: ",self.ac,
+              "\ndf: ",self.df,
+              "\nws: ",self.ws,
+              "\ncm: ",self.cm,
+              "\nvt: ",self.vt,
+              "\ntlc: ",self.tlc,
+              )
 
 
 def datasets(root_path) -> list:

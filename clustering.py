@@ -15,8 +15,6 @@ from d3l.querying.query_engine import QueryEngine
 from d3l.utils.functions import pickle_python_object, unpickle_python_object
 
 
-
-
 def create_or_find_indexes(data_path):
     #  collection of tables
     dataloader = CSVDataLoader(
@@ -54,16 +52,13 @@ def create_or_find_indexes(data_path):
         distribution_index = DistributionIndex(dataloader=dataloader)
         pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
 
-    #EmbeddingIndex
+    # EmbeddingIndex
     if os.path.isfile(os.path.join(data_path, './embedding.lsh')):
         embeddingIndex = unpickle_python_object(os.path.join(data_path, './embedding.lsh'))
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader)
         pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
-    return [name_index, distribution_index,value_index,embeddingIndex]#format_index,
-
-
-
+    return [name_index, distribution_index, value_index, embeddingIndex]  # format_index,
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
@@ -117,7 +112,7 @@ def dbscan_param_search(data_path, indexes):
             db = DBSCAN(eps=eps_trial, min_samples=min_sample_trial).fit(Z)
 
             labels = db.labels_
-           # print(labels)
+            # print(labels)
             n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
 
             if n_clusters > 1:
@@ -136,27 +131,28 @@ def dbscan_param_search(data_path, indexes):
     min_sample = par.iloc[0][2]
     return eps, int(min_sample), Z, T
 
-def cluster_discovery(data_path,parameters):
 
+def cluster_discovery(data_path, parameters):
     db = DBSCAN(eps=parameters[0],
-               min_samples=parameters[1],
-               n_jobs=-1)
+                min_samples=parameters[1],
+                n_jobs=-1)
 
     db.fit(parameters[2])
     labels = list(db.labels_)
-    l = (parameters[3],labels)
+    l = (parameters[3], labels)
     clust = zip(*l)
     clu = list(clust)
 
     return clu
-def compute_rand_score(clusters_list,file):
 
-    file = open(file,'r')
+
+def compute_rand_score(clusters_list, file):
+    file = open(file, 'r')
     content = file.read().strip()
     content_list = content.split(",")
     file.close()
 
-    label=[]
+    label = []
     for member in clusters_list:
         label.append(member[1])
 
@@ -164,41 +160,42 @@ def compute_rand_score(clusters_list,file):
 
     return rand_score
 
-T2DV2Path = os.getcwd()+"/T2DV2/"
-samplePath = os.getcwd()+"/T2DV2/test/"
-#get_random_train_data(T2DV2Path, samplePath, 0.2)
-#Concepts = get_concept(WDCFilePath)
-T2DV2GroundTruth = os.getcwd()+"/T2DV2/extended_instance_goldstandard/classes_GS.csv"
+
+T2DV2Path = os.getcwd() + "/T2DV2/"
+samplePath = os.getcwd() + "/T2DV2/test/"
+# get_random_train_data(T2DV2Path, samplePath, 0.2)
+# Concepts = get_concept(WDCFilePath)
+T2DV2GroundTruth = os.getcwd() + "/T2DV2/extended_instance_goldstandard/classes_GS.csv"
 f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
 gt_CSV = pd.read_csv(f, header=None)
 
 GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
 print(GroundTruth)
-gt_clusters,ground_t,truth = ed.get_concept_files(ed.get_files(samplePath),GroundTruth)
-gt_cluster=gt_CSV[1].unique()
-#for key in gt_clusters:
- #   shutil.copy(samplePath + key+".csv", samplePath)
-print(len(gt_clusters),gt_clusters)
-print(len(ground_t),ground_t)
-print(len(truth),truth)
+gt_clusters, ground_t, truth = ed.get_concept_files(ed.get_files(samplePath), GroundTruth)
+gt_cluster = gt_CSV[1].unique()
+# for key in gt_clusters:
+#   shutil.copy(samplePath + key+".csv", samplePath)
+print(len(gt_clusters), gt_clusters)
+print(len(ground_t), ground_t)
+print(len(truth), truth)
 groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
-#print(groundTruthWDCTest)
-samplePath = os.getcwd()+"/T2DV2/Test/"
+# print(groundTruthWDCTest)
+samplePath = os.getcwd() + "/T2DV2/Test/"
 indexes = create_or_find_indexes(samplePath)
-#indexes = create_or_find_indexes(ed.WDCsamplePath)
+# indexes = create_or_find_indexes(ed.WDCsamplePath)
 parameters = dbscan_param_search(samplePath, indexes)
-#parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
+# parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
 print(parameters)
-clusters = cluster_discovery(ed.samplePath,parameters)
-#clusters = cluster_discovery(ed.WDCsamplePath,parameters)
-cluster_dict ={}
+clusters = cluster_discovery(ed.samplePath, parameters)
+# clusters = cluster_discovery(ed.WDCsamplePath,parameters)
+cluster_dict = {}
 for k, v in clusters:
     if cluster_dict.get(v) == None:
         cluster_dict[v] = []
     cluster_dict[v].append(k)
 
 print(clusters)
-print(len(cluster_dict),cluster_dict)
+print(len(cluster_dict), cluster_dict)
 '''
 dataloader = CSVDataLoader(root_path=(samplePath), encoding='latin-1')
 T = ed.get_files(samplePath)

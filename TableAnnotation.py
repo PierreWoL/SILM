@@ -1,5 +1,3 @@
-import ast
-
 import pandas as pd
 import SubjectColumnDetection as SCD
 import webSearchAPI as Search
@@ -14,9 +12,12 @@ class TableColumnAnnotation:
         if isinstance(table, pd.DataFrame) is False:
             print("input should be dataframe!")
             return
-        self.table = table
+        self.table = table.copy(True)
         self.annotation = {}
-        self.NE_table = table
+        self.NE_table = table.copy(True)
+        for i, col in enumerate(self.NE_table.columns):
+            self.NE_table.rename(columns={col: str(i)}, inplace=True)
+        print(self.table)
         self.NE_cols = []
         self.annotate_type()
         # in the NE_columns() self.NE_table is also updated to store the tokens of cells in named_entity columns
@@ -51,12 +52,12 @@ class TableColumnAnnotation:
         Returns the dictionary recording the NE columns header and its index in the table
         -------
         """
-        key_list = list(self.annotation.keys())
         for key, value in self.annotation.items():
             if value == SCD.ColumnType.named_entity:
                 self.NE_cols.append(key)
-        self.NE_table = self.table.iloc[:, self.NE_cols]
+        self.NE_table = self.NE_table.iloc[:, self.NE_cols]
         self.NE_table = self.NE_table.applymap(convert_to_tuple)  # + ":[]"
+
         """
         NE_Table should be like this:
         index NE_Column1                     NE_column2     NE_column3
@@ -69,7 +70,7 @@ class TableColumnAnnotation:
         vocabulary_set = set()
         for index, row in self.NE_table.iterrows():
             for cell in row:
-                vocabulary_set.update(util.token_stop_word(cell[0]))
+                vocabulary_set.update(cell[0])
         self.vocabulary = list(vocabulary_set)
         return self.vocabulary
 
@@ -82,7 +83,8 @@ class TableColumnAnnotation:
         -------
         none but update the results self.ws
         """
-        I_inf(self.table, self.NE_table, self.ws_table_cal, convergence_pair, top_K=top_n)
+        self.NE_table = I_inf(self.table, self.NE_table, self.ws_table_cal, have_converged, top_K=top_n)
+        print(self.NE_table)
         # for row in self.table.iterrows():
         #    self.ws_table_cal(row, top_n)
 
@@ -106,7 +108,7 @@ class TableColumnAnnotation:
         # series of all named_entity columns, the index of named entity columns
         # is obtained when detecting the type of table
         # row[0]: the index of the row of cell
-        row_NE_cells = pd.Series([row[1][i] for i in self.NE_cols])
+        row_NE_cells = pd.Series([str(row[1][i]) for i in self.NE_cols])
         # concatenating all the named entity cells in the row as an input query
         input_query = row_NE_cells.str.cat(sep=",")
         # results are the returning results in dictionary format of top n web pages
@@ -117,14 +119,14 @@ class TableColumnAnnotation:
         list_row_NE = list(row_NE_cells)
         for cell in list_row_NE:
             # column_index is the index of column in NE_table (correspondingly)
-            #print(list_row_NE, cell)
+            # print(list_row_NE, cell)
             column_index = list_row_NE.index(cell)
             bow = self.bow_column(row[0], column_index)
             ws = ws_Tij(cell, results, bow)
             # 在这里我先算每个的 不累加
-            #print(pairs.iloc[row[0]][column_index][1])
+            # print(pairs.iloc[row[0]][column_index][1])
             pairs.iloc[row[0]][column_index][1] = ws
-            #print(pairs.iloc[row[0]][column_index][1], pairs.iloc[row[0] - 1][column_index][1])
+            # print(pairs.iloc[row[0]][column_index][1], pairs.iloc[row[0] - 1][column_index][1])
 
     def bow_column(self, row_index, column_index) -> np.array:
         """
@@ -139,9 +141,18 @@ class TableColumnAnnotation:
 
         """
         bow = [0] * len(self.vocabulary)
-        for token in util.token_stop_word(self.NE_table.iloc[row_index, column_index][0]):
+        for token in self.NE_table.iloc[row_index, column_index][0]:
             bow[self.vocabulary.index(token)] += 1
         return np.array(bow)
+
+    def columns_feature(self):
+        features = {}
+        for i in range(self.table.shape[1]):
+            print("table name is ",self.table.columns[i],"index is ",i)
+            columnDetection = SCD.ColumnDetection(self.table.iloc[:, i])
+            columnDetection.features(i, self.NE_table)
+            features[i] = columnDetection
+        return features
 
 
 def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
@@ -158,9 +169,11 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
     NOTE: freq_title is a list [], which length is
     """
     cell_token = util.remove_stopword(cell_text)
-    #print("the cell token is " + str(cell_token), "length is ", len(cell_token))
+    # print("the cell token is " + str(cell_token), "length is ", len(cell_token))
     length = len(cell_token)
-    freq_title, freq_snippet = [0] * (length + 1), [0] * (length + 1)
+    if len(cell_token) > 1:
+        length += 1
+    freq_title, freq_snippet = [0] * length, [0] * length
     for webpage in webpages:
         # todo need to check if there is no return, freq still the same after the function runs
         freq_count_web_page(cell_token, webpage, freq_title, freq_snippet)
@@ -171,13 +184,12 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
 
 def freq_count_web_page(cell_token: list, webpage: dict, freq_title: list, freq_snippet: list):
     # the frequency of cell in title and snippet
+    # print(cell_token, freq_title, freq_snippet)
     freq_title[0] += webpage["title"].count(cell_token[0])
     freq_snippet[0] += webpage["snippet"].count(cell_token[0])
-    if len(cell_token) == 1:
-        freq_title.pop()
-        freq_snippet.pop()
-    else:
+    if len(cell_token) > 1:
         for index, token in enumerate(cell_token, 1):
+            # print(index, token, len(freq_title), len(freq_snippet))
             freq_title[index] += util.tokenize_str(webpage["title"]).count(token)
             freq_snippet[index] += util.tokenize_str(webpage["snippet"]).count(token)
 
@@ -191,13 +203,8 @@ def countw(freq_title: list, freq_snippet: list, bowTij: np.array):
     return sumW / magnitudeW
 
 
-def convergence_pair(pair1: tuple, pair2: tuple):
-    # todo CARRY ON HERE
-    return 1
-
-
 def convert_to_tuple(cell):
-    return [cell, 0]
+    return [util.token_stop_word(cell), 0]
 
 
 def I_inf(dataset,
@@ -222,31 +229,36 @@ def I_inf(dataset,
     the collections of key value pairs ranked by v
     """
     i = 0
-    iters = dataset
+    iter_length = len(dataset)
     if type(dataset) is pd.DataFrame:
-        iters = dataset.iterrows()
-    for data in iters:
+        iter_length = dataset.shape[0]
+    for i in range(iter_length - 1):
         if i == 0:
-            print("the first iteration")
-            process(data, pairs, **kwargs)
+            process((i, dataset.iloc[i]), pairs, **kwargs)
+
         i += 1
-        process(data, pairs, **kwargs)
+        process((i, dataset.iloc[i]), pairs, **kwargs)
         # if key in the pairs, update this key value pair, if not, add into key value pairs list
-        if convergence(pairs.iloc[i - 1,], pairs.iloc[i,]):
+        if convergence(pairs.iloc[i - 1,], pairs.iloc[i,]):  #
+            pairs = pairs.drop(index=pairs.index[i + 1:])
             break
-        pairs.drop(index=pairs.index[i + 1:])
     return pairs
 
 
-def entropy(key_value_pairs):
+def entropy(inputs):
+    # key_value_pairs = {key: value for key, value in list(inputs)}
+    key_value_pairs = {str(t[0]): t[1] for t in list(inputs)}
     entropy_cal = 0
+
     total = sum(key_value_pairs.values())
     for value in key_value_pairs.values():
+        if value == 0:
+            continue
         entropy_cal -= value / total * math.log(value / total)
     return entropy_cal
 
 
-def have_converged(pre_pairs, cur_pairs, threshold=0.0001):
+def have_converged(pre_pairs, cur_pairs, threshold=0.1):
     previous_entropy = entropy(pre_pairs)
     current_entropy = entropy(cur_pairs)
     if abs(current_entropy - previous_entropy) < threshold:
