@@ -4,6 +4,7 @@ import webSearchAPI as Search
 import d3l.utils.functions as util
 import numpy as np
 import math
+from typing import Iterable
 
 
 class TableColumnAnnotation:
@@ -146,13 +147,49 @@ class TableColumnAnnotation:
         return np.array(bow)
 
     def columns_feature(self):
-        features = {}
+        """
+        calculate all features of the columns
+        Returns
+        -------
+
+        """
+        lists = []
         for i in range(self.table.shape[1]):
-            print("table name is ",self.table.columns[i],"index is ",i)
             columnDetection = SCD.ColumnDetection(self.table.iloc[:, i])
-            columnDetection.features(i, self.NE_table)
-            features[i] = columnDetection
-        return features
+            feature = columnDetection.features(i, self.NE_table)
+            lists.append(feature)
+        matrix = np.array(lists)
+        print(matrix)
+        return matrix
+
+
+def subCol_Tj(mat: np.array):
+    matrix = np.transpose(mat)
+    features, df = matrix[:-1, :], matrix[-1, :]
+    # Get the minimum and maximum values of each row
+    row_min = np.min(features, axis=1).reshape(-1, 1)
+    row_max = np.max(features, axis=1).reshape(-1, 1)
+
+    # Subtract the minimum value of each row from all elements in the row
+    # and Divide the result by the range (max - min) of each row
+    def divide_array(dividend, divisor):
+        for i, d in enumerate(divisor):
+            if divisor[i] == [0]:
+                divisor[i] = 1
+        results = dividend / divisor
+        return results
+
+    features = divide_array(features - row_min, row_max - row_min)
+    normal_f = np.transpose(np.vstack((features, df)))
+    """
+        the subcol(Tj) = (ucnorm(Tj) +2 *(cmnorm(Tj)+wsnorm(Tj)-emcnorm(Tj)) )/(df(Tj)+1)^(1/2)
+        """
+
+    def calc_func(row):
+        return (row[1] + 2 * (row[2] + row[3]) - row[4]) / math.sqrt(row[5] + 1)
+
+    # Use np.apply_along_axis to apply the calculation function to each row of the array
+    return np.apply_along_axis(calc_func, 1, normal_f)
 
 
 def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
@@ -169,7 +206,6 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
     NOTE: freq_title is a list [], which length is
     """
     cell_token = util.remove_stopword(cell_text)
-    # print("the cell token is " + str(cell_token), "length is ", len(cell_token))
     length = len(cell_token)
     if len(cell_token) > 1:
         length += 1
@@ -195,16 +231,20 @@ def freq_count_web_page(cell_token: list, webpage: dict, freq_title: list, freq_
 
 
 def countw(freq_title: list, freq_snippet: list, bowTij: np.array):
-    sumW = 0
+    countW = 0
     magnitudeW = np.linalg.norm(bowTij)
     if len(freq_title) > 1:
         for i in range(1, len(freq_title)):
-            sumW += freq_title[i] * 2 + freq_snippet[i]
-    return sumW / magnitudeW
+            countW += freq_title[i] * 2 + freq_snippet[i]
+        return countW / magnitudeW
+    return countW
 
 
 def convert_to_tuple(cell):
-    return [util.token_stop_word(cell), 0]
+    cell_token = util.token_stop_word(cell)
+    if util.token_stop_word(cell)!= ['']:
+        cell_token = [cell]
+    return [cell_token, 0]
 
 
 def I_inf(dataset,

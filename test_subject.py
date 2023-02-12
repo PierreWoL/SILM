@@ -5,14 +5,16 @@ import TableAnnotation as TA
 data_path = os.getcwd() + "/T2DV2/test/"
 tables = SCD.datasets(data_path)
 
-example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/4501311_8_8306082458935575308.csv'
+example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/12271141_0_8517913935669973086.csv'
 table = pd.read_csv(example)
-#table = SCD.random_table(tables)
-#print(table)
+key, table_sample = SCD.random_table(tables)
+#print(key, table_sample)
 anno = TA.TableColumnAnnotation(table)
+#anno = TA.TableColumnAnnotation(table_sample)
 #print(anno.annotation)
 anno.ws_cal(3)
-anno.columns_feature()
+matrix = anno.columns_feature()
+print(TA.subCol_Tj(matrix))
 
 """
 NOTE the web search is very unstable 

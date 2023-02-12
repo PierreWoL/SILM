@@ -59,10 +59,8 @@ class ColumnDetection:
         self.cm = 0
         self.tlc = 0
         self.vt = 0
-        self.acronym_id_num = 0
         self.ws = 0
-
-        # todo don't know if I should add this here
+        self.acronym_id_num = 0
 
     def column_type_judge(self, fraction=3):
         """
@@ -289,11 +287,11 @@ class ColumnDetection:
         if self.col_type == ColumnType.named_entity:
             token_list = list(self.column.apply((lambda x: len(func.token_stop_word(x)))))
             self.tlc = statistics.variance(token_list)
-        #return self.tlc
+        # return self.tlc
 
     def vt_cal(self):
         self.vt = self.column.apply((lambda x: len(str(x).split(" ")))).sum() / len(self.column)
-        #return self.vt
+        # return self.vt
 
     def features(self, index: int, NE_table: pd.DataFrame):
         self.emc_cal()
@@ -304,17 +302,10 @@ class ColumnDetection:
         self.cm_cal()
         self.vt_cal()
         self.tlc_cal()
-        print("emc: ",self.emc,
-              "\nac: ",self.ac,
-              "\ndf: ",self.df,
-              "\nws: ",self.ws,
-              "\ncm: ",self.cm,
-              "\nvt: ",self.vt,
-              "\ntlc: ",self.tlc,
-              )
+        return [self.ac, self.uc, self.ws, self.cm, self.emc, self.df, self.vt, self.tlc]
 
 
-def datasets(root_path) -> list:
+def datasets(root_path):
     if not os.path.isdir(root_path):
         raise FileNotFoundError(
             "The {} root directory was not found locally. "
@@ -325,7 +316,7 @@ def datasets(root_path) -> list:
 
     if root_path[-1] != "/":
         root_path = root_path + "/"
-    tables = []
+    tables = {}
     dataloader = CSVDataLoader(root_path=root_path, encoding='latin-1')
     T = os.listdir(root_path)
     T = [t[:-4] for t in T if t.endswith('.csv')]
@@ -333,12 +324,14 @@ def datasets(root_path) -> list:
 
     for t in T:
         table = dataloader.read_table(table_name=t)
-        tables.append(table)
+        tables[t] = table
+        print(t)
     return tables
 
 
-def random_table(table_list: list) -> pd.DataFrame:
-    return random.choice(table_list)
+def random_table(tables: dict) :
+    random_key = random.choice(list(tables.keys()))
+    return random_key, tables[random_key]
 
 
 '''
