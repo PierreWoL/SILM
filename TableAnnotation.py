@@ -18,12 +18,14 @@ class TableColumnAnnotation:
         self.NE_table = table.copy(True)
         for i, col in enumerate(self.NE_table.columns):
             self.NE_table.rename(columns={col: str(i)}, inplace=True)
-        print(self.table)
+        # print(self.table)
         self.NE_cols = []
         self.annotate_type()
         # in the NE_columns() self.NE_table is also updated to store the tokens of cells in named_entity columns
         self.NE_columns()
         self.vocabulary = self.vocabularySet()
+        self.matrix_list = []
+        self.subject_col = []
 
     def annotate_type(self):
         """
@@ -75,7 +77,7 @@ class TableColumnAnnotation:
         self.vocabulary = list(vocabulary_set)
         return self.vocabulary
 
-    def ws_cal(self, top_n: int):
+    def ws_cal(self, top_n: int, cseid="87f5671ca9e2242a9"):
         """
         todo: fetch result but still in the progress
         calculate the context match score:
@@ -84,12 +86,14 @@ class TableColumnAnnotation:
         -------
         none but update the results self.ws
         """
-        self.NE_table = I_inf(self.table, self.NE_table, self.ws_table_cal, have_converged, top_K=top_n)
-        print(self.NE_table)
+        if self.NE_cols:
+            self.NE_table = I_inf(self.table, self.NE_table, self.ws_table_cal, have_converged, top_K=top_n,
+                                  cse_id=cseid)
+        # print(self.NE_table)
         # for row in self.table.iterrows():
         #    self.ws_table_cal(row, top_n)
 
-    def ws_table_cal(self, row: tuple, pairs: pd.DataFrame, top_K=10):
+    def ws_table_cal(self, row: tuple, pairs: pd.DataFrame, top_K=4, cse_id="87f5671ca9e2242a9"):
         # TODO  you forget about the returning value
         # in this case: pairs is the self.NE_table
         """
@@ -98,6 +102,7 @@ class TableColumnAnnotation:
 
         Parameters
         ----------
+        cse_id
         pairs : key value pairs
         row: row in table.iterrows()
         top_K: number of top searched web pages
@@ -114,7 +119,7 @@ class TableColumnAnnotation:
         input_query = row_NE_cells.str.cat(sep=",")
         # results are the returning results in dictionary format of top n web pages
         # P (webpages) in the paper
-        results = Search.WebSearch().search_result(input_query, top_K)
+        results = Search.WebSearch(cse_id).search_result(input_query, top_K)
         # I_inf(tableAnnotated.table, ws_table_cal, convergence_pair, index=index_ne, top_K=top_n)
         # the D is collections of data rows Ti, and key value pair as <Tj, ws(Tj)>
         list_row_NE = list(row_NE_cells)
@@ -124,7 +129,6 @@ class TableColumnAnnotation:
             column_index = list_row_NE.index(cell)
             bow = self.bow_column(row[0], column_index)
             ws = ws_Tij(cell, results, bow)
-            # 在这里我先算每个的 不累加
             # print(pairs.iloc[row[0]][column_index][1])
             pairs.iloc[row[0]][column_index][1] = ws
             # print(pairs.iloc[row[0]][column_index][1], pairs.iloc[row[0] - 1][column_index][1])
@@ -153,14 +157,28 @@ class TableColumnAnnotation:
         -------
 
         """
-        lists = []
         for i in range(self.table.shape[1]):
             columnDetection = SCD.ColumnDetection(self.table.iloc[:, i])
             feature = columnDetection.features(i, self.NE_table)
-            lists.append(feature)
-        matrix = np.array(lists)
-        print(matrix)
+            self.matrix_list.append(feature)
+        matrix = np.array(self.matrix_list)
+        # print(matrix)
         return matrix
+
+    def subCol(self, threshold):
+        score = subCol_Tj(self.columns_feature())
+        score_l = list(score)
+        # print(self.matrix_list, score_l,self.annotation)
+        subject_column = [0] * len(score)
+        score_l.sort(reverse=True)
+        index0 = list(score).index(score_l[0])
+        subject_column[index0] = 1
+        if score_l[0] - score_l[1] <= threshold:
+            index1 = list(score).index(score_l[1])
+            subject_column[index1] = 1
+        # print(subject_column)
+        self.subject_col = subject_column
+        return np.array(subject_column)
 
 
 def subCol_Tj(mat: np.array):
@@ -179,11 +197,12 @@ def subCol_Tj(mat: np.array):
         results = dividend / divisor
         return results
 
+    # print(features)
     features = divide_array(features - row_min, row_max - row_min)
     normal_f = np.transpose(np.vstack((features, df)))
     """
-        the subcol(Tj) = (ucnorm(Tj) +2 *(cmnorm(Tj)+wsnorm(Tj)-emcnorm(Tj)) )/(df(Tj)+1)^(1/2)
-        """
+    subcol(Tj) = (ucnorm(Tj) +2 *(cmnorm(Tj)+wsnorm(Tj)-emcnorm(Tj)) )/(df(Tj)+1)^(1/2)
+    """
 
     def calc_func(row):
         return (row[1] + 2 * (row[2] + row[3]) - row[4]) / math.sqrt(row[5] + 1)
@@ -206,13 +225,16 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
     NOTE: freq_title is a list [], which length is
     """
     cell_token = util.remove_stopword(cell_text)
+    if len(cell_token) == 0:
+        cell_token.append(cell_text)
     length = len(cell_token)
-    if len(cell_token) > 1:
+    if len(cell_token) > 1 or len(cell_token) == 0:
         length += 1
     freq_title, freq_snippet = [0] * length, [0] * length
     for webpage in webpages:
         # todo need to check if there is no return, freq still the same after the function runs
         freq_count_web_page(cell_token, webpage, freq_title, freq_snippet)
+    #print(freq_title, freq_snippet)
     countP = freq_title[0] * 2 + freq_snippet[0]
     countW = countw(freq_title, freq_snippet, bow_cell)
     return countP + countW
@@ -221,13 +243,18 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
 def freq_count_web_page(cell_token: list, webpage: dict, freq_title: list, freq_snippet: list):
     # the frequency of cell in title and snippet
     # print(cell_token, freq_title, freq_snippet)
-    freq_title[0] += webpage["title"].count(cell_token[0])
-    freq_snippet[0] += webpage["snippet"].count(cell_token[0])
+    title, snippet = "", ""
+    if "title" in webpage.keys():
+        title = webpage["title"]
+    if "snippet" in webpage.keys():
+        snippet = webpage["snippet"]
+    freq_title[0] += title.count(cell_token[0])
+    freq_snippet[0] += snippet.count(cell_token[0])
     if len(cell_token) > 1:
         for index, token in enumerate(cell_token, 1):
             # print(index, token, len(freq_title), len(freq_snippet))
-            freq_title[index] += util.tokenize_str(webpage["title"]).count(token)
-            freq_snippet[index] += util.tokenize_str(webpage["snippet"]).count(token)
+            freq_title[index] += util.tokenize_str(title).count(token)
+            freq_snippet[index] += util.tokenize_str(snippet).count(token)
 
 
 def countw(freq_title: list, freq_snippet: list, bowTij: np.array):
@@ -242,7 +269,7 @@ def countw(freq_title: list, freq_snippet: list, bowTij: np.array):
 
 def convert_to_tuple(cell):
     cell_token = util.token_stop_word(cell)
-    if util.token_stop_word(cell)!= ['']:
+    if util.token_stop_word(cell) != ['']:
         cell_token = [cell]
     return [cell_token, 0]
 

@@ -325,11 +325,11 @@ def datasets(root_path):
     for t in T:
         table = dataloader.read_table(table_name=t)
         tables[t] = table
-        print(t)
+        # print(t)
     return tables
 
 
-def random_table(tables: dict) :
+def random_table(tables: dict):
     random_key = random.choice(list(tables.keys()))
     return random_key, tables[random_key]
 

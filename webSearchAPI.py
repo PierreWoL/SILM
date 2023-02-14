@@ -27,9 +27,9 @@ for j in search(query, tld="co.in", num=2, stop=2, pause=0.1):
 
 class WebSearch:
 
-    def __init__(self):  # , api_key, cse_id
+    def __init__(self, cse_id ="87f5671ca9e2242a9"):  # , api_key, cse_id
         """
-        Init: connect with google custom search api
+        Init: connect with Google custom search api
         Parameters api
         ----------
         api_key: api key of custom search api
@@ -37,7 +37,7 @@ class WebSearch:
         """
         try:
             self.my_api_key = "AIzaSyBogbAxNrr0c39ChcCTHliSBiMHVSQ7mog"
-            self.my_cse_id = "87f5671ca9e2242a9"
+            self.my_cse_id = cse_id
             self.service = build("customsearch", "v1", developerKey=self.my_api_key)
             self.res = []
         except ValueError:
@@ -65,13 +65,16 @@ class WebSearch:
             # print(start_num, iteration)
             cur_res = self.service.cse().list(q=search_term, cx=self.my_cse_id, num=10,
                                               start=start_num, **kwargs).execute()
+            if 'items' in dict(cur_res).keys():
+                self.res = self.res + cur_res['items']
             self.res = self.res + cur_res['items']
             iteration = iteration + 1
             start_num = 10 * iteration + 1
         # print(top_n - iteration*10, iteration, start_num)
         other_res = self.service.cse().list(q=search_term, cx=self.my_cse_id, num=top_n - iteration * 10,
                                             start=start_num, **kwargs).execute()
-        self.res = self.res + other_res['items']
+        if 'items' in dict(other_res).keys():
+            self.res = self.res + other_res['items']
         return self.res
 
 

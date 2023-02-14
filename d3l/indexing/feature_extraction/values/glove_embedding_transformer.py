@@ -280,7 +280,7 @@ class GloveTransformer:
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
                 min_tok_id = np.argmin(token_weights)
                 tokenset.add(tokens[min_tok_id])
-
+        print(tokenset)
         return tokenset
 
     def transform(self, input_values: Iterable[str]) -> np.ndarray:

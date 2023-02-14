@@ -1,6 +1,5 @@
 import os
-import shutil
-
+from collections import Counter
 import experimentalData as ed
 import statistics
 import pandas as pd
@@ -24,9 +23,6 @@ def create_or_find_indexes(data_path):
     )
 
     # NameIndex
-    '''
-      
-    '''
     if os.path.isfile(os.path.join(data_path, './name.lsh')):
         name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
     else:
@@ -58,7 +54,7 @@ def create_or_find_indexes(data_path):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader)
         pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
-    return [name_index, distribution_index, value_index, embeddingIndex]  # format_index,
+    return [embeddingIndex, name_index,value_index, format_index]  # distribution_index,
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
@@ -87,9 +83,10 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
 
 
 def dbscan_param_search(data_path, indexes):
+    # print(indexes)
     dataloader = CSVDataLoader(root_path=(data_path), encoding='latin-1')
     T = ed.get_files(data_path)
-    print(T)
+    # print(T)
     L = {}
     for i, t in enumerate(T):
         L[t] = i
@@ -98,7 +95,7 @@ def dbscan_param_search(data_path, indexes):
     # after_distance_matrix = time()
     # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
     Z = pd.DataFrame(D)
-
+    # print(Z)
     # Defining the list of hyperparameters to try
     eps_list = np.arange(start=0.1, stop=5, step=0.1)
     min_sample_list = np.arange(start=2, stop=25, step=1)
@@ -136,7 +133,6 @@ def cluster_discovery(data_path, parameters):
     db = DBSCAN(eps=parameters[0],
                 min_samples=parameters[1],
                 n_jobs=-1)
-
     db.fit(parameters[2])
     labels = list(db.labels_)
     l = (parameters[3], labels)
@@ -163,39 +159,75 @@ def compute_rand_score(clusters_list, file):
 
 T2DV2Path = os.getcwd() + "/T2DV2/"
 samplePath = os.getcwd() + "/T2DV2/test/"
+samplePath = os.getcwd() + "/result/subject_column/test/"
 # get_random_train_data(T2DV2Path, samplePath, 0.2)
 # Concepts = get_concept(WDCFilePath)
-T2DV2GroundTruth = os.getcwd() + "/T2DV2/extended_instance_goldstandard/classes_GS.csv"
+T2DV2GroundTruth = os.getcwd() + "/T2DV2/classes_GS.csv"
 f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
 gt_CSV = pd.read_csv(f, header=None)
 
 GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
-print(GroundTruth)
+# print(GroundTruth)
 gt_clusters, ground_t, truth = ed.get_concept_files(ed.get_files(samplePath), GroundTruth)
 gt_cluster = gt_CSV[1].unique()
 # for key in gt_clusters:
 #   shutil.copy(samplePath + key+".csv", samplePath)
 print(len(gt_clusters), gt_clusters)
-print(len(ground_t), ground_t)
-print(len(truth), truth)
-groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
+# print(len(ground_t), ground_t)
+# print(len(truth), truth)
+# groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
 # print(groundTruthWDCTest)
-samplePath = os.getcwd() + "/T2DV2/Test/"
+# samplePath = os.getcwd() + "/T2DV2/Test/"
 indexes = create_or_find_indexes(samplePath)
 # indexes = create_or_find_indexes(ed.WDCsamplePath)
 parameters = dbscan_param_search(samplePath, indexes)
 # parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
-print(parameters)
+# print(parameters)
 clusters = cluster_discovery(ed.samplePath, parameters)
 # clusters = cluster_discovery(ed.WDCsamplePath,parameters)
 cluster_dict = {}
 for k, v in clusters:
-    if cluster_dict.get(v) == None:
+    if cluster_dict.get(v) is None:
         cluster_dict[v] = []
     cluster_dict[v].append(k)
 
-print(clusters)
+# print(clusters)
 print(len(cluster_dict), cluster_dict)
+
+
+def most_frequent(list1):
+    count = Counter(list1)
+    return count.most_common(1)[0][0]
+
+
+clusters_label = {}
+false_ones = []
+for index, tables_list in cluster_dict.items():
+    labels = []
+    for table in tables_list:
+        label = gt_clusters[table]
+        labels.append(label)
+    cluster_label = most_frequent(labels)
+    clusters_label[index] = cluster_label
+    for table in tables_list:
+        if gt_clusters[table] != cluster_label:
+            false_ones.append([table + ".csv", cluster_label, gt_clusters[table]])
+# print(clusters_label, false_ones)
+
+df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
+results = []
+for key in clusters_label.keys():
+    results.append([key, cluster_dict[key], clusters_label[key]])
+df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
+df.to_csv('result/subject_column/test4.csv', encoding='utf-8', index=False)
+df2.to_csv('result/subject_column/test4_meta.csv', encoding='utf-8', index=False)
+"""
+
+    
+     
+    
+"""
+
 '''
 dataloader = CSVDataLoader(root_path=(samplePath), encoding='latin-1')
 T = ed.get_files(samplePath)
