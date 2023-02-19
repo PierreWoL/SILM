@@ -6,12 +6,11 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
-from time import time
-from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
-from d3l.input_output.dataloaders import PostgresDataLoader, CSVDataLoader
+from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.querying.query_engine import QueryEngine
 from d3l.utils.functions import pickle_python_object, unpickle_python_object
+from sklearn.metrics import pairwise_distances
 
 
 def create_or_find_indexes(data_path):
@@ -54,7 +53,7 @@ def create_or_find_indexes(data_path):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader)
         pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
-    return [embeddingIndex, name_index,value_index, format_index]  # distribution_index,
+    return [embeddingIndex, name_index, distribution_index, value_index, format_index]  #
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
@@ -142,50 +141,57 @@ def cluster_discovery(data_path, parameters):
     return clu
 
 
-def compute_rand_score(clusters_list, file):
-    file = open(file, 'r')
-    content = file.read().strip()
-    content_list = content.split(",")
-    file.close()
-
-    label = []
-    for member in clusters_list:
-        label.append(member[1])
-
-    rand_score = metrics.rand_score(content_list, label)
-
-    return rand_score
-
-
 T2DV2Path = os.getcwd() + "/T2DV2/"
-samplePath = os.getcwd() + "/T2DV2/test/"
+# samplePath = os.getcwd() + "/T2DV2/test/"
 samplePath = os.getcwd() + "/result/subject_column/test/"
 # get_random_train_data(T2DV2Path, samplePath, 0.2)
 # Concepts = get_concept(WDCFilePath)
 T2DV2GroundTruth = os.getcwd() + "/T2DV2/classes_GS.csv"
 f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
 gt_CSV = pd.read_csv(f, header=None)
-
+"""
+a dictionary that mapping table name and the annotated class label
+element in this dictionary: '68779923_0_3859283110041832023': 'Country'
+"""
 GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
 # print(GroundTruth)
+"""
+a dictionary that mapping table name and the annotated class label
+element in this dictionary: '68779923_0_3859283110041832023': 'Country'
+gt_clusters == GroundTruth
+
+ground_t is a dictionary of which key is class label while value is the list
+of the table name which belonging to this cluster
+like 'GolfPlayer': ['44206774_0_3810538885942465703']
+
+
+value of gt_clusters
+"""
 gt_clusters, ground_t, truth = ed.get_concept_files(ed.get_files(samplePath), GroundTruth)
+"""
+gt_cluster: all the labels of tables  [a,b,c,d,e,...,f]
+gt_cluster_dict: table name: index of the cluster label (corresponding to the gt_cluster label index)
+{table1: index(a),...,}
+"""
 gt_cluster = gt_CSV[1].unique()
+gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
+"""
+create lsh indexes of samplePath
+"""
+indexes = create_or_find_indexes(samplePath)
+parameters = dbscan_param_search(samplePath, indexes)
+clusters = cluster_discovery(ed.samplePath, parameters)
 # for key in gt_clusters:
 #   shutil.copy(samplePath + key+".csv", samplePath)
-print(len(gt_clusters), gt_clusters)
-# print(len(ground_t), ground_t)
-# print(len(truth), truth)
 # groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
 # print(groundTruthWDCTest)
 # samplePath = os.getcwd() + "/T2DV2/Test/"
-indexes = create_or_find_indexes(samplePath)
 # indexes = create_or_find_indexes(ed.WDCsamplePath)
-parameters = dbscan_param_search(samplePath, indexes)
 # parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
 # print(parameters)
-clusters = cluster_discovery(ed.samplePath, parameters)
 # clusters = cluster_discovery(ed.WDCsamplePath,parameters)
 cluster_dict = {}
+
 for k, v in clusters:
     if cluster_dict.get(v) is None:
         cluster_dict[v] = []
@@ -194,24 +200,84 @@ for k, v in clusters:
 # print(clusters)
 print(len(cluster_dict), cluster_dict)
 
+"""
+count the most frequent occurring annotated label in the cluster
+"""
+
 
 def most_frequent(list1):
     count = Counter(list1)
     return count.most_common(1)[0][0]
 
 
+"""
+the label of result clusters
+"""
 clusters_label = {}
+"the label index of all tables"
+table_label_index = []
+"the list of all tables if they have been clustered to the wrong cluster compared to the original label"
 false_ones = []
+"the original label index of all tables"
+gt_table_label = []
+
 for index, tables_list in cluster_dict.items():
     labels = []
     for table in tables_list:
         label = gt_clusters[table]
+        gt_table_label.append(gt_cluster_dict[label])
         labels.append(label)
     cluster_label = most_frequent(labels)
     clusters_label[index] = cluster_label
+
     for table in tables_list:
+        table_label_index.append(gt_cluster_dict[cluster_label])
         if gt_clusters[table] != cluster_label:
             false_ones.append([table + ".csv", cluster_label, gt_clusters[table]])
+
+print(table_label_index, gt_table_label)
+
+
+# rand_s = metrics.rand_score(table_label_index, gt_table_label)
+def SMC(labels_true, labels_pred):
+    distance_matrix = pairwise_distances([labels_pred], [labels_true], metric='hamming')
+    # Get the number of matching pairs (a)
+    a = len(labels_pred) - distance_matrix.sum()
+    # Get the number of pairs that are in the same cluster in the predicted labels
+    # but in different clusters in the true labels (b)
+    b = 0
+    for i in range(len(labels_pred)):
+        for j in range(i + 1, len(labels_pred)):
+            if labels_pred[i] == labels_pred[j] and labels_true[i] != labels_true[j]:
+                b += 1
+    # Get the number of pairs that are in different clusters in the predicted
+    # labels but in the same cluster in the true labels (c)
+    c = 0
+    for i in range(len(labels_pred)):
+        for j in range(i + 1, len(labels_pred)):
+            if labels_pred[i] != labels_pred[j] and labels_true[i] == labels_true[j]:
+                c += 1
+    # Get the number of pairs that are in different clusters in both the predicted and true labels (d)
+    d = (len(labels_pred) * (len(labels_pred) - 1) // 2) - (a + b + c)
+    # Calculate the SMC
+    print(a,b,c,d)
+    smc = a  / (a + b + c + d)
+    return smc
+
+
+def metric_Spee(labels_true, labels_pred):
+    MI = metrics.mutual_info_score(labels_true, labels_pred)
+    NMI = metrics.normalized_mutual_info_score(labels_true, labels_pred)
+    AMI = metrics.adjusted_mutual_info_score(labels_true, labels_pred)
+    rand_score = metrics.rand_score(labels_true, labels_pred)
+    adjusted_random_score = metrics.adjusted_rand_score(labels_true, labels_pred)
+    FMI = metrics.fowlkes_mallows_score(labels_true, labels_pred)
+    smc = SMC(labels_true, labels_pred)
+    return {"MI": MI, "NMI": NMI, "AMI": AMI, "random score": rand_score,
+            "ARI": adjusted_random_score, "FMI": FMI, 'smc': smc}
+
+
+print("evaluation metrics is :", metric_Spee(gt_table_label, table_label_index))
 # print(clusters_label, false_ones)
 
 df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
@@ -219,8 +285,10 @@ results = []
 for key in clusters_label.keys():
     results.append([key, cluster_dict[key], clusters_label[key]])
 df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
-df.to_csv('result/subject_column/test4.csv', encoding='utf-8', index=False)
-df2.to_csv('result/subject_column/test4_meta.csv', encoding='utf-8', index=False)
+# baselinePath = os.getcwd()+"/result/baseline/"
+baselinePath = os.getcwd() + "/result/subject_column/"
+df.to_csv(baselinePath + 'testbeta8.csv', encoding='utf-8', index=False)
+df2.to_csv(baselinePath + 'testbeta8_meta.csv', encoding='utf-8', index=False)
 """
 
     
