@@ -55,10 +55,12 @@ class WDC:
     def trans_csv(self, ground_truth_csv):
         folders = os.listdir(self.folder)
         for folder in folders:
-
-            if folder !="ShoppingCenter" and folder !="City" and folder !=".DS_Store":
+            if folder == "CreativeWork" or folder =="Place"\
+                     or folder =="SportsEvent" or folder =="Event":
+                # folder !="ShoppingCenter" and folder !="City" and folder !=".DS_Store" and \
+                # folder != "Person" and folder !="Product" \
                 folder_files = self.get_files(self.folder + folder + "/")
-                for file in folder_files:
+                for file in folder_files[:10]:
                     csv_folder = os.getcwd() + "/WDC_corpus/"
                     json_file = self.folder + folder + "/" + file
                     print(json_file)
@@ -97,3 +99,12 @@ def write_line(csv_name, row: list):
 
 wdc = WDC(os.getcwd() + "/WDC1/")
 wdc.trans_csv("ground_truth.csv")
+# for key in gt_clusters:
+#   shutil.copy(samplePath + key+".csv", samplePath)
+# groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
+# print(groundTruthWDCTest)
+# samplePath = os.getcwd() + "/T2DV2/Test/"
+# indexes = create_or_find_indexes(ed.WDCsamplePath)
+# parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
+# print(parameters)
+# clusters = cluster_discovery(ed.WDCsamplePath,parameters)

@@ -71,19 +71,29 @@ def get_concept(filepath):
 
 
 def get_concept_files(files, GroundTruth):
+    """
+    obtain the files' classes by
+    mapping its name to the ground truth
+    Parameters
+    ----------
+    files: the test data xxxx.csv
+    we have the ground truth csv that has two columns
+    "filename: xxxx label: ABC"
+    GroundTruth: csv file stores the ground truth
+    Returns
+    -------
+
+    """
     test_gt_dic = {}
     test_gt = {}
-    truth = []
     for file in files:
         if GroundTruth.get(file.strip(".csv")) is not None:
             ground_truth = GroundTruth.get(file.strip(".csv"))
             test_gt_dic[file.strip(".csv")] = ground_truth
-            truth.append(ground_truth)
             if test_gt.get(ground_truth) is None:
                 test_gt[ground_truth] = []
             test_gt[ground_truth].append(file)
-
-    return test_gt_dic, test_gt, truth
+    return test_gt_dic, test_gt
 
 
 def get_random_train_data(data_path, train_path, portion):

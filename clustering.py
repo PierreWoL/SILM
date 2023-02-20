@@ -141,104 +141,6 @@ def cluster_discovery(data_path, parameters):
     return clu
 
 
-T2DV2Path = os.getcwd() + "/T2DV2/"
-# samplePath = os.getcwd() + "/T2DV2/test/"
-samplePath = os.getcwd() + "/result/subject_column/test/"
-# get_random_train_data(T2DV2Path, samplePath, 0.2)
-# Concepts = get_concept(WDCFilePath)
-T2DV2GroundTruth = os.getcwd() + "/T2DV2/classes_GS.csv"
-f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
-gt_CSV = pd.read_csv(f, header=None)
-"""
-a dictionary that mapping table name and the annotated class label
-element in this dictionary: '68779923_0_3859283110041832023': 'Country'
-"""
-GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
-# print(GroundTruth)
-"""
-a dictionary that mapping table name and the annotated class label
-element in this dictionary: '68779923_0_3859283110041832023': 'Country'
-gt_clusters == GroundTruth
-
-ground_t is a dictionary of which key is class label while value is the list
-of the table name which belonging to this cluster
-like 'GolfPlayer': ['44206774_0_3810538885942465703']
-
-
-value of gt_clusters
-"""
-gt_clusters, ground_t, truth = ed.get_concept_files(ed.get_files(samplePath), GroundTruth)
-"""
-gt_cluster: all the labels of tables  [a,b,c,d,e,...,f]
-gt_cluster_dict: table name: index of the cluster label (corresponding to the gt_cluster label index)
-{table1: index(a),...,}
-"""
-gt_cluster = gt_CSV[1].unique()
-gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
-"""
-create lsh indexes of samplePath
-"""
-indexes = create_or_find_indexes(samplePath)
-parameters = dbscan_param_search(samplePath, indexes)
-clusters = cluster_discovery(ed.samplePath, parameters)
-# for key in gt_clusters:
-#   shutil.copy(samplePath + key+".csv", samplePath)
-# groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)
-# print(groundTruthWDCTest)
-# samplePath = os.getcwd() + "/T2DV2/Test/"
-# indexes = create_or_find_indexes(ed.WDCsamplePath)
-# parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
-# print(parameters)
-# clusters = cluster_discovery(ed.WDCsamplePath,parameters)
-cluster_dict = {}
-
-for k, v in clusters:
-    if cluster_dict.get(v) is None:
-        cluster_dict[v] = []
-    cluster_dict[v].append(k)
-
-# print(clusters)
-print(len(cluster_dict), cluster_dict)
-
-"""
-count the most frequent occurring annotated label in the cluster
-"""
-
-
-def most_frequent(list1):
-    count = Counter(list1)
-    return count.most_common(1)[0][0]
-
-
-"""
-the label of result clusters
-"""
-clusters_label = {}
-"the label index of all tables"
-table_label_index = []
-"the list of all tables if they have been clustered to the wrong cluster compared to the original label"
-false_ones = []
-"the original label index of all tables"
-gt_table_label = []
-
-for index, tables_list in cluster_dict.items():
-    labels = []
-    for table in tables_list:
-        label = gt_clusters[table]
-        gt_table_label.append(gt_cluster_dict[label])
-        labels.append(label)
-    cluster_label = most_frequent(labels)
-    clusters_label[index] = cluster_label
-
-    for table in tables_list:
-        table_label_index.append(gt_cluster_dict[cluster_label])
-        if gt_clusters[table] != cluster_label:
-            false_ones.append([table + ".csv", cluster_label, gt_clusters[table]])
-
-print(table_label_index, gt_table_label)
-
-
-# rand_s = metrics.rand_score(table_label_index, gt_table_label)
 def SMC(labels_true, labels_pred):
     distance_matrix = pairwise_distances([labels_pred], [labels_true], metric='hamming')
     # Get the number of matching pairs (a)
@@ -260,8 +162,8 @@ def SMC(labels_true, labels_pred):
     # Get the number of pairs that are in different clusters in both the predicted and true labels (d)
     d = (len(labels_pred) * (len(labels_pred) - 1) // 2) - (a + b + c)
     # Calculate the SMC
-    print(a,b,c,d)
-    smc = a  / (a + b + c + d)
+    print(a, b, c, d)
+    smc = a / (a + b + c + d)
     return smc
 
 
@@ -274,9 +176,119 @@ def metric_Spee(labels_true, labels_pred):
     FMI = metrics.fowlkes_mallows_score(labels_true, labels_pred)
     smc = SMC(labels_true, labels_pred)
     return {"MI": MI, "NMI": NMI, "AMI": AMI, "random score": rand_score,
-            "ARI": adjusted_random_score, "FMI": FMI, 'smc': smc}
+            "ARI": adjusted_random_score, "FMI": FMI}
 
 
+def most_frequent(list1):
+    """
+    count the most frequent occurring annotated label in the cluster
+    """
+
+    count = Counter(list1)
+    return count.most_common(1)[0][0]
+
+
+samplePath = os.getcwd() + "/T2DV2/test/"
+# samplePath = os.getcwd() + "/result/subject_column/test/"
+T2DV2GroundTruth = os.getcwd() + "/T2DV2/classes_GS.csv"
+
+"""
+f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
+gt_CSV = pd.read_csv(f, header=None)
+GroundTruth = dict(zip(gt_CSV[0].str.removesuffix(".tar.gz"), gt_CSV[1]))
+gt_clusters, ground_t = ed.get_concept_files(ed.get_files(samplePath), GroundTruth)
+gt_cluster = gt_CSV[1].unique()
+gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
+
+"""
+
+
+def data_classes(data_path, groundTruth_file):
+    """
+    return three dict
+    Parameters
+    ----------
+    data_path: the path where data stores
+    groundTruth_file: table class csv files
+    Returns
+    -------
+    gt_clusters: tablename:corresponding label dictionary. e.g.{'a': 'Book', 'b': 'Newspaper',...}
+    ground_t: label and its tables. e.g. {'Book': ['a'], 'Newspaper': ['b', 'c'],...}
+    gt_cluster_dict: dictionary of index: label
+    like {'Political Party': 0, 'swimmer': 1, ...}
+    """
+    gt_file = open(groundTruth_file, errors='ignore')
+    ground_truth_df = pd.read_csv(gt_file, header=None)
+    dict_gt = {}
+    if ground_truth_df[0][0].endswith(".tar.gz"):
+        dict_gt = dict(zip(ground_truth_df[0].str.removesuffix(".tar.gz"), ground_truth_df[1]))
+    if ground_truth_df[0][0].endswith(".json"):
+        dict_gt = dict(zip(ground_truth_df[0].str.removesuffix(".json"), ground_truth_df[1]))
+    gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
+    gt_cluster = pd.Series(gt_clusters.values()).unique()
+    gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
+    return gt_clusters, ground_t, gt_cluster_dict
+
+
+gt_clusters, ground_t, gt_cluster_dict = data_classes(samplePath, T2DV2GroundTruth)
+# 实现LSH indexes 为数据
+indexes = create_or_find_indexes(samplePath)
+# 寻找最优参数
+parameters = dbscan_param_search(samplePath, indexes)
+clusters = cluster_discovery(ed.samplePath, parameters)
+cluster_dict = {}
+for k, v in clusters:
+    if cluster_dict.get(v) is None:
+        cluster_dict[v] = []
+    cluster_dict[v].append(k)
+# print(clusters)
+print(len(cluster_dict), cluster_dict)
+
+# TODO 为不同的数据读取数据 带入不同clustering算法的大函数
+# print(GroundTruth)
+"""
+gt_clusters: a dictionary that mapping table name and the annotated class label
+element in this dictionary: '68779923_0_3859283110041832023': 'Country'
+gt_clusters == GroundTruth
+
+ground_t is a dictionary of which key is class label while value is the list
+of the table name which belonging to this cluster
+like 'GolfPlayer': ['44206774_0_3810538885942465703']
+
+truth: value of gt_clusters
+
+gt_cluster: all the labels of tables  [a,b,c,d,e,...,f]
+gt_cluster_dict: table name: index of the cluster label (corresponding to the gt_cluster label index)
+{table1: index(a),...,}
+"""
+
+"""
+create lsh indexes of samplePath
+"""
+
+"""
+clusters_label: the label of result clusters
+"""
+clusters_label = {}
+"table_label_index: the label index of all tables"
+table_label_index = []
+false_ones = []
+gt_table_label = []
+for index, tables_list in cluster_dict.items():
+    labels = []
+    for table in tables_list:
+        label = gt_clusters[table]
+        gt_table_label.append(gt_cluster_dict[label])
+        print(label)
+        labels.append(label)
+    cluster_label = most_frequent(labels)
+    clusters_label[index] = cluster_label
+    for table in tables_list:
+        table_label_index.append(gt_cluster_dict[cluster_label])
+        if gt_clusters[table] != cluster_label:
+            false_ones.append([table + ".csv", cluster_label, gt_clusters[table]])
+
+print(table_label_index, gt_table_label)
 print("evaluation metrics is :", metric_Spee(gt_table_label, table_label_index))
 # print(clusters_label, false_ones)
 
@@ -285,18 +297,10 @@ results = []
 for key in clusters_label.keys():
     results.append([key, cluster_dict[key], clusters_label[key]])
 df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
-# baselinePath = os.getcwd()+"/result/baseline/"
 baselinePath = os.getcwd() + "/result/subject_column/"
-df.to_csv(baselinePath + 'testbeta8.csv', encoding='utf-8', index=False)
-df2.to_csv(baselinePath + 'testbeta8_meta.csv', encoding='utf-8', index=False)
-"""
+# df.to_csv(baselinePath + 'testbeta8.csv', encoding='utf-8', index=False)
+# df2.to_csv(baselinePath + 'testbeta8_meta.csv', encoding='utf-8', index=False)
+"false_ones: the list of all tables if they have been clustered to" \
+" the wrong cluster compared to the original label"
 
-    
-     
-    
-"""
-
-'''
-dataloader = CSVDataLoader(root_path=(samplePath), encoding='latin-1')
-T = ed.get_files(samplePath)
-'''
+"loop: the original label index of all tables"
