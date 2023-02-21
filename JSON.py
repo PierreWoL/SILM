@@ -55,7 +55,7 @@ class WDC:
     def trans_csv(self, ground_truth_csv):
         folders = os.listdir(self.folder)
         for folder in folders:
-            if folder == "CreativeWork" or folder =="Place"\
+            if folder != "CreativeWork" and folder =="Place"\
                      or folder =="SportsEvent" or folder =="Event":
                 # folder !="ShoppingCenter" and folder !="City" and folder !=".DS_Store" and \
                 # folder != "Person" and folder !="Product" \

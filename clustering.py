@@ -3,7 +3,6 @@ from collections import Counter
 import experimentalData as ed
 import statistics
 import pandas as pd
-import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
 from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
@@ -11,6 +10,14 @@ from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.querying.query_engine import QueryEngine
 from d3l.utils.functions import pickle_python_object, unpickle_python_object
 from sklearn.metrics import pairwise_distances
+from sklearn.mixture import GaussianMixture
+from sklearn.metrics import silhouette_score
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import Birch
+from sklearn.cluster import OPTICS
+from sklearn.cluster import KMeans
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def create_or_find_indexes(data_path):
@@ -27,7 +34,7 @@ def create_or_find_indexes(data_path):
     else:
         name_index = NameIndex(dataloader=dataloader)
         pickle_python_object(name_index, os.path.join(data_path, './name.lsh'))
-        # FormatIndex
+    # FormatIndex
     if os.path.isfile(os.path.join(data_path, './format.lsh')):
         format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
     else:
@@ -81,8 +88,8 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
     return D
 
 
-def dbscan_param_search(data_path, indexes):
-    # print(indexes)
+def distance_matrix(data_path, index):
+    # print(index)
     dataloader = CSVDataLoader(root_path=(data_path), encoding='latin-1')
     T = ed.get_files(data_path)
     # print(T)
@@ -90,45 +97,42 @@ def dbscan_param_search(data_path, indexes):
     for i, t in enumerate(T):
         L[t] = i
     # before_distance_matrix = time()
-    D = initialise_distance_matrix(len(T), L, dataloader, data_path, indexes)
+    D = initialise_distance_matrix(len(T), L, dataloader, data_path, index)
     # after_distance_matrix = time()
     # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
-    Z = pd.DataFrame(D)
+    Z_df = pd.DataFrame(D)
     # print(Z)
+    return Z_df, T
+
+
+def dbscan_param_search(input_data):
     # Defining the list of hyperparameters to try
     eps_list = np.arange(start=0.1, stop=5, step=0.1)
     min_sample_list = np.arange(start=2, stop=25, step=1)
-
+    score = -1
+    best_dbscan = DBSCAN()
     # Creating empty data frame to store the silhouette scores for each trials
     silhouette_scores_data = pd.DataFrame()
     for eps_trial in eps_list:
-
         for min_sample_trial in min_sample_list:
             # Generating DBSAN clusters
-            db = DBSCAN(eps=eps_trial, min_samples=min_sample_trial).fit(Z)
-
+            db = DBSCAN(eps=eps_trial, min_samples=min_sample_trial).fit(input_data)
             labels = db.labels_
             # print(labels)
             n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-
             if n_clusters > 1:
-                sil_score = metrics.silhouette_score(Z, labels)
+                if score <= silhouette_score(input_data, labels):
+                    score = silhouette_score(input_data, labels)
+                    best_dbscan = db
             else:
                 continue
-            trial_parameters = "eps:" + str(eps_trial.round(1)) + " min_sample :" + str(min_sample_trial)
-
-            silhouette_scores_data = silhouette_scores_data.append(
-                pd.DataFrame(data=[[sil_score, eps_trial.round(1), min_sample_trial]],
-                             columns=["score", "eps", "min_sample"]))
-
-    # Finding out the best hyperparameters with highest Score
-    par = silhouette_scores_data.sort_values(by=['score'], axis=0, ascending=False).head(1)
-    eps = par.iloc[0][1]
-    min_sample = par.iloc[0][2]
-    return eps, int(min_sample), Z, T
+    return best_dbscan, best_dbscan.labels_
 
 
-def cluster_discovery(data_path, parameters):
+"""
+Useless
+
+def cluster_discovery(parameters):
     db = DBSCAN(eps=parameters[0],
                 min_samples=parameters[1],
                 n_jobs=-1)
@@ -138,6 +142,107 @@ def cluster_discovery(data_path, parameters):
     clust = zip(*l)
     clu = list(clust)
 
+    return clu
+"""
+
+"""
+Find BIRCH clustering algorithms
+"""
+
+
+def OPTICS_param_search(input_data):
+    score = -1
+    best_optics = OPTICS()
+    for min_samples in range(1, 10):
+        for xi in np.linspace(0.01, 0.1, 10):
+            optics = OPTICS(min_samples=min_samples, xi=xi)
+            optics.fit(input_data)
+            labels = optics.labels_
+
+            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+            if n_clusters > 1:
+                if score <= silhouette_score(input_data, labels):
+                    score = silhouette_score(input_data, labels)
+                    best_optics = optics
+            else:
+                continue
+    return best_optics, best_optics.labels_
+
+
+def BIRCH_param_search(input_data, cluster_num):
+    score = -1
+    best_birch = Birch()
+    for i in range(cluster_num - 2, cluster_num + 2):
+        for threshold in np.arange(start=0.1, stop=1, step=0.1):
+            for branchingfactor in np.arange(start=10, stop=50, step=5):
+                birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
+                birch.fit(input_data)
+                labels = birch.predict(input_data)
+                if score <= silhouette_score(input_data, labels):
+                    score = silhouette_score(input_data, labels)
+                    best_birch = birch
+    return best_birch, best_birch.predict(input_data)
+
+
+"""
+The following is a AgglomerativeClustering
+"""
+
+
+def KMeans_param_search(input_data, cluster_num):
+    score = -1
+    best_model = KMeans()
+    for i in range(cluster_num - 3, cluster_num + 3):
+        kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init='auto', random_state=0)
+        kmeans.fit(input_data)
+        labels = kmeans.labels_
+        if score <= silhouette_score(input_data, labels):
+            score = silhouette_score(input_data, labels)
+            best_model = kmeans
+    return best_model, best_model.labels_
+
+
+def AgglomerativeClustering_param_search(input_data, cluster_num):
+    score = -1
+    best_model = AgglomerativeClustering()
+    for n_clusters in range(cluster_num - 2, cluster_num + 2):
+        agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
+        agg_clustering.fit(input_data)
+        labels = agg_clustering.labels_
+        if score <= silhouette_score(input_data, labels):
+            score = silhouette_score(input_data, labels)
+            best_model = agg_clustering
+    return best_model, best_model.labels_
+
+
+def gaussian_m_param_search(input_data, cluster_num):
+    lowest_bic = np.infty
+    bic = []
+    n_components_range = range(cluster_num - 3, cluster_num + 3)
+    cv_types = ['spherical', 'tied', 'diag', 'full']
+    best_gmm = GaussianMixture()
+    for cv_type in cv_types:
+        for n_components in n_components_range:
+            # Fit a GMM model with the specified number of components and covariance type
+            gmm = GaussianMixture(n_components=n_components,
+                                  covariance_type=cv_type)
+            gmm.fit(input_data)
+            # Calculate the BIC score for the fitted GMM
+            bic.append(gmm.bic(input_data))
+            if bic[-1] < lowest_bic:
+                lowest_bic = bic[-1]
+                best_gmm = gmm
+    return best_gmm, best_gmm.predict(input_data)
+
+
+def cluster_discovery(parameters, tableNames):
+    if not parameters:
+        print("parameters are invalid! Check the code.")
+        return None
+    labels = parameters[1]
+    l = (tableNames, labels)
+    clust = zip(*l)
+    clu = list(clust)
     return clu
 
 
@@ -174,7 +279,7 @@ def metric_Spee(labels_true, labels_pred):
     rand_score = metrics.rand_score(labels_true, labels_pred)
     adjusted_random_score = metrics.adjusted_rand_score(labels_true, labels_pred)
     FMI = metrics.fowlkes_mallows_score(labels_true, labels_pred)
-    smc = SMC(labels_true, labels_pred)
+    # smc = SMC(labels_true, labels_pred)
     return {"MI": MI, "NMI": NMI, "AMI": AMI, "random score": rand_score,
             "ARI": adjusted_random_score, "FMI": FMI}
 
@@ -187,10 +292,6 @@ def most_frequent(list1):
     count = Counter(list1)
     return count.most_common(1)[0][0]
 
-
-samplePath = os.getcwd() + "/T2DV2/test/"
-# samplePath = os.getcwd() + "/result/subject_column/test/"
-T2DV2GroundTruth = os.getcwd() + "/T2DV2/classes_GS.csv"
 
 """
 f = open(T2DV2GroundTruth, encoding='latin1', errors='ignore')
@@ -230,21 +331,100 @@ def data_classes(data_path, groundTruth_file):
     return gt_clusters, ground_t, gt_cluster_dict
 
 
-gt_clusters, ground_t, gt_cluster_dict = data_classes(samplePath, T2DV2GroundTruth)
-# 实现LSH indexes 为数据
-indexes = create_or_find_indexes(samplePath)
-# 寻找最优参数
-parameters = dbscan_param_search(samplePath, indexes)
-clusters = cluster_discovery(ed.samplePath, parameters)
-cluster_dict = {}
-for k, v in clusters:
-    if cluster_dict.get(v) is None:
-        cluster_dict[v] = []
-    cluster_dict[v].append(k)
-# print(clusters)
-print(len(cluster_dict), cluster_dict)
+def cluster_Dict(clusters_list):
+    cluster_dictionary = {}
+    for k, v in clusters_list:
+        if cluster_dictionary.get(v) is None:
+            cluster_dictionary[v] = []
+        cluster_dictionary[v].append(k)
+    return cluster_dictionary
 
-# TODO 为不同的数据读取数据 带入不同clustering算法的大函数
+
+def wrong_pairs(labels_true, labels_pred, Tables,gtclusters_dict):
+    c = []
+    b = []
+    for i in range(len(labels_pred)):
+        for j in range(i + 1, len(labels_pred)):
+            # b是在预测相同clusters中但ground truth 不同
+            if labels_pred[i] == labels_pred[j] and labels_true[i] != labels_true[j]:
+                b.append({i:(Tables[i], Tables[j])})
+            # c是在ground truth相同clusters中但预测不同clusters
+            if labels_pred[i] != labels_pred[j] and labels_true[i] == labels_true[j]:
+                c.append({j:(Tables[i], Tables[j])})
+    cb = pd.concat([pd.Series(c), pd.Series(b)],axis=1)
+    return cb
+
+
+def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict,  folder=None, filename=None):
+    clusters_label = {}
+    table_label_index = []
+    false_ones = []
+    gt_table_label = []
+    tables = []
+    for index, tables_list in clusterDict.items():
+        labels = []
+        for table in tables_list:
+            tables.append(table)
+            label = gtclusters[table]
+            gt_table_label.append(gtclusters_dict[label])
+            labels.append(label)
+        cluster_label = most_frequent(labels)
+        clusters_label[index] = cluster_label
+        for table in tables_list:
+            table_label_index.append(gtclusters_dict[cluster_label])
+            if gtclusters[table] != cluster_label:
+                false_ones.append([table + ".csv", cluster_label, gtclusters[table]])
+    metric_dict = metric_Spee(gt_table_label, table_label_index)
+    cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables,gtclusters_dict)
+    metric_dict["purity"] = 1- len(false_ones) / len(gtclusters)
+    if folder is not None and filename is not None:
+        df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
+        results = []
+        for key in clusters_label.keys():
+            results.append([key, clusterDict[key], clusters_label[key]])
+        df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
+        # baselinePath = os.getcwd() + "/result/subject_column/"
+        df.to_csv(folder + filename + '.csv', encoding='utf-8', index=False)
+        df2.to_csv(folder + filename + '_meta.csv', encoding='utf-8', index=False)
+        cb_pairs.to_csv(folder + filename + '_cb.csv', encoding='utf-8', index=False)
+    return metric_dict
+
+
+def inputData(data_path):
+    indexes = create_or_find_indexes(data_path)
+    Z, T = distance_matrix(data_path, indexes)
+    return Z, T
+
+
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName,folderName,filename):
+    # clustering的ground truth
+    gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
+    # 实现LSH indexes 为数据
+    indexes = create_or_find_indexes(data_path)
+    parameters = []
+    if clusteringName == "DBSCAN":
+        parameters = dbscan_param_search(input_data)
+    if clusteringName == "GMM":
+        parameters = gaussian_m_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "Agglomerative":
+        parameters = AgglomerativeClustering_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "OPTICS":
+        parameters = OPTICS_param_search(input_data)
+    if clusteringName == "KMeans":
+        parameters = KMeans_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "BIRCH":
+        parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
+    clusters = cluster_discovery(parameters, tables)
+    cluster_dict = cluster_Dict(clusters)
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict,folderName,filename)
+    print(metrics_value)
+    return metrics_value
+
+
+# print(clusters)
+# print(len(cluster_dict), cluster_dict)
+
+
 # print(GroundTruth)
 """
 gt_clusters: a dictionary that mapping table name and the annotated class label
@@ -268,9 +448,12 @@ create lsh indexes of samplePath
 
 """
 clusters_label: the label of result clusters
+table_label_index: the label index of all tables
 """
+
+"""
+
 clusters_label = {}
-"table_label_index: the label index of all tables"
 table_label_index = []
 false_ones = []
 gt_table_label = []
@@ -279,7 +462,6 @@ for index, tables_list in cluster_dict.items():
     for table in tables_list:
         label = gt_clusters[table]
         gt_table_label.append(gt_cluster_dict[label])
-        print(label)
         labels.append(label)
     cluster_label = most_frequent(labels)
     clusters_label[index] = cluster_label
@@ -287,8 +469,6 @@ for index, tables_list in cluster_dict.items():
         table_label_index.append(gt_cluster_dict[cluster_label])
         if gt_clusters[table] != cluster_label:
             false_ones.append([table + ".csv", cluster_label, gt_clusters[table]])
-
-print(table_label_index, gt_table_label)
 print("evaluation metrics is :", metric_Spee(gt_table_label, table_label_index))
 # print(clusters_label, false_ones)
 
@@ -300,7 +480,11 @@ df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
 baselinePath = os.getcwd() + "/result/subject_column/"
 # df.to_csv(baselinePath + 'testbeta8.csv', encoding='utf-8', index=False)
 # df2.to_csv(baselinePath + 'testbeta8_meta.csv', encoding='utf-8', index=False)
-"false_ones: the list of all tables if they have been clustered to" \
-" the wrong cluster compared to the original label"
+"""
 
+"""
+false_ones: the list of all tables 
+if they have been clustered to the wrong cluster 
+compared to the original label
+"""
 "loop: the original label index of all tables"
