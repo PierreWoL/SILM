@@ -133,11 +133,13 @@ def create_test_data(gt_filename, data_path, output_path):
         shutil.copyfile(src, dst)
         shutil.copyfile(metadata, metadst)
 
-
+"""
 T2DV2Path = os.getcwd() + "/T2DV2/tables/test/"
 samplePath = os.getcwd() + "/T2DV2/test/"
 ground_truth = os.getcwd() + "/T2DV2/classes_GS.csv"
 create_test_data(ground_truth, T2DV2Path, samplePath)
+"""
+
 """
 WDCFilePath = os.getcwd() + "/WDC/CPA_Validation/Validation/Table/"
 T2DV2Path = os.getcwd() + "/T2DV2/"
