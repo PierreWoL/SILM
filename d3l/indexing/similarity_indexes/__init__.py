@@ -145,12 +145,12 @@ class NameIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_signature = self.transformer.transform(table)
-            print("table is:",table,"\nThis is table signature",table_signature)
+            # print("table is:",table,"\nThis is table signature",table_signature)
             lsh_index.add(input_id=str(table), input_set=table_signature)
             column_data = self.dataloader.get_columns(table_name=table)
 
             column_signatures = [(c, self.transformer.transform(c)) for c in column_data]
-            print("This is column signatures", column_signatures)
+            # print("This is column signatures", column_signatures)
             for c, signature in column_signatures:
                 if len(signature) > 0:
                     lsh_index.add(input_id=str(table) + "." + str(c), input_set=signature)

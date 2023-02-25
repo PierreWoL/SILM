@@ -60,10 +60,10 @@ def create_or_find_indexes(data_path):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader)
         pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
-    return [embeddingIndex, name_index, distribution_index, value_index, format_index]  #
+    return [name_index,distribution_index,format_index, value_index,embeddingIndex]  #
 
 
-def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
+def initialise_distance_matrix(dim, L, dataloader, data_path, indexes,k):
     D = np.ones((dim, dim))
     T = ed.get_files(data_path)
 
@@ -76,7 +76,7 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
         qe = QueryEngine(*indexes)
 
         Neighbours = qe.table_query(table=dataloader.read_table(table_name=t),
-                                    aggregator=None, k=3)
+                                    aggregator=None, k=k)
 
         for n in Neighbours:  # index
             (name, similarities) = n  # 'car', [1.0, 0.4, 0.4, 0.0]
@@ -88,7 +88,7 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes):
     return D
 
 
-def distance_matrix(data_path, index):
+def distance_matrix(data_path, index,k):
     # print(index)
     dataloader = CSVDataLoader(root_path=(data_path), encoding='latin-1')
     T = ed.get_files(data_path)
@@ -97,7 +97,7 @@ def distance_matrix(data_path, index):
     for i, t in enumerate(T):
         L[t] = i
     # before_distance_matrix = time()
-    D = initialise_distance_matrix(len(T), L, dataloader, data_path, index)
+    D = initialise_distance_matrix(len(T), L, dataloader, data_path, index,k)
     # after_distance_matrix = time()
     # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
     Z_df = pd.DataFrame(D)
@@ -319,15 +319,20 @@ def data_classes(data_path, groundTruth_file):
     like {'Political Party': 0, 'swimmer': 1, ...}
     """
     gt_file = open(groundTruth_file, errors='ignore')
-    ground_truth_df = pd.read_csv(gt_file, header=None)
+    ground_truth_df = pd.read_csv(gt_file)
+    #print(ground_truth_df)
+    #print(ground_truth_df.iloc[0,0])
     dict_gt = {}
-    if ground_truth_df[0][0].endswith(".tar.gz"):
-        dict_gt = dict(zip(ground_truth_df[0].str.removesuffix(".tar.gz"), ground_truth_df[1]))
-    if ground_truth_df[0][0].endswith(".json"):
-        dict_gt = dict(zip(ground_truth_df[0].str.removesuffix(".json"), ground_truth_df[1]))
+    if ground_truth_df.iloc[0,0].endswith(".tar.gz"):
+        dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:,1]))
+    if ground_truth_df.iloc[0,0].endswith(".json"):
+        dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".json"), ground_truth_df.iloc[:,1]))
+    if ground_truth_df.iloc[0,0].endswith(".csv"):
+        dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".csv"), ground_truth_df.iloc[:,1]))
     gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
     gt_cluster = pd.Series(gt_clusters.values()).unique()
     gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
+    #print(gt_clusters, ground_t, gt_cluster_dict)
     return gt_clusters, ground_t, gt_cluster_dict
 
 
@@ -390,17 +395,18 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict,  folder=Non
     return metric_dict
 
 
-def inputData(data_path):
+def inputData(data_path,k):
     indexes = create_or_find_indexes(data_path)
-    Z, T = distance_matrix(data_path, indexes)
+    Z, T = distance_matrix(data_path, indexes,k)
     return Z, T
 
 
 def clustering_results(input_data, tables, data_path, groundTruth, clusteringName,folderName,filename):
     # clustering的ground truth
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
+    print(len(gt_clusters),len(ground_t))
     # 实现LSH indexes 为数据
-    indexes = create_or_find_indexes(data_path)
+    # indexes = create_or_find_indexes(data_path)
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)

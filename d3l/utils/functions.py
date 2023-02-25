@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Iterable, Any
 from d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
-
+from urllib.parse import urlparse
 
 def shingles(value: str) -> Iterable[str]:
     """
@@ -130,12 +130,25 @@ def is_acronym(text: str) -> bool:
     ----------
     text
     """
-    rmoveUpper = re.sub(r"\b[A-Z\\.]{2,}\b", "", text)
-    removePunc = rmoveUpper.translate(str.maketrans('', '', string.punctuation))
-    if removePunc == "":
+    if text.islower() is False and len(text)<3:
         return True
+    if len(text)<6:
+        rmoveUpper = re.sub(r"\b[A-Z\\.]{2,}\b", "", text)
+        removePunc = rmoveUpper.translate(str.maketrans('', '', string.punctuation))
+        if removePunc == "":
+            return True
     else:
         return False
+
+
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
 
 
 def is_id(text: str) -> bool:

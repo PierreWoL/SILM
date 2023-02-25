@@ -1,4 +1,6 @@
 import math
+import string
+
 import pandas as pd
 from typing import Iterable
 from d3l.input_output.dataloaders import CSVDataLoader
@@ -9,13 +11,21 @@ from typing import Any
 from enum import Enum
 import random
 import statistics
-
+from d3l.utils.constants import STOPWORDS
+from nltk.stem import WordNetLemmatizer
+import experimentalData as ed
+from country_list import countries_for_language
 """
 This combines the features to detection subject columns of tables
 both in tableMiner+ and recovering semantics of data on the web
 1. column_type_judge: judge the type of column:
     named_entity, long_text, number, date_expression, empty, other
 """
+
+
+def is_country(string):
+    token = func.tokenize_str(string)
+    countries = [x[1] for x in countries_for_language('en')]
 
 
 class ColumnType(Enum):
@@ -93,7 +103,7 @@ class ColumnDetection:
                 if temp_count_text_cell != 0:
                     ave_token_number = total_token_number / temp_count_text_cell
                     # TODO : I think this needs further modification later Currently set to 10 just in case
-                    if ave_token_number > 10:
+                    if ave_token_number > 7:
                         type_count[ColumnType.long_text.value] = temp_count_text_cell
                     else:
                         type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + \
@@ -140,16 +150,33 @@ class ColumnDetection:
                         continue
 
                     # judge if it is a single word indicate an entity or a acronym
+
                     if element.isalpha():
                         # actually this is an acronym type, but this will fixed in the future todo: later add this type
                         if func.is_acronym(element):
-                            type_count[ColumnType.other.value] += 1
-                            continue
+                            if is_country(element) is True:
+                                type_count[ColumnType.named_entity.value] += 1
+                                continue
+                            else:
+                                type_count[ColumnType.other.value] += 1
+                                continue
                         else:
-                            type_count[ColumnType.named_entity.value] += 1
-                            continue
+                            ele = func.tokenize_str(element).lower()
+                            lemmatizer = WordNetLemmatizer()
+                            ele_origin = lemmatizer.lemmatize(ele)
+                            if ele_origin not in STOPWORDS and ele_origin != 'yes' and ele_origin != 'no':
+                                type_count[ColumnType.named_entity.value] += 1
+                                continue
+
+                            else:
+                                type_count[ColumnType.other.value] += 1
+                    if func.is_valid_url(element) is True:
+                        type_count[ColumnType.other.value] += 1
                     else:
                         tokens = func.token_stop_word(element)
+                        if func.is_acronym(element.translate(str.maketrans('', '', string.digits))) is True:
+                            type_count[ColumnType.other.value] += 1
+                            continue
                         judge = False
                         for token in tokens:
                             if token.isalpha() is True and func.is_acronym(token) is False:
@@ -320,18 +347,40 @@ def datasets(root_path):
     dataloader = CSVDataLoader(root_path=root_path, encoding='latin-1')
     T = os.listdir(root_path)
     T = [t[:-4] for t in T if t.endswith('.csv')]
-    T.sort()
-
+    if len(T)>1:
+        T.sort()
+        #print(T)
+        #random.choices(T, k=400)
+    else:
+        Table_names = []
+        T = os.listdir(root_path)
+        for t in T:
+            if t!=".DS_Store" and not t.endswith(".csv"):
+                for file in os.listdir(root_path+t+"/"):
+                    if file.endswith('.csv'):
+                        Table_names.append(t+"/"+file)
+        T = Table_names.copy()
     for t in T:
         table = dataloader.read_table(table_name=t)
+        #print(table.iloc[:,1])
         tables[t] = table
-        # print(t)
     return tables
 
 
 def random_table(tables: dict):
     random_key = random.choice(list(tables.keys()))
     return random_key, tables[random_key]
+
+
+def test_subject_column(filename):
+    files = ed.get_files(filename)
+    for file in files:
+        f = open(filename + file + '.csv', errors='ignore')
+        table = pd.read_csv(f)
+        print(table.T)
+        for i in range(0, table.shape[1]):
+            annotation = ColumnDetection(table.iloc[:, i])
+            print(annotation.column_type_judge(3))
 
 
 '''

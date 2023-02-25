@@ -89,11 +89,12 @@ class TableColumnAnnotation:
         if self.NE_cols:
             self.NE_table = I_inf(self.table, self.NE_table, self.ws_table_cal, have_converged, top_K=top_n,
                                   cse_id=cseid)
-        # print(self.NE_table)
-        # for row in self.table.iterrows():
-        #    self.ws_table_cal(row, top_n)
 
-    def ws_table_cal(self, row: tuple, pairs: pd.DataFrame, top_K=4, cse_id="87f5671ca9e2242a9"):
+        # print(self.NE_table)
+        for row in self.table.iterrows():
+            self.ws_table_cal(row, top_n)
+
+    def ws_table_cal(self, row: tuple, pairs: pd.DataFrame, top_K=3, cse_id="87f5671ca9e2242a9"):
         # TODO  you forget about the returning value
         # in this case: pairs is the self.NE_table
         """
@@ -309,6 +310,7 @@ def I_inf(dataset,
         if convergence(pairs.iloc[i - 1,], pairs.iloc[i,]):  #
             pairs = pairs.drop(index=pairs.index[i + 1:])
             break
+    print(pairs)
     return pairs
 
 

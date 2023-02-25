@@ -1,8 +1,12 @@
 import os
 import csv
+import shutil
+
 import pandas as pd
 
-
+"""
+this file is used fo testing annotation of tables in SOTAB 
+"""
 class SOTAB:
     def __init__(self, datafolder):
         self.folder = datafolder
@@ -13,7 +17,7 @@ class SOTAB:
         T.sort()
         return T
 
-    def trans_csv(self, ground_truth_csv):
+    def trans_csv(self, dst_path,ground_truth_csv):
         folders = os.listdir(self.folder)
         print(folders)
         for folder in folders:
@@ -21,7 +25,9 @@ class SOTAB:
                 folder_files = self.get_files(self.folder + folder + "/")
                 for file in folder_files:
                     json_file = self.folder + folder + "/" + file
-                    write_line(ground_truth_csv, [file, folder])
+                    shutil.copy2(json_file, os.path.join(dst_path, folder+"_"+json_file.split("/")[-1]))
+                    #shutil.copy(json_file, dst_path)
+                    write_line(ground_truth_csv, [folder+"_"+json_file.split("/")[-1], folder])
 
 
 def write_line(csv_name, row: list):
@@ -57,7 +63,7 @@ def annotate_sotab(folder, gt_csv_file):
         write_line(os.getcwd() + "/datasets/SOTAB/ground_truth.csv", [file, label])
 
 
-annotate_sotab(os.getcwd() + "/datasets/SOTAB/Table/", os.getcwd() + "/datasets/SOTAB/CPA_validation_gt.csv")
+#annotate_sotab(os.getcwd() + "/datasets/SOTAB/Table/", os.getcwd() + "/datasets/SOTAB/CPA_validation_gt.csv")
 
-# sotab = SOTAB(os.getcwd() + "/datasets/open_data/")
-# sotab.trans_csv(os.getcwd() + "/datasets/open_data/" + "gt_openData.csv")
+sotab = SOTAB(os.getcwd() + "/datasets/open_data/")
+sotab.trans_csv(os.getcwd() + "/datasets/open_data/test/",os.getcwd() + "/datasets/open_data/" + "gt_openData.csv")

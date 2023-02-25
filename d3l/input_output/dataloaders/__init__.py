@@ -483,8 +483,11 @@ class CSVDataLoader(DataLoader):
             The entire table data or a Dataframe with *chunksize* rows.
 
         """
-
-        file_path = self.root_path + table_name + ".csv"
+        file_path = ''
+        if table_name.endswith(".csv"):
+            file_path =  self.root_path + table_name
+        else:
+            file_path = self.root_path + table_name + ".csv"
         if table_columns is not None:
             return pd.read_csv(
                 file_path,

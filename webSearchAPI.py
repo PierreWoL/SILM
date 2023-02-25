@@ -1,11 +1,5 @@
-from googlesearch import search
 from googleapiclient.discovery import build
-import requests
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
-from mechanize import Browser
-import pprint
-from typing import List, Optional, Any
+from typing import  Any
 
 query = 'Allen Crags'
 '''
@@ -27,7 +21,7 @@ for j in search(query, tld="co.in", num=2, stop=2, pause=0.1):
 
 class WebSearch:
 
-    def __init__(self, cse_id ="87f5671ca9e2242a9"):  # , api_key, cse_id
+    def __init__(self, cse_id ="c08f6c0abe4964877"):  # , api_key, cse_id
         """
         Init: connect with Google custom search api
         Parameters api

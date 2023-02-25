@@ -8,12 +8,23 @@ import random
 
 
 def create_experiment_directory(gt_filename, data_path, Concepts, output_path):
+    """
     # Given the name of the file that contains the Ground Truth that
     # associates web table filenames with manually annotated concepts,
     # the path to the directory containing those files, and a list
     # of concepts of interest, populate the directory with the given
     # output_path with the files associated with the given Concepts.
+    Parameters
+    ----------
+    gt_filename
+    data_path
+    Concepts
+    output_path
 
+    Returns
+    -------
+
+    """
     df = pd.read_csv(gt_filename, header=None)
     identifier = 0  # Name the files after their concepts
     for ind in df.index:
