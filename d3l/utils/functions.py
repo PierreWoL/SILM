@@ -173,8 +173,9 @@ def is_id(text: str) -> bool:
 
 
 def tokenize_str(text: str) -> str:
+
     re.compile(r"[^\w\s\-_@&]+")
-    textRemovePuc = text.translate(str.maketrans('', '', string.punctuation)).strip()
+    textRemovePuc = str(text).translate(str.maketrans('', '', string.punctuation)).strip()
     textRemovenumber = textRemovePuc.translate(str.maketrans('', '', string.digits)).strip()
     ele = re.sub(r"\s+", " ", textRemovenumber)
     return ele

@@ -175,8 +175,8 @@ def write_line(csv_name, row: list):
         csv_writer.writerow(row)
 
 
-wdc = WDC(os.getcwd() + "/datasets/WDC1/")
-wdc.trans_csv(os.getcwd() + "/datasets/" + "WDC_corpus_ground_truth.csv")
+#wdc = WDC(os.getcwd() + "/datasets/WDC1/")
+#wdc.trans_csv(os.getcwd() + "/datasets/" + "WDC_corpus_ground_truth.csv")
 # for key in gt_clusters:
 #   shutil.copy(samplePath + key+".csv", samplePath)
 # groundTruthWDCTest = ed.get_concept(ed.WDCsamplePath)

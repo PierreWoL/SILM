@@ -322,6 +322,7 @@ def data_classes(data_path, groundTruth_file):
     ground_truth_df = pd.read_csv(gt_file)
     #print(ground_truth_df)
     #print(ground_truth_df.iloc[0,0])
+    test_table = []
     dict_gt = {}
     if ground_truth_df.iloc[0,0].endswith(".tar.gz"):
         dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:,1]))
@@ -329,10 +330,15 @@ def data_classes(data_path, groundTruth_file):
         dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".json"), ground_truth_df.iloc[:,1]))
     if ground_truth_df.iloc[0,0].endswith(".csv"):
         dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".csv"), ground_truth_df.iloc[:,1]))
+        test_table=list(ground_truth_df.iloc[:,0].str.removesuffix(".csv"))
+    test_table2 = {}.fromkeys(test_table).keys()
+    # print(dict_gt.keys())
     gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
     gt_cluster = pd.Series(gt_clusters.values()).unique()
     gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
-    #print(gt_clusters, ground_t, gt_cluster_dict)
+    #print(gt_clusters, ground_t, gt_cluster_dict,len(gt_clusters))
+    #gt_cluster_dict{cluster:}
+    print(ground_t, gt_cluster_dict, len(gt_clusters))
     return gt_clusters, ground_t, gt_cluster_dict
 
 
@@ -406,7 +412,6 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
     print(len(gt_clusters),len(ground_t))
     # 实现LSH indexes 为数据
-    # indexes = create_or_find_indexes(data_path)
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
@@ -429,7 +434,19 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
 # print(clusters)
 # print(len(cluster_dict), cluster_dict)
-
+"""
+groundTruth = os.getcwd() + "/datasets/open_data/gt_openData.csv"
+import clustering as c
+import os
+data_path = os.getcwd()+"/datasets/open_data/test/"
+gt_clusters, ground_t, gt_cluster_dict = c.data_classes(data_path, groundTruth)
+gt_cluster_dict_sum = {cluster: len(ground_t[cluster]) for cluster in ground_t}
+print(len(gt_cluster_dict))
+print(gt_cluster_dict_sum)
+df = pd.DataFrame(list(gt_cluster_dict_sum.items()), columns=['label', 'total number'])
+print(df)
+df.to_csv(os.getcwd()+"/datasets/open_data/cluster_distribution.csv",index=False)
+"""
 
 # print(GroundTruth)
 """

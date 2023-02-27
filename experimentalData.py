@@ -40,9 +40,15 @@ def create_experiment_directory(gt_filename, data_path, Concepts, output_path):
 
 
 def get_files(data_path):
-    T = os.listdir(data_path)
-    T = [t[:-4] for t in T if t.endswith('.csv')]
-    T.sort()
+    T=[]
+    if data_path.endswith('.csv'):
+        features = pd.read_csv(data_path)
+        T = features.iloc[:, 0]
+    else:
+        T = os.listdir(data_path)
+        T = [t[:-4] for t in T if t.endswith('.csv')]
+        T.sort()
+
     return (T)
 
 
@@ -80,7 +86,7 @@ def get_concept(filepath):
     concept.sort()
     return concept
 
-
+from collections import Counter
 def get_concept_files(files, GroundTruth):
     """
     obtain the files' classes by
@@ -97,13 +103,19 @@ def get_concept_files(files, GroundTruth):
     """
     test_gt_dic = {}
     test_gt = {}
+    test_duplicate=[]
+    i =0
     for file in files:
-        if GroundTruth.get(file.strip(".csv")) is not None:
-            ground_truth = GroundTruth.get(file.strip(".csv"))
-            test_gt_dic[file.strip(".csv")] = ground_truth
+        name_without_extension = file
+        #print(name_without_extension)
+        if GroundTruth.get(name_without_extension) is not None:
+            ground_truth = GroundTruth.get(name_without_extension)
+            test_gt_dic[name_without_extension] = ground_truth
+            test_duplicate.append(len(test_gt_dic.keys()))
             if test_gt.get(ground_truth) is None:
                 test_gt[ground_truth] = []
             test_gt[ground_truth].append(file)
+        i+=1
     return test_gt_dic, test_gt
 
 
