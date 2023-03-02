@@ -6,12 +6,12 @@ import clustering
 
 
 def experiment(Z, T, data_path, ground_truth, folderName, filename):
-    clustering_method = ["DBSCAN", "GMM", "KMeans", "OPTICS", "BIRCH", "Agglomerative"]  #
+    clustering_method = [ "BIRCH", "Agglomerative"]  #"DBSCAN", "GMM", "KMeans", "OPTICS",
     methods_metrics = {}
     for method in clustering_method:
         print(method)
         metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-        for i in range(0, 3):
+        for i in range(0, 4):
             mkdir(os.getcwd() + "/result/" + method + "/" + folderName + "/")
             metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method,
                                                         os.getcwd() + "/result/" + method + "/" + folderName + "/",
