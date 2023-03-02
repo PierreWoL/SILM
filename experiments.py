@@ -1,6 +1,5 @@
 import ast
 import os
-
 import numpy
 import pandas as pd
 import clustering
@@ -48,13 +47,13 @@ def mkdir(path):
 def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, k, method=0):
     # samplepath 既可以是路径也可以是feature的文件绝对路径
     Z3 = pd.DataFrame()
-    T3 =[]
-    if method ==1:
+    T3 = []
+    if method == 1:
         features = pd.read_csv(samplePath)
-        T3 = features.iloc[:,0]
-        #Z3 = features.iloc[:,1]
-        Z3 = numpy.array([ast.literal_eval(x) for x in features.iloc[:,1]])
-        #print(Z3)
+        T3 = features.iloc[:, 0]
+        # Z3 = features.iloc[:,1]
+        Z3 = numpy.array([ast.literal_eval(x) for x in features.iloc[:, 1]])
+        # print(Z3)
     else:
         Z3, T3 = clustering.inputData(samplePath, k)
     e = experiment(Z3, T3, samplePath, GroundTruth, targetFolder, experiment_name)
@@ -96,7 +95,7 @@ samplePath = os.getcwd() + "/datasets/Test_corpus/feature.csv"
 experimentName = "Test_corpus_M1"
 groundTruth = os.getcwd() + "/datasets/WDC_corpus_ground_truth.csv"
 targetPath = "Test_corpus/M1"
-klist = [3,5]
+klist = [3, 5]
 
 for k in klist:
-    run_exp(experimentName + "_" + str(k) + "k", groundTruth, targetPath + "_" + str(k) + "k/", samplePath, k,method=1)
+    run_exp(experimentName + "_" + str(k) + "k", groundTruth, targetPath + "_" + str(k) + "k/", samplePath, k, method=1)

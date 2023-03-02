@@ -99,7 +99,10 @@ class ColumnDetection:
 
         # iterate and judge the element belong to which category
         for index, element in self.column.items():
-            if index == math.floor(len(self.column) / fraction):
+            checkpoint= math.ceil(len(self.column) / fraction)
+            if checkpoint>=len(self.column):
+                checkpoint = len(self.column)-1
+            if index == checkpoint:
                 if temp_count_text_cell != 0:
                     ave_token_number = total_token_number / temp_count_text_cell
                     # TODO : I think this needs further modification later Currently set to 10 just in case

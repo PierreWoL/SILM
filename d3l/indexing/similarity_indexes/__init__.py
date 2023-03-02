@@ -6,9 +6,12 @@ from d3l.indexing.feature_extraction.schema.qgram_transformer import QGramTransf
 from d3l.indexing.feature_extraction.values.distribution_transformer import (
     DistributionTransformer,
 )
-
+from SubjectColumnDetection import ColumnDetection as detection
+from SubjectColumnDetection import ColumnType
 from d3l.indexing.feature_extraction.values.fd_transformer import FDTransformer
 from d3l.indexing.feature_extraction.values.glove_embedding_transformer import GloveTransformer
+from d3l.indexing.feature_extraction.values.fasttext_embedding_transformer import FasttextTransformer
+from d3l.indexing.feature_extraction.values.SBERT_transformer import SBERTTransformer
 from d3l.indexing.feature_extraction.values.token_transformer import TokenTransformer
 from d3l.indexing.lsh.lsh_index import LSHIndex
 from d3l.input_output.dataloaders import DataLoader
@@ -79,14 +82,14 @@ class SimilarityIndex(ABC):
 
 class NameIndex(SimilarityIndex):
     def __init__(
-        self,
-        dataloader: DataLoader,
-        data_root: Optional[str] = None,
-        transformer_qgram_size: int = 3,
-        index_hash_size: int = 256,
-        index_similarity_threshold: float = 0.5,
-        index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
-        index_seed: int = 12345,
+            self,
+            dataloader: DataLoader,
+            data_root: Optional[str] = None,
+            transformer_qgram_size: int = 3,
+            index_hash_size: int = 256,
+            index_similarity_threshold: float = 0.5,
+            index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
+            index_seed: int = 12345,
     ):
         """
 
@@ -180,7 +183,7 @@ class NameIndex(SimilarityIndex):
         """
 
         query_signature = self.transformer.transform(query)
-        #print("query is ",query,"\n the signature is ",query_signature )
+        # print("query is ",query,"\n the signature is ",query_signature )
         if len(query_signature) == 0:
             return []
         return self.lsh_index.query(
@@ -190,13 +193,13 @@ class NameIndex(SimilarityIndex):
 
 class FormatIndex(SimilarityIndex):
     def __init__(
-        self,
-        dataloader: DataLoader,
-        data_root: Optional[str] = None,
-        index_hash_size: int = 256,
-        index_similarity_threshold: float = 0.5,
-        index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
-        index_seed: int = 12345,
+            self,
+            dataloader: DataLoader,
+            data_root: Optional[str] = None,
+            index_hash_size: int = 256,
+            index_similarity_threshold: float = 0.5,
+            index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
+            index_seed: int = 12345,
     ):
         """
 
@@ -262,7 +265,7 @@ class FormatIndex(SimilarityIndex):
         return lsh_index
 
     def query(
-        self, query: Iterable[Any], k: Optional[int] = None
+            self, query: Iterable[Any], k: Optional[int] = None
     ) -> Iterable[Tuple[str, float]]:
         """
 
@@ -297,16 +300,16 @@ class FormatIndex(SimilarityIndex):
 
 class ValueIndex(SimilarityIndex):
     def __init__(
-        self,
-        dataloader: DataLoader,
-        data_root: Optional[str] = None,
-        transformer_token_pattern: str = r"(?u)\b\w\w+\b",
-        transformer_max_df: float = 0.5,
-        transformer_stop_words: Iterable[str] = STOPWORDS,
-        index_hash_size: int = 256,
-        index_similarity_threshold: float = 0.5,
-        index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
-        index_seed: int = 12345,
+            self,
+            dataloader: DataLoader,
+            data_root: Optional[str] = None,
+            transformer_token_pattern: str = r"(?u)\b\w\w+\b",
+            transformer_max_df: float = 0.5,
+            transformer_stop_words: Iterable[str] = STOPWORDS,
+            index_hash_size: int = 256,
+            index_similarity_threshold: float = 0.5,
+            index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
+            index_seed: int = 12345,
     ):
         """
 
@@ -388,7 +391,7 @@ class ValueIndex(SimilarityIndex):
         return lsh_index
 
     def query(
-        self, query: Iterable[Any], k: Optional[int] = None
+            self, query: Iterable[Any], k: Optional[int] = None
     ) -> Iterable[Tuple[str, float]]:
         """
 
@@ -421,20 +424,24 @@ class ValueIndex(SimilarityIndex):
         )
 
 
+# start from here
+
 class EmbeddingIndex(SimilarityIndex):
     def __init__(
-        self,
-        dataloader: DataLoader,
-        data_root: Optional[str] = None,
-        transformer_token_pattern: str = r"(?u)\b\w\w+\b",
-        transformer_max_df: float = 0.5,
-        transformer_stop_words: Iterable[str] = STOPWORDS,
-        transformer_embedding_model_lang: str = "en",
-        index_hash_size: int = 1024,
-        index_similarity_threshold: float = 0.5,
-        index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
-        index_seed: int = 12345,
-        index_cache_dir: Optional[str] = None
+            self,
+            dataloader: DataLoader,
+            data_root: Optional[str] = None,
+            transformer_token_pattern: str = r"(?u)\b\w\w+\b",
+            transformer_max_df: float = 1,
+            transformer_min_df: float = 1,
+            transformer_stop_words: Iterable[str] = STOPWORDS,
+            transformer_embedding_model_lang: str = "en",
+            index_hash_size: int = 1024,
+            index_similarity_threshold: float = 0.5,
+            index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
+            index_seed: int = 12345,
+            index_cache_dir: Optional[str] = None,
+            mode: Optional[int] = 0
     ):
         """
 
@@ -449,6 +456,7 @@ class EmbeddingIndex(SimilarityIndex):
             The default value is scikit-learn's TfidfVectorizer default.
         transformer_max_df : float
             Percentage of values the token can appear in before it is ignored.
+        transformer_min_df : float
         transformer_stop_words : Iterable[str]
             A collection of stopwords to ignore that defaults to NLTK's English stopwords.
         transformer_embedding_model_lang : str
@@ -472,32 +480,42 @@ class EmbeddingIndex(SimilarityIndex):
 
         """
         super(EmbeddingIndex, self).__init__(dataloader=dataloader, data_root=data_root)
-
         self.transformer_token_pattern = transformer_token_pattern
         self.transformer_max_df = transformer_max_df
+        self.transformer_min_df = transformer_min_df
         self.transformer_stop_words = transformer_stop_words
         self.transformer_embedding_model_lang = transformer_embedding_model_lang
         self.index_hash_size = index_hash_size
         self.index_similarity_threshold = index_similarity_threshold
         self.index_fp_fn_weights = index_fp_fn_weights
         self.index_seed = index_seed
-
         self.index_cache_dir = index_cache_dir
+        self.mode = mode
+        if self.mode == 0:
+            self.transformer = FasttextTransformer(
+                token_pattern=self.transformer_token_pattern,
+                max_df=self.transformer_max_df,
+                stop_words=self.transformer_stop_words,
+                embedding_model_lang=self.transformer_embedding_model_lang,
+                cache_dir=self.index_cache_dir
+            )
 
-        # self.transformer = FasttextTransformer(
-        #     token_pattern=self.transformer_token_pattern,
-        #     max_df=self.transformer_max_df,
-        #     stop_words=self.transformer_stop_words,
-        #     embedding_model_lang=self.transformer_embedding_model_lang,
-        #     cache_dir=self.index_cache_dir
-        # )
+        if self.mode == 1:
+            self.transformer = GloveTransformer(
+                token_pattern=self.transformer_token_pattern,
+                max_df=self.transformer_max_df,
+                min_df=self.transformer_min_df,
+                stop_words=self.transformer_stop_words,
+                cache_dir=self.index_cache_dir
+            )
+        if self.mode == 2:
+            self.transformer = SBERTTransformer(
+                token_pattern=self.transformer_token_pattern,
+                max_df=self.transformer_max_df,
+                stop_words=self.transformer_stop_words,
+                cache_dir=self.index_cache_dir
+            )
 
-        self.transformer = GloveTransformer(
-            token_pattern=self.transformer_token_pattern,
-            max_df=self.transformer_max_df,
-            stop_words=self.transformer_stop_words,
-            cache_dir=self.index_cache_dir
-        )
         self.lsh_index = self.create_index()
 
     def create_index(self) -> LSHIndex:
@@ -520,11 +538,20 @@ class EmbeddingIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
-
+            print(table_data)
             column_signatures = [
-                (c, self.transformer.transform(table_data[c].tolist()))
-                for c in table_data.columns
-                if not is_numeric(table_data[c]) and table_data[c].count() > 0
+                (table_data.iloc[:, i].name, self.transformer.transform(
+                    table_data.iloc[:, i]))
+                # for c in table_data.columns
+                # if not is_numeric(table_data[c]) and table_data[c].count() > 0
+                for i in range(0, table_data.shape[1])
+                if detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.long_text
+                and detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
+                # and not is_numeric(table_data.iloc[:, i])
+                # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
+                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
+                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
+                and table_data.iloc[:, i].count() > 0
             ]
             for c, signature in column_signatures:
                 if len(signature) > 0:
@@ -533,7 +560,7 @@ class EmbeddingIndex(SimilarityIndex):
         return lsh_index
 
     def query(
-        self, query: Iterable[Any], k: Optional[int] = None
+            self, query: Iterable[Any], k: Optional[int] = None
     ) -> Iterable[Tuple[str, float]]:
         """
 
@@ -568,15 +595,15 @@ class EmbeddingIndex(SimilarityIndex):
 
 class DistributionIndex(SimilarityIndex):
     def __init__(
-        self,
-        dataloader: DataLoader,
-        data_root: Optional[str] = None,
-        transformer_num_bins: int = 300,
-        transformer_use_density: bool = True,
-        index_hash_size: int = 1024,
-        index_similarity_threshold: float = 0.5,
-        index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
-        index_seed: int = 12345,
+            self,
+            dataloader: DataLoader,
+            data_root: Optional[str] = None,
+            transformer_num_bins: int = 300,
+            transformer_use_density: bool = True,
+            index_hash_size: int = 1024,
+            index_similarity_threshold: float = 0.5,
+            index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
+            index_seed: int = 12345,
     ):
         """
 
@@ -655,7 +682,7 @@ class DistributionIndex(SimilarityIndex):
         return lsh_index
 
     def query(
-        self, query: Iterable[Any], k: Optional[int] = None
+            self, query: Iterable[Any], k: Optional[int] = None
     ) -> Iterable[Tuple[str, float]]:
         """
 

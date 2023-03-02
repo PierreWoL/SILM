@@ -17,13 +17,12 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
-import matplotlib.pyplot as plt
 
 
-def create_or_find_indexes(data_path):
+def create_or_find_indexes(data_path, embedding_mode=1):
     #  collection of tables
     dataloader = CSVDataLoader(
-        root_path=(data_path),
+        root_path=data_path,
         # sep=",",
         encoding='latin-1'
     )
@@ -55,10 +54,11 @@ def create_or_find_indexes(data_path):
         pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
 
     # EmbeddingIndex
-    if os.path.isfile(os.path.join(data_path, './embedding.lsh')):
-        embeddingIndex = unpickle_python_object(os.path.join(data_path, './embedding.lsh'))
+    embed_lsh = './embedding'+str(embedding_mode)+'.lsh'
+    if os.path.isfile(os.path.join(data_path, embed_lsh)):
+        embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
     else:
-        embeddingIndex = EmbeddingIndex(dataloader=dataloader)
+        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode) #
         pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
     return [name_index,distribution_index,format_index, value_index,embeddingIndex]  #
 

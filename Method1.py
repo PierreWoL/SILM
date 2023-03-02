@@ -1,5 +1,4 @@
 import math
-
 import pandas as pd
 import os
 import experimentalData as ed
@@ -42,25 +41,14 @@ def SBERT(data_path, feature_csv):
     return pd.DataFrame(encodings), table_names, exception
 
 
-def remove_blank(column: pd.Series):
-    for index, item in column.items():
-        if fun.is_empty(item):
-            column.drop([index])
-    return list(column)
 
-
-def token(column: list):
-    list_column_tokens = []
-    for item in column:
-        list_column_tokens.append(' '.join(fun.token_stop_word(item)))
-    return list_column_tokens
 
 
 def encoding(column):
     model = SentenceTransformer('bert-base-nli-mean-tokens')
     # try:
-    column = remove_blank(column)
-    column_token = token(column)
+    column = fun.remove_blank(column)
+    column_token = fun.token_list(column)
     column_embeddings = model.encode(column_token)
     average = np.mean(column_embeddings, axis=0)
     print(average)

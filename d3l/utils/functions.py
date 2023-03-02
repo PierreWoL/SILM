@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 import re
 import os
@@ -9,6 +10,7 @@ from typing import Iterable, Any
 from d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
 from urllib.parse import urlparse
+
 
 def shingles(value: str) -> Iterable[str]:
     """
@@ -30,8 +32,11 @@ def shingles(value: str) -> Iterable[str]:
 
 
 def is_empty(text) -> bool:
-    if isinstance(text, float) and text =="nan":
-        return True
+    if isinstance(text, float):
+        if str(text) == "nan":
+            return True
+        if math.isnan(text):
+            return True
     empty_representation = ['-', 'NA', 'na', 'nan', 'n/a', 'NULL', 'null', 'nil', 'empty', ' ', '']
     if text in empty_representation:
         return True
@@ -64,25 +69,26 @@ check if the string is in date expression
 '''
 
 
-def strftime_format(format):
+def strftime_format(str_format):
     def func(value):
         try:
-            datetime.strptime(value, format)
+            datetime.strptime(value, str_format)
         except ValueError:
             return False
         return True
 
-    func.__doc__ = f'should use date format {format}'
+    func.__doc__ = f'should use date format {str_format}'
     return func
 
 
 def is_number(s):
     """
     Return whether the string can be numeric.
-    :param string: str, string to check for number
-    :param fuzzy: bool, ignore unknown tokens in string if True
+    :param s: str, string to check for number
     REFERENCE: https://www.runoob.com/python3/python3-check-is-number.html
     """
+    if type(s) is bool:
+        return False
     if "%" in s:
         s = s.replace("%", "")
     try:
@@ -130,9 +136,9 @@ def is_acronym(text: str) -> bool:
     ----------
     text
     """
-    if text.islower() is False and len(text)<3:
+    if text.islower() is False and len(text) < 3:
         return True
-    if len(text)<6:
+    if len(text) < 6:
         rmoveUpper = re.sub(r"\b[A-Z\\.]{2,}\b", "", text)
         removePunc = rmoveUpper.translate(str.maketrans('', '', string.punctuation))
         if removePunc == "":
@@ -141,14 +147,12 @@ def is_acronym(text: str) -> bool:
         return False
 
 
-
 def is_valid_url(url):
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
-
 
 
 def is_id(text: str) -> bool:
@@ -173,7 +177,6 @@ def is_id(text: str) -> bool:
 
 
 def tokenize_str(text: str) -> str:
-
     re.compile(r"[^\w\s\-_@&]+")
     textRemovePuc = str(text).translate(str.maketrans('', '', string.punctuation)).strip()
     textRemovenumber = textRemovePuc.translate(str.maketrans('', '', string.digits)).strip()
@@ -182,7 +185,7 @@ def tokenize_str(text: str) -> str:
 
 
 def token_stop_word(text) -> list:
-    elements =[]
+    elements = []
     if not is_empty(text):
         lemmatizer = WordNetLemmatizer()
         ele = tokenize_str(text).lower()
@@ -207,6 +210,30 @@ def tokenize_with_number(text: str) -> str:
 
 def has_numbers(input_string):
     return bool(re.search(r'\d', input_string))
+
+
+def remove_blank(column: pd.Series):
+    index_list = []
+    for index, item in column.items():
+        if is_empty(item) is True:
+            index_list.append(index)
+    if len(index_list) < 1:
+        return list(column)
+    return column.drop(index_list)
+
+
+def token_list(column: list):
+    list_column_tokens = []
+    for item in column:
+        tokens = token_stop_word(item)
+        if len(tokens) > 0:
+            list_column_tokens.append(' '.join(token_stop_word(item)))
+    return list_column_tokens
+
+
+def remove_blanked_token(column):
+    column_no_empty = remove_blank(column)
+    return token_list(column_no_empty)
 
 
 def pickle_python_object(obj: Any, object_path: str):
