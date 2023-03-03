@@ -5,7 +5,7 @@ from multiprocessing.pool import ThreadPool as Pool
 
 def try_parallel(dataPath):
     absolute_path = os.getcwd() + "/datasets/"
-    Methods = [ 2, 3]
+    Methods = [1, 2, 3]
     ground_Truth = absolute_path + dataPath + "/groundTruth.csv"
     experiment_Name = "K3"
     for method in Methods:
@@ -17,7 +17,6 @@ def try_parallel(dataPath):
         if method == 3:
             samplePath = absolute_path + dataPath + "/Test/"
         print(samplePath)
-
         # for k in [3, 100]:
         for embed_mode in range(1, 3):
             targetPath = dataPath + "/Method" + str(method) + "/"
@@ -32,8 +31,10 @@ if __name__ == "__main__":
 
     DATA_PATH = ['SOTAB', 'open_data', 'T2DV2', 'Test_corpus']
     # TARGET_PATH = []
-    pool = Pool(processes=3)  # create a pool of 4 processes
-    results = pool.map(try_parallel, DATA_PATH)
+    #pool = Pool(processes=3)  # create a pool of 4 processes
+    #results = pool.map(try_parallel, DATA_PATH)
+    for datapath in DATA_PATH:
+        try_parallel(datapath)
     """
         for i in range(0, len(DATA_PATH)):
         groundTruth = absolute_path + DATA_PATH[i] + "/groundTruth.csv"
