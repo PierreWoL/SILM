@@ -538,7 +538,7 @@ class EmbeddingIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
-            print(table_data)
+            #print(table_data)
             column_signatures = [
                 (table_data.iloc[:, i].name, self.transformer.transform(
                     table_data.iloc[:, i]))

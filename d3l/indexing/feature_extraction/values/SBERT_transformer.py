@@ -169,7 +169,6 @@ class SBERTTransformer:
 
         model_file = self._download_model(model_name=model_name, if_exists=if_exists)
         print("Loading embeddings. This may take a few minutes ...")
-        print(model_file)
         model = SentenceTransformer(model_file)
         return model
 

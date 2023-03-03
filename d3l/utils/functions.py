@@ -212,8 +212,10 @@ def has_numbers(input_string):
     return bool(re.search(r'\d', input_string))
 
 
-def remove_blank(column: pd.Series):
+def remove_blank(column):
     index_list = []
+    if type(column) != pd.Series:
+        column = pd.Series(column)
     for index, item in column.items():
         if is_empty(item) is True:
             index_list.append(index)

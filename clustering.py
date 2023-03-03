@@ -54,16 +54,16 @@ def create_or_find_indexes(data_path, embedding_mode=1):
         pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
 
     # EmbeddingIndex
-    embed_lsh = './embedding'+str(embedding_mode)+'.lsh'
+    embed_lsh = './embedding' + str(embedding_mode) + '.lsh'
     if os.path.isfile(os.path.join(data_path, embed_lsh)):
         embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
     else:
-        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode) #
-        pickle_python_object(distribution_index, os.path.join(data_path, './embedding.lsh'))
-    return [name_index,distribution_index,format_index, value_index,embeddingIndex]  #
+        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
+        pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
+    return [name_index, distribution_index, format_index, value_index, embeddingIndex]
 
 
-def initialise_distance_matrix(dim, L, dataloader, data_path, indexes,k):
+def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
     D = np.ones((dim, dim))
     T = ed.get_files(data_path)
 
@@ -88,7 +88,7 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes,k):
     return D
 
 
-def distance_matrix(data_path, index,k):
+def distance_matrix(data_path, index, k):
     # print(index)
     dataloader = CSVDataLoader(root_path=(data_path), encoding='latin-1')
     T = ed.get_files(data_path)
@@ -97,7 +97,7 @@ def distance_matrix(data_path, index,k):
     for i, t in enumerate(T):
         L[t] = i
     # before_distance_matrix = time()
-    D = initialise_distance_matrix(len(T), L, dataloader, data_path, index,k)
+    D = initialise_distance_matrix(len(T), L, dataloader, data_path, index, k)
     # after_distance_matrix = time()
     # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
     Z_df = pd.DataFrame(D)
@@ -320,24 +320,24 @@ def data_classes(data_path, groundTruth_file):
     """
     gt_file = open(groundTruth_file, errors='ignore')
     ground_truth_df = pd.read_csv(gt_file)
-    #print(ground_truth_df)
-    #print(ground_truth_df.iloc[0,0])
+    # print(ground_truth_df)
+    # print(ground_truth_df.iloc[0,0])
     test_table = []
     dict_gt = {}
-    if ground_truth_df.iloc[0,0].endswith(".tar.gz"):
-        dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:,1]))
-    if ground_truth_df.iloc[0,0].endswith(".json"):
-        dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".json"), ground_truth_df.iloc[:,1]))
-    if ground_truth_df.iloc[0,0].endswith(".csv"):
-        dict_gt = dict(zip(ground_truth_df.iloc[:,0].str.removesuffix(".csv"), ground_truth_df.iloc[:,1]))
-        test_table=list(ground_truth_df.iloc[:,0].str.removesuffix(".csv"))
+    if ground_truth_df.iloc[0, 0].endswith(".tar.gz"):
+        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:, 1]))
+    if ground_truth_df.iloc[0, 0].endswith(".json"):
+        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".json"), ground_truth_df.iloc[:, 1]))
+    if ground_truth_df.iloc[0, 0].endswith(".csv"):
+        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
+        test_table = list(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"))
     test_table2 = {}.fromkeys(test_table).keys()
     # print(dict_gt.keys())
     gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
     gt_cluster = pd.Series(gt_clusters.values()).unique()
     gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
-    #print(gt_clusters, ground_t, gt_cluster_dict,len(gt_clusters))
-    #gt_cluster_dict{cluster:}
+    # print(gt_clusters, ground_t, gt_cluster_dict,len(gt_clusters))
+    # gt_cluster_dict{cluster:}
     print(ground_t, gt_cluster_dict, len(gt_clusters))
     return gt_clusters, ground_t, gt_cluster_dict
 
@@ -351,22 +351,22 @@ def cluster_Dict(clusters_list):
     return cluster_dictionary
 
 
-def wrong_pairs(labels_true, labels_pred, Tables,gtclusters_dict):
+def wrong_pairs(labels_true, labels_pred, Tables, gtclusters_dict):
     c = []
     b = []
     for i in range(len(labels_pred)):
         for j in range(i + 1, len(labels_pred)):
             # b是在预测相同clusters中但ground truth 不同
             if labels_pred[i] == labels_pred[j] and labels_true[i] != labels_true[j]:
-                b.append({i:(Tables[i], Tables[j])})
+                b.append({i: (Tables[i], Tables[j])})
             # c是在ground truth相同clusters中但预测不同clusters
             if labels_pred[i] != labels_pred[j] and labels_true[i] == labels_true[j]:
-                c.append({j:(Tables[i], Tables[j])})
-    cb = pd.concat([pd.Series(c), pd.Series(b)],axis=1)
+                c.append({j: (Tables[i], Tables[j])})
+    cb = pd.concat([pd.Series(c), pd.Series(b)], axis=1)
     return cb
 
 
-def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict,  folder=None, filename=None):
+def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None, filename=None):
     clusters_label = {}
     table_label_index = []
     false_ones = []
@@ -386,8 +386,8 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict,  folder=Non
             if gtclusters[table] != cluster_label:
                 false_ones.append([table + ".csv", cluster_label, gtclusters[table]])
     metric_dict = metric_Spee(gt_table_label, table_label_index)
-    cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables,gtclusters_dict)
-    metric_dict["purity"] = 1- len(false_ones) / len(gtclusters)
+    cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, gtclusters_dict)
+    metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
     if folder is not None and filename is not None:
         df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
         results = []
@@ -401,16 +401,17 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict,  folder=Non
     return metric_dict
 
 
-def inputData(data_path,k):
-    indexes = create_or_find_indexes(data_path)
-    Z, T = distance_matrix(data_path, indexes,k)
+def inputData(data_path, k, embedding_mode=2):
+    print("embed mode is ", embedding_mode)
+    indexes = create_or_find_indexes(data_path, embedding_mode=embedding_mode)
+    Z, T = distance_matrix(data_path, indexes, k)
     return Z, T
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName,folderName,filename):
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName, filename):
     # clustering的ground truth
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
-    print(len(gt_clusters),len(ground_t))
+    print(len(gt_clusters), len(ground_t))
     # 实现LSH indexes 为数据
     parameters = []
     if clusteringName == "DBSCAN":
@@ -427,7 +428,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
         parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
     clusters = cluster_discovery(parameters, tables)
     cluster_dict = cluster_Dict(clusters)
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict,folderName,filename)
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)
     print(metrics_value)
     return metrics_value
 

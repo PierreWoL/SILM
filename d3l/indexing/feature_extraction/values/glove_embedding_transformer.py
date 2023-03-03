@@ -271,8 +271,8 @@ class GloveTransformer:
             #print(preprocessed_data)
             vectorizer.fit_transform(preprocessed_data)
             # print("tfidf ",vectorizer.get_feature_names_out())
-        except ValueError:
-            print(ValueError)
+        except ValueError as e:
+            print(['{}'.format(term) for term, count in Counter(input_values).items()],e)
             return set()
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
         tokenset = set()
