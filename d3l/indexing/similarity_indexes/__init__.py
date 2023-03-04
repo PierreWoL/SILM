@@ -383,6 +383,7 @@ class ValueIndex(SimilarityIndex):
                 (c, self.transformer.transform(table_data[c].tolist()))
                 for c in table_data.columns
                 if not is_numeric(table_data[c]) and table_data[c].count() > 0
+                   or detection(table_data[c]).column_type_judge(3) != ColumnType.empty
             ]
             for c, signature in column_signatures:
                 if len(signature) > 0:
@@ -538,7 +539,6 @@ class EmbeddingIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
-            #print(table_data)
             column_signatures = [
                 (table_data.iloc[:, i].name, self.transformer.transform(
                     table_data.iloc[:, i]))
@@ -546,12 +546,12 @@ class EmbeddingIndex(SimilarityIndex):
                 # if not is_numeric(table_data[c]) and table_data[c].count() > 0
                 for i in range(0, table_data.shape[1])
                 if detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.long_text
-                and detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
-                # and not is_numeric(table_data.iloc[:, i])
-                # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
-                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
-                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
-                and table_data.iloc[:, i].count() > 0
+                   or detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
+                   # and not is_numeric(table_data.iloc[:, i])
+                   # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
+                   # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
+                   # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
+                   and table_data.iloc[:, i].count() > 0
             ]
             for c, signature in column_signatures:
                 if len(signature) > 0:
@@ -669,7 +669,6 @@ class DistributionIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
-
             column_signatures = [
                 (c, self.transformer.transform(table_data[c].tolist()))
                 for c in table_data.columns

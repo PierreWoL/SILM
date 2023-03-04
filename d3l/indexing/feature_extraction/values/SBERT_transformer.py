@@ -1,19 +1,21 @@
 import os
 from typing import Iterable, Optional, Set
-from d3l.utils.functions import remove_blanked_token
+from d3l.utils.functions import remove_blank
+from collections import Counter
 from d3l.utils.functions import token_stop_word as tokenize
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from d3l.utils.constants import STOPWORDS
-from d3l.utils.functions import shingles
+from d3l.utils.functions import shingles, is_empty, is_number
 
 
 class SBERTTransformer:
     def __init__(
             self,
             token_pattern: str = r"(?u)\b\w\w+\b",
-            max_df: float = 0.5,
+            max_df: float = 1,
+            min_df: float = 0,
             stop_words: Iterable[str] = STOPWORDS,
             model_name: str = "all-MiniLM-L6-v2",  # download pretrained model
             cache_dir: Optional[str] = None,
@@ -40,6 +42,7 @@ class SBERTTransformer:
 
         self._token_pattern = token_pattern
         self._max_df = max_df
+        self._min_df = min_df
         self._stop_words = stop_words
         self._model_name = model_name
         if cache_dir is not None:
@@ -253,7 +256,47 @@ class SBERTTransformer:
                 tokenset.add(tokens[min_tok_id])
         print(tokenset)
         """
-        tokenset = remove_blanked_token(input_values)
+        # tokenset = remove_blanked_token(input_values)
+        try:
+            vectorizer = TfidfVectorizer(
+                decode_error="ignore",
+                strip_accents="unicode",
+                lowercase=True,
+                analyzer="word",
+                stop_words=self._stop_words,
+                token_pattern=self._token_pattern,
+                max_df=self._max_df,
+                min_df=self._min_df,
+                use_idf=True,
+            )
+            term_counts = Counter(input_values)
+            # preprocessed_data = ['{} ({})'.format(term, count) for term, count in term_counts.items()]
+            preprocessed_data = ['{}'.format(term) for term, count in term_counts.items()]
+            #print(preprocessed_data)
+            vectorizer.fit_transform(preprocessed_data)
+            # print("tfidf ",vectorizer.get_feature_names_out())
+        except ValueError as e:
+            print(input_values, e)
+            return set()
+        weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
+        tokenset = set()
+        tokenizer = vectorizer.build_tokenizer()
+        for value in input_values:
+            if is_empty(value) is True:
+                continue
+            if is_number(value) is True:
+                continue
+            if type(value) is bool:
+                value = str(value)
+            value = value.lower().replace("\n", " ").strip()
+            for shingle in shingles(value):
+                tokens = [t for t in tokenizer(shingle)]
+                if len(tokens) < 1:
+                    continue
+
+                token_weights = [weight_map.get(t, 0.0) for t in tokens]
+                min_tok_id = np.argmin(token_weights)
+                tokenset.add(tokens[min_tok_id])
         return tokenset
 
     def transform(self, input_values: Iterable[str]) -> np.ndarray:
@@ -273,8 +316,8 @@ class SBERTTransformer:
          np.ndarray
              A Numpy vector representing the mean of all token embeddings.
         """
-
-        embeddings = [self.get_vector(token) for token in self.get_tokens(input_values)]
+        # print(input_values)
+        embeddings = [self.get_vector(token) for token in self.get_tokens(remove_blank(input_values))]
         # print(embeddings)
         if len(embeddings) == 0:
             return np.empty(0)
