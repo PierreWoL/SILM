@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from d3l.utils.constants import STOPWORDS
-from d3l.utils.functions import shingles,remove_blank
+from d3l.utils.functions import shingles,remove_blank,remove_blanked_token
 
 
 class TokenTransformer:
@@ -50,7 +50,7 @@ class TokenTransformer:
 
         if len(input_values) < 1:
             return set()
-        input_values = remove_blank(input_values)
+        input_values = remove_blanked_token(input_values)
         try:
             vectorizer = TfidfVectorizer(
                 decode_error="ignore",
@@ -64,7 +64,7 @@ class TokenTransformer:
             )
             vectorizer.fit_transform(input_values)
         except (ValueError,AttributeError) as e:
-            print(input_values,e)
+            print(input_values[:2],e)
             return set()
 
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))

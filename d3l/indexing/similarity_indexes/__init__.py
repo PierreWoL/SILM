@@ -118,7 +118,6 @@ class NameIndex(SimilarityIndex):
             The random seed for the underlying hash generator.
         """
         super(NameIndex, self).__init__(dataloader=dataloader, data_root=data_root)
-
         self.transformer_qgram_size = transformer_qgram_size
         self.index_hash_size = index_hash_size
         self.index_similarity_threshold = index_similarity_threshold
@@ -546,12 +545,12 @@ class EmbeddingIndex(SimilarityIndex):
                 # if not is_numeric(table_data[c]) and table_data[c].count() > 0
                 for i in range(0, table_data.shape[1])
                 if detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.long_text
-                   or detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
-                   # and not is_numeric(table_data.iloc[:, i])
-                   # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
-                   # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
-                   # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
-                   and table_data.iloc[:, i].count() > 0
+                or detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
+                # and not is_numeric(table_data.iloc[:, i])
+                # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
+                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
+                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
+                and table_data.iloc[:, i].count() > 0
             ]
             for c, signature in column_signatures:
                 if len(signature) > 0:

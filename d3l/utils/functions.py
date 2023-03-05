@@ -229,7 +229,7 @@ def token_list(column: list):
     for item in column:
         tokens = token_stop_word(item)
         if len(tokens) > 0:
-            list_column_tokens.append(' '.join(token_stop_word(item)))
+            list_column_tokens.append(' '.join(tokens))
     return list_column_tokens
 
 
