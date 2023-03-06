@@ -7,7 +7,7 @@ def try_parallel(dataPath):
     absolute_path = os.getcwd() + "/datasets/"
     Methods = [2, 3]
     ground_Truth = absolute_path + dataPath + "/groundTruth.csv"
-    experiment_Name = "K5"
+    experiment_Name = "K3_lshSBert"
     for method in Methods:
         samplePath = []
         if method == 1:

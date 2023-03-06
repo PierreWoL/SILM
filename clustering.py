@@ -60,7 +60,7 @@ def create_or_find_indexes(data_path, embedding_mode=1):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
         pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
-    return [name_index, distribution_index, format_index, value_index, embeddingIndex]
+    return [ distribution_index, format_index,value_index,name_index, embeddingIndex]#
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
@@ -395,9 +395,9 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             results.append([key, clusterDict[key], clusters_label[key]])
         df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
         # baselinePath = os.getcwd() + "/result/subject_column/"
-        df.to_csv(folder + filename + 'sb1.csv', encoding='utf-8', index=False)
-        df2.to_csv(folder + filename + 'sb1_meta.csv', encoding='utf-8', index=False)
-        cb_pairs.to_csv(folder + filename + 'sb1_cb.csv', encoding='utf-8', index=False)
+        df.to_csv(folder + filename + 'K3_lshSBert.csv', encoding='utf-8', index=False)
+        df2.to_csv(folder + filename + 'K3_lshSBert_meta.csv', encoding='utf-8', index=False)
+        cb_pairs.to_csv(folder + filename + 'K3_lshSBert_cb.csv', encoding='utf-8', index=False)
     return metric_dict
 
 
