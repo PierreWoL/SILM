@@ -5,7 +5,7 @@ from multiprocessing.pool import ThreadPool as Pool
 
 def try_parallel(dataPath):
     absolute_path = os.getcwd() + "/datasets/"
-    Methods = [2, 3]
+    Methods = [1]
     ground_Truth = absolute_path + dataPath + "/groundTruth.csv"
     experiment_Name = "K3_lshSBert"
     for method in Methods:
@@ -25,7 +25,7 @@ def try_parallel(dataPath):
                 experiment_Name += "Method" + str(method) +"_MODE" + str(embed_mode)
             print(ground_Truth, samplePath)
             run_exp(experiment_Name, ground_Truth, targetPath,
-                    samplePath, k=5, method=method, embedding_mode=embed_mode)
+                    samplePath, k=3, method=method, embedding_mode=embed_mode)
 
 
 if __name__ == "__main__":

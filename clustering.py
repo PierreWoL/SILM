@@ -1,5 +1,7 @@
 import os
 from collections import Counter
+from typing import Optional
+from scipy.spatial.distance import cosine, euclidean
 import experimentalData as ed
 import statistics
 import pandas as pd
@@ -60,7 +62,7 @@ def create_or_find_indexes(data_path, embedding_mode=1):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
         pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
-    return [ distribution_index, format_index,value_index,name_index, embeddingIndex]#
+    return [distribution_index, format_index, value_index, name_index, embeddingIndex]  #
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
@@ -351,22 +353,33 @@ def cluster_Dict(clusters_list):
     return cluster_dictionary
 
 
-def wrong_pairs(labels_true, labels_pred, Tables, gtclusters_dict):
+def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None):
     c = []
     b = []
     for i in range(len(labels_pred)):
         for j in range(i + 1, len(labels_pred)):
             # b是在预测相同clusters中但ground truth 不同
             if labels_pred[i] == labels_pred[j] and labels_true[i] != labels_true[j]:
-                b.append({i: (Tables[i], Tables[j])})
+                if tables is not None:
+                    cosine_sim = 1 - cosine(tables[Tables[i]], tables[Tables[j]])
+                    euclidean_distance = euclidean(tables[Tables[i]], tables[Tables[j]])
+                    b.append({i: (Tables[i], Tables[j],cosine_sim,euclidean_distance)})
+                else:
+                    b.append({i: (Tables[i], Tables[j])})
             # c是在ground truth相同clusters中但预测不同clusters
             if labels_pred[i] != labels_pred[j] and labels_true[i] == labels_true[j]:
-                c.append({j: (Tables[i], Tables[j])})
+                if tables is not None:
+                    cosine_sim = 1 - cosine(tables[Tables[i]], tables[Tables[j]])
+                    euclidean_distance = euclidean(tables[Tables[i]], tables[Tables[j]])
+                    c.append({i: (Tables[i], Tables[j],cosine_sim,euclidean_distance)})
+                else:
+                    c.append({j: (Tables[i], Tables[j])})
     cb = pd.concat([pd.Series(c), pd.Series(b)], axis=1)
     return cb
 
 
-def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None, filename=None):
+def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None, filename=None,
+                     tables_gt: Optional[dict] = None):
     clusters_label = {}
     table_label_index = []
     false_ones = []
@@ -386,7 +399,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             if gtclusters[table] != cluster_label:
                 false_ones.append([table + ".csv", cluster_label, gtclusters[table]])
     metric_dict = metric_Spee(gt_table_label, table_label_index)
-    cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, gtclusters_dict)
+    cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
     if folder is not None and filename is not None:
         df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
@@ -398,6 +411,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
         df.to_csv(folder + filename + 'K3_lshSBert.csv', encoding='utf-8', index=False)
         df2.to_csv(folder + filename + 'K3_lshSBert_meta.csv', encoding='utf-8', index=False)
         cb_pairs.to_csv(folder + filename + 'K3_lshSBert_cb.csv', encoding='utf-8', index=False)
+        print(cb_pairs)
     return metric_dict
 
 
@@ -428,7 +442,9 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
         parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
     clusters = cluster_discovery(parameters, tables)
     cluster_dict = cluster_Dict(clusters)
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)
+    table_dict = None
+    table_dict = {tables[i]: input_data[i] for i in range(0,len(tables))}
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
     print(metrics_value)
     return metrics_value
 
