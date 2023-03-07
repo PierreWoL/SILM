@@ -64,7 +64,7 @@ class TokenTransformer:
             )
             vectorizer.fit_transform(input_values)
         except (ValueError,AttributeError) as e:
-            print(input_values[:2],e)
+            print(input_values[:2], e)
             return set()
 
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
@@ -74,10 +74,8 @@ class TokenTransformer:
             value = value.lower().replace("\n", " ").strip()
             for shingle in shingles(value):
                 tokens = [t for t in tokenizer(shingle)]
-
                 if len(tokens) < 1:
                     continue
-
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
                 max_tok_id = np.argmax(token_weights)
                 tokenset.add(tokens[max_tok_id])
