@@ -64,7 +64,7 @@ class TokenTransformer:
             )
             vectorizer.fit_transform(input_values)
         except (ValueError,AttributeError) as e:
-            print(input_values[:2], e)
+            print(input_values[:5], e)
             return set()
 
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))

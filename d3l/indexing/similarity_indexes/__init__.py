@@ -87,7 +87,7 @@ class NameIndex(SimilarityIndex):
             data_root: Optional[str] = None,
             transformer_qgram_size: int = 3,
             index_hash_size: int = 256,
-            index_similarity_threshold: float = 0.5,
+            index_similarity_threshold: float = 0.6,
             index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
             index_seed: int = 12345,
     ):
@@ -124,7 +124,8 @@ class NameIndex(SimilarityIndex):
         self.index_fp_fn_weights = index_fp_fn_weights
         self.index_seed = index_seed
 
-        self.transformer = QGramTransformer(qgram_size=self.transformer_qgram_size)
+        # self.transformer = QGramTransformer(qgram_size=self.transformer_qgram_size)
+        self.transformer = SBERTTransformer(max_df=1, min_df=1)
         self.lsh_index = self.create_index()
 
     def create_index(self) -> LSHIndex:
@@ -545,12 +546,12 @@ class EmbeddingIndex(SimilarityIndex):
                 # if not is_numeric(table_data[c]) and table_data[c].count() > 0
                 for i in range(0, table_data.shape[1])
                 if detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.long_text
-                or detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
-                # and not is_numeric(table_data.iloc[:, i])
-                # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
-                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
-                # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
-                and table_data.iloc[:, i].count() > 0
+                   or detection(table_data.iloc[:, i]).column_type_judge(3) == ColumnType.named_entity
+                   # and not is_numeric(table_data.iloc[:, i])
+                   # detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.empty
+                   # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.number
+                   # and detection(table_data.iloc[:, i]).column_type_judge(3) != ColumnType.date_expression
+                   and table_data.iloc[:, i].count() > 0
             ]
             for c, signature in column_signatures:
                 if len(signature) > 0:

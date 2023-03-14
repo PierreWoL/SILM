@@ -224,7 +224,7 @@ class SBERTTransformer:
 
         if len(input_values) < 1:
             return set()
-        """
+
         try:
             vectorizer = TfidfVectorizer(
                 decode_error="ignore",
@@ -260,9 +260,9 @@ class SBERTTransformer:
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
                 min_tok_id = np.argmin(token_weights)
                 tokenset.add(tokens[min_tok_id])
-        """
+
         term_counts = Counter(input_values)
-        # preprocessed_data = ['{} ({})'.format(term, count) for term, count in term_counts.items()]
+        #preprocessed_data = ['{} ({})'.format(term, count) for term, count in term_counts.items()]
         tokenset = set(['{}'.format(term) for term, count in term_counts.items()])
         # print(tokenset)
         return tokenset

@@ -21,14 +21,47 @@ from sklearn.cluster import KMeans
 import numpy as np
 
 
-def create_or_find_indexes(data_path, embedding_mode=1):
+def create_or_find_indexes(data_path, threshold,embedding_mode=1):
     #  collection of tables
     dataloader = CSVDataLoader(
         root_path=data_path,
         # sep=",",
         encoding='latin-1'
     )
+    # NameIndex
 
+    name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold)
+    pickle_python_object(name_index, os.path.join(data_path, './name.lsh'))
+    # FormatIndex
+
+    # FormatIndex
+    if os.path.isfile(os.path.join(data_path, './format.lsh')):
+        format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
+    else:
+        format_index = FormatIndex(dataloader=dataloader)
+        pickle_python_object(format_index, os.path.join(data_path, './format.lsh'))
+        # ValueIndex
+    if os.path.isfile(os.path.join(data_path, './value.lsh')):
+        value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
+    else:
+        value_index = ValueIndex(dataloader=dataloader)
+        pickle_python_object(value_index, os.path.join(data_path, './value.lsh'))
+
+    # DistributionIndex
+    if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
+        distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
+    else:
+        distribution_index = DistributionIndex(dataloader=dataloader)
+        pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
+
+    # EmbeddingIndex
+    embed_lsh = './embedding' + str(embedding_mode) + '.lsh'
+    if os.path.isfile(os.path.join(data_path, embed_lsh)):
+        embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
+    else:
+        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
+        pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
+    """
     # NameIndex
     if os.path.isfile(os.path.join(data_path, './name.lsh')):
         name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
@@ -62,28 +95,30 @@ def create_or_find_indexes(data_path, embedding_mode=1):
     else:
         embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
         pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
-    return [distribution_index, format_index, value_index, name_index, embeddingIndex]  #
+   
+    """
+    return [distribution_index, format_index, value_index, name_index,embeddingIndex]  #
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
+    print(L)
     D = np.ones((dim, dim))
     T = ed.get_files(data_path)
-
     # Things are the same as themselves
     for i in range(dim):
         D[i, i] = 0
-
     for t in T:
         # qe = QueryEngine(name_index, format_index, value_index, distribution_index)
         qe = QueryEngine(*indexes)
 
         Neighbours = qe.table_query(table=dataloader.read_table(table_name=t),
                                     aggregator=None, k=k)
-
+        # print(Neighbours,len(Neighbours))
         for n in Neighbours:  # index
             (name, similarities) = n  # 'car', [1.0, 0.4, 0.4, 0.0]
-
-            if (name in L and t != name):
+            if name in L and t != name:
+                # print(L[t], L[name])
+                # print(L[name], L[t])
                 D[L[t], L[name]] = 1 - statistics.mean(similarities)
                 D[L[name], L[t]] = 1 - statistics.mean(similarities)
 
@@ -408,16 +443,16 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             results.append([key, clusterDict[key], clusters_label[key]])
         df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
         # baselinePath = os.getcwd() + "/result/subject_column/"
-        df.to_csv(folder + filename + 'K3_lshSBert.csv', encoding='utf-8', index=False)
-        df2.to_csv(folder + filename + 'K3_lshSBert_meta.csv', encoding='utf-8', index=False)
-        cb_pairs.to_csv(folder + filename + 'K3_lshSBert_cb.csv', encoding='utf-8', index=False)
+        df.to_csv(folder + filename + 'LSHOnly.csv', encoding='utf-8', index=False)
+        df2.to_csv(folder + filename + 'LSHOnly_meta.csv', encoding='utf-8', index=False)
+        cb_pairs.to_csv(folder + filename + 'LSHOnly_cb.csv', encoding='utf-8', index=False)
         print(cb_pairs)
     return metric_dict
 
 
-def inputData(data_path, k, embedding_mode=2):
+def inputData(data_path, threshold, k, embedding_mode=2):
     print("embed mode is ", embedding_mode)
-    indexes = create_or_find_indexes(data_path, embedding_mode=embedding_mode)
+    indexes = create_or_find_indexes(data_path,threshold, embedding_mode=embedding_mode)
     Z, T = distance_matrix(data_path, indexes, k)
     return Z, T
 

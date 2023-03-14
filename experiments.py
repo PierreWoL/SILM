@@ -3,7 +3,10 @@ import os
 import numpy
 import pandas as pd
 import clustering
-
+import numpy as np
+from datasketch.datasketch.minhash import MinHash
+from datasketch.datasketch.weighted_minhash import WeightedMinHashGenerator
+from datasketch.datasketch.lsh import MinHashLSH
 
 def experiment(Z, T, data_path, ground_truth, folderName, filename):
     clustering_method = [ "BIRCH", "Agglomerative"]  #"DBSCAN", "GMM", "KMeans", "OPTICS",
@@ -44,7 +47,7 @@ def mkdir(path):
 # e2 = experiment(Z2, T2, samplePath2, T2DV2GroundTruth,'Subject_Column','e2')
 
 
-def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, k, method=0,embedding_mode =2):
+def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold,k, method=0,embedding_mode =2):
     # samplepath 既可以是路径也可以是feature的文件绝对路径
     Z3 = pd.DataFrame()
     T3 = []
@@ -52,9 +55,28 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, k, method=0,
         features = pd.read_csv(samplePath)
         T3 = features.iloc[:, 0]
         Z3 = numpy.array([ast.literal_eval(x) for x in features.iloc[:, 1]])
-        # print(Z3)
+
+        D = np.ones((len(T3), len(T3)))
+        for i in range(len(T3)):
+            D[i, i] = 0
+        lsh = MinHashLSH(threshold=0.6, num_perm=256)
+        minhash_dict = {}
+        mg = WeightedMinHashGenerator(len(ast.literal_eval(features.iloc[:, 1][0])), 256)
+        for i in range(0, len(T3)):
+            m = mg.minhash(Z3[i])
+            minhash_dict[T3[i]] = m
+            lsh.insert(T3[i], m)
+        T3_list = list(T3)
+        for t in T3:
+            result = lsh.query(minhash_dict[t])
+            for name in result:  # index
+                if name in T3 and t != name:
+                    D[T3_list.index(t), T3_list.index(name)] = minhash_dict[name].jaccard(minhash_dict[t])
+                    D[T3_list.index(name), T3_list.index(t)] = minhash_dict[name].jaccard(minhash_dict[t])
+        Z3 = D
+        print(Z3)
     else:
-        Z3, T3 = clustering.inputData(samplePath, k,embedding_mode=embedding_mode)
+        Z3, T3 = clustering.inputData(samplePath, threshold, k,embedding_mode=embedding_mode)
     e = experiment(Z3, T3, samplePath, GroundTruth, targetFolder, experiment_name)
     e_df = pd.DataFrame()
     for i, v in e.items():
@@ -63,7 +85,7 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, k, method=0,
     print(e_df)
     store_path = os.getcwd() + "/result/metrics/" + targetFolder
     mkdir(store_path)
-    e_df.to_csv(store_path+experiment_name + '_metrics.csv', encoding='utf-8')
+    e_df.to_csv(store_path+experiment_name + 'LSHALL_metrics.csv', encoding='utf-8')
 
 
 """

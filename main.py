@@ -1,39 +1,45 @@
 import os
 from experiments import run_exp
 from multiprocessing.pool import ThreadPool as Pool
+from experimentalData import get_files
 
 
 def try_parallel(dataPath):
     absolute_path = os.getcwd() + "/datasets/"
-    Methods = [1]
+    Methods = [2, 3]  # ,3
     ground_Truth = absolute_path + dataPath + "/groundTruth.csv"
-    experiment_Name = "K3_lshSBert"
+    Max_K = 100
     for method in Methods:
         samplePath = []
         if method == 1:
             samplePath = absolute_path + dataPath + "/feature.csv"
         if method == 2:
             samplePath = absolute_path + dataPath + "/SubjectColumn/"
+            Max_K = len(get_files(samplePath))
         if method == 3:
             samplePath = absolute_path + dataPath + "/Test/"
+            Max_K = len(get_files(samplePath))
         print(samplePath)
-        # for k in [3, 100]:
-        for embed_mode in range(2, 3):
-            targetPath = dataPath + "/Method" + str(method) + "/"
-            if method != 1:
-                targetPath = targetPath + ("MODE" + str(embed_mode) + "/")
-                experiment_Name += "Method" + str(method) +"_MODE" + str(embed_mode)
-            print(ground_Truth, samplePath)
-            run_exp(experiment_Name, ground_Truth, targetPath,
-                    samplePath, k=3, method=method, embedding_mode=embed_mode)
+        for k in [100]:  # 3,5, 50, 100 , -20
+            for embed_mode in [1]:  # 2,
+                targetPath = dataPath + "/Method" + str(method) + "/"
+                if method != 1:
+                    targetPath = targetPath + ("MODE" + str(embed_mode) + "/")
+
+                print(ground_Truth, samplePath)
+                for threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+                    experiment_Name = "K" + str(k) + "Method" + str(method) + "_MODE" + str(
+                        embed_mode) + "Sim" + str(threshold)
+                    run_exp(experiment_Name, ground_Truth, targetPath,
+                            samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
 
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['SOTAB', 'open_data', 'T2DV2','Test_corpus']#
+    DATA_PATH = ['T2DV2', 'SOTAB', 'open_data', 'Test_corpus']  #
     # TARGET_PATH = []
-    #pool = Pool(processes=3)  # create a pool of 4 processes
-    #results = pool.map(try_parallel, DATA_PATH)
+    # pool = Pool(processes=3)  # create a pool of 4 processes
+    # results = pool.map(try_parallel, DATA_PATH)
     for datapath in DATA_PATH:
         try_parallel(datapath)
     """
