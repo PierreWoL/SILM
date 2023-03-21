@@ -28,75 +28,43 @@ def create_or_find_indexes(data_path, threshold,embedding_mode=1):
         # sep=",",
         encoding='latin-1'
     )
-    # NameIndex
 
-    name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold)
+
+    # NameIndex
+    #if os.path.isfile(os.path.join(data_path, './name.lsh')):
+     #   name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
+    #else:
+    name_index = NameIndex(dataloader=dataloader,index_similarity_threshold=threshold)
     pickle_python_object(name_index, os.path.join(data_path, './name.lsh'))
     # FormatIndex
-
-    # FormatIndex
-    if os.path.isfile(os.path.join(data_path, './format.lsh')):
-        format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
-    else:
-        format_index = FormatIndex(dataloader=dataloader)
-        pickle_python_object(format_index, os.path.join(data_path, './format.lsh'))
+    #if os.path.isfile(os.path.join(data_path, './format.lsh')):
+     #   format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
+    #else:
+    format_index = FormatIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    pickle_python_object(format_index, os.path.join(data_path, './format.lsh'))
         # ValueIndex
-    if os.path.isfile(os.path.join(data_path, './value.lsh')):
-        value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
-    else:
-        value_index = ValueIndex(dataloader=dataloader)
-        pickle_python_object(value_index, os.path.join(data_path, './value.lsh'))
+    #if os.path.isfile(os.path.join(data_path, './value.lsh')):
+     #   value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
+    #else:
+    value_index = ValueIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    pickle_python_object(value_index, os.path.join(data_path, './value.lsh'))
 
     # DistributionIndex
-    if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
-        distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
-    else:
-        distribution_index = DistributionIndex(dataloader=dataloader)
-        pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
+    #if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
+     #   distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
+    #else:
+    distribution_index = DistributionIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
 
     # EmbeddingIndex
     embed_lsh = './embedding' + str(embedding_mode) + '.lsh'
-    if os.path.isfile(os.path.join(data_path, embed_lsh)):
-        embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
-    else:
-        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
-        pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
-    """
-    # NameIndex
-    if os.path.isfile(os.path.join(data_path, './name.lsh')):
-        name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
-    else:
-        name_index = NameIndex(dataloader=dataloader)
-        pickle_python_object(name_index, os.path.join(data_path, './name.lsh'))
-    # FormatIndex
-    if os.path.isfile(os.path.join(data_path, './format.lsh')):
-        format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
-    else:
-        format_index = FormatIndex(dataloader=dataloader)
-        pickle_python_object(format_index, os.path.join(data_path, './format.lsh'))
-        # ValueIndex
-    if os.path.isfile(os.path.join(data_path, './value.lsh')):
-        value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
-    else:
-        value_index = ValueIndex(dataloader=dataloader)
-        pickle_python_object(value_index, os.path.join(data_path, './value.lsh'))
-
-    # DistributionIndex
-    if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
-        distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
-    else:
-        distribution_index = DistributionIndex(dataloader=dataloader)
-        pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
-
-    # EmbeddingIndex
-    embed_lsh = './embedding' + str(embedding_mode) + '.lsh'
-    if os.path.isfile(os.path.join(data_path, embed_lsh)):
-        embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
-    else:
-        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode)
-        pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
+    #if os.path.isfile(os.path.join(data_path, embed_lsh)):
+     #   embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
+    #else:
+    embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode,index_similarity_threshold=threshold)
+    pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
    
-    """
+
     return [distribution_index, format_index, value_index, name_index,embeddingIndex]  #
 
 
@@ -443,9 +411,9 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             results.append([key, clusterDict[key], clusters_label[key]])
         df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
         # baselinePath = os.getcwd() + "/result/subject_column/"
-        df.to_csv(folder + filename + 'LSHOnly.csv', encoding='utf-8', index=False)
-        df2.to_csv(folder + filename + 'LSHOnly_meta.csv', encoding='utf-8', index=False)
-        cb_pairs.to_csv(folder + filename + 'LSHOnly_cb.csv', encoding='utf-8', index=False)
+        df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
+        df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
+        cb_pairs.to_csv(folder + filename + 'HeaderLSH_cb.csv', encoding='utf-8', index=False)
         print(cb_pairs)
     return metric_dict
 

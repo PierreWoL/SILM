@@ -8,8 +8,9 @@ from datasketch.datasketch.minhash import MinHash
 from datasketch.datasketch.weighted_minhash import WeightedMinHashGenerator
 from datasketch.datasketch.lsh import MinHashLSH
 
+
 def experiment(Z, T, data_path, ground_truth, folderName, filename):
-    clustering_method = [ "BIRCH", "Agglomerative"]  #"DBSCAN", "GMM", "KMeans", "OPTICS",
+    clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
     methods_metrics = {}
     for method in clustering_method:
         print(method)
@@ -47,7 +48,7 @@ def mkdir(path):
 # e2 = experiment(Z2, T2, samplePath2, T2DV2GroundTruth,'Subject_Column','e2')
 
 
-def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold,k, method=0,embedding_mode =2):
+def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold, k, method=0, embedding_mode=2):
     # samplepath 既可以是路径也可以是feature的文件绝对路径
     Z3 = pd.DataFrame()
     T3 = []
@@ -55,7 +56,7 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold,k,
         features = pd.read_csv(samplePath)
         T3 = features.iloc[:, 0]
         Z3 = numpy.array([ast.literal_eval(x) for x in features.iloc[:, 1]])
-
+        """
         D = np.ones((len(T3), len(T3)))
         for i in range(len(T3)):
             D[i, i] = 0
@@ -74,9 +75,11 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold,k,
                     D[T3_list.index(t), T3_list.index(name)] = minhash_dict[name].jaccard(minhash_dict[t])
                     D[T3_list.index(name), T3_list.index(t)] = minhash_dict[name].jaccard(minhash_dict[t])
         Z3 = D
+        """
+
         print(Z3)
     else:
-        Z3, T3 = clustering.inputData(samplePath, threshold, k,embedding_mode=embedding_mode)
+        Z3, T3 = clustering.inputData(samplePath, threshold, k, embedding_mode=embedding_mode)
     e = experiment(Z3, T3, samplePath, GroundTruth, targetFolder, experiment_name)
     e_df = pd.DataFrame()
     for i, v in e.items():
@@ -85,7 +88,7 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold,k,
     print(e_df)
     store_path = os.getcwd() + "/result/metrics/" + targetFolder
     mkdir(store_path)
-    e_df.to_csv(store_path+experiment_name + 'LSHALL_metrics.csv', encoding='utf-8')
+    e_df.to_csv(store_path + experiment_name + 'AllTableLSH_metrics.csv', encoding='utf-8')
 
 
 """
@@ -113,5 +116,3 @@ targetpath = "openData_baseline/"
 #  "/datasets/open_data/gt_openData.csv"
 # "/datasets/T2DV2/SubjectColumn/"
 # "/datasets/T2DV2/classes_GS.csv"
-
-

@@ -242,7 +242,7 @@ class SBERTTransformer:
             preprocessed_data = ['{}'.format(term) for term, count in term_counts.items()]
             vectorizer.fit_transform(preprocessed_data)
         except ValueError as e:
-            print(input_values, e)
+           #  print(input_values, e)
             return set()
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
         tokenset = set()

@@ -274,7 +274,7 @@ class GloveTransformer:
         except ValueError as e:
             term_counts = Counter(input_values)
             preprocessed_data = ['{}'.format(term) for term, count in term_counts.items()]
-            print(preprocessed_data, e)
+            # print(preprocessed_data, e)
             return set()
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
         tokenset = set()
@@ -314,7 +314,7 @@ class GloveTransformer:
          np.ndarray
              A Numpy vector representing the mean of all token embeddings.
         """
-        print(input_values)
+        # print(input_values)
         embeddings = [self.get_vector(token) for token in self.get_tokens(remove_blank(input_values))]
         if len(embeddings) == 0:
             return np.empty(0)

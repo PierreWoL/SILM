@@ -6,13 +6,13 @@ from experimentalData import get_files
 
 def try_parallel(dataPath):
     absolute_path = os.getcwd() + "/datasets/"
-    Methods = [2, 3]  # ,3
+    Methods = [2,3]  # ,3
     ground_Truth = absolute_path + dataPath + "/groundTruth.csv"
     Max_K = 100
     for method in Methods:
         samplePath = []
         if method == 1:
-            samplePath = absolute_path + dataPath + "/feature.csv"
+            samplePath = absolute_path + dataPath + "/featureAll.csv"
         if method == 2:
             samplePath = absolute_path + dataPath + "/SubjectColumn/"
             Max_K = len(get_files(samplePath))
@@ -21,22 +21,23 @@ def try_parallel(dataPath):
             Max_K = len(get_files(samplePath))
         print(samplePath)
         for k in [100]:  # 3,5, 50, 100 , -20
-            for embed_mode in [1]:  # 2,
+            for embed_mode in [2]:  #
                 targetPath = dataPath + "/Method" + str(method) + "/"
                 if method != 1:
                     targetPath = targetPath + ("MODE" + str(embed_mode) + "/")
 
                 print(ground_Truth, samplePath)
-                for threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+                for threshold in [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
                     experiment_Name = "K" + str(k) + "Method" + str(method) + "_MODE" + str(
-                        embed_mode) + "Sim" + str(threshold)
+                       embed_mode)
                     run_exp(experiment_Name, ground_Truth, targetPath,
-                            samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
+                        samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
 
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['T2DV2', 'SOTAB', 'open_data', 'Test_corpus']  #
+    DATA_PATH = ['open_data', 'Test_corpus']  #,'T2DV2', 'SOTAB'
+    #
     # TARGET_PATH = []
     # pool = Pool(processes=3)  # create a pool of 4 processes
     # results = pool.map(try_parallel, DATA_PATH)
