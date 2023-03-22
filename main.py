@@ -6,7 +6,7 @@ from experimentalData import get_files
 
 def try_parallel(dataPath):
     absolute_path = os.getcwd() + "/datasets/"
-    Methods = [2,3]  # ,3
+    Methods = [3]  # ,3
     ground_Truth = absolute_path + dataPath + "/groundTruth.csv"
     Max_K = 100
     for method in Methods:
@@ -25,18 +25,17 @@ def try_parallel(dataPath):
                 targetPath = dataPath + "/Method" + str(method) + "/"
                 if method != 1:
                     targetPath = targetPath + ("MODE" + str(embed_mode) + "/")
-
                 print(ground_Truth, samplePath)
-                for threshold in [ 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-                    experiment_Name = "K" + str(k) + "Method" + str(method) + "_MODE" + str(
-                       embed_mode)
+                for threshold in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+                    experiment_Name = "Method" + str(method) + "_MODE" + str(
+                        embed_mode) + "Sim" + str(threshold)
                     run_exp(experiment_Name, ground_Truth, targetPath,
-                        samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
+                            samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
 
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['open_data', 'Test_corpus']  #,'T2DV2', 'SOTAB'
+    DATA_PATH = ['open_data']  # 'open_data', 'Test_corpus','T2DV2', 'SOTAB'
     #
     # TARGET_PATH = []
     # pool = Pool(processes=3)  # create a pool of 4 processes

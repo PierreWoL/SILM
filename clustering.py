@@ -21,7 +21,7 @@ from sklearn.cluster import KMeans
 import numpy as np
 
 
-def create_or_find_indexes(data_path, threshold,embedding_mode=1):
+def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     #  collection of tables
     dataloader = CSVDataLoader(
         root_path=data_path,
@@ -29,43 +29,41 @@ def create_or_find_indexes(data_path, threshold,embedding_mode=1):
         encoding='latin-1'
     )
 
-
     # NameIndex
-    #if os.path.isfile(os.path.join(data_path, './name.lsh')):
-     #   name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
-    #else:
-    name_index = NameIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    # if os.path.isfile(os.path.join(data_path, './name.lsh')):
+    #   name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
+    # else:
+    name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(name_index, os.path.join(data_path, './name.lsh'))
     # FormatIndex
-    #if os.path.isfile(os.path.join(data_path, './format.lsh')):
-     #   format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
-    #else:
-    format_index = FormatIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    # if os.path.isfile(os.path.join(data_path, './format.lsh')):
+    #   format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
+    # else:
+    format_index = FormatIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(format_index, os.path.join(data_path, './format.lsh'))
-        # ValueIndex
-    #if os.path.isfile(os.path.join(data_path, './value.lsh')):
-     #   value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
-    #else:
-    value_index = ValueIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    # ValueIndex
+    # if os.path.isfile(os.path.join(data_path, './value.lsh')):
+    #   value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
+    # else:
+    value_index = ValueIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(value_index, os.path.join(data_path, './value.lsh'))
 
     # DistributionIndex
-    #if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
-     #   distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
-    #else:
-    distribution_index = DistributionIndex(dataloader=dataloader,index_similarity_threshold=threshold)
+    # if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
+    #   distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
+    # else:
+    distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
 
     # EmbeddingIndex
     embed_lsh = './embedding' + str(embedding_mode) + '.lsh'
-    #if os.path.isfile(os.path.join(data_path, embed_lsh)):
-     #   embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
-    #else:
-    embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode,index_similarity_threshold=threshold)
+    # if os.path.isfile(os.path.join(data_path, embed_lsh)):
+    #   embeddingIndex = unpickle_python_object(os.path.join(data_path, embed_lsh))
+    # else:
+    embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode, index_similarity_threshold=threshold)
     pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
-   
 
-    return [distribution_index, format_index, value_index, name_index,embeddingIndex]  #
+    return [distribution_index, format_index, value_index, name_index, embeddingIndex]  #
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
@@ -366,7 +364,7 @@ def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None)
                 if tables is not None:
                     cosine_sim = 1 - cosine(tables[Tables[i]], tables[Tables[j]])
                     euclidean_distance = euclidean(tables[Tables[i]], tables[Tables[j]])
-                    b.append({i: (Tables[i], Tables[j],cosine_sim,euclidean_distance)})
+                    b.append({i: (Tables[i], Tables[j], cosine_sim, euclidean_distance)})
                 else:
                     b.append({i: (Tables[i], Tables[j])})
             # c是在ground truth相同clusters中但预测不同clusters
@@ -374,7 +372,7 @@ def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None)
                 if tables is not None:
                     cosine_sim = 1 - cosine(tables[Tables[i]], tables[Tables[j]])
                     euclidean_distance = euclidean(tables[Tables[i]], tables[Tables[j]])
-                    c.append({i: (Tables[i], Tables[j],cosine_sim,euclidean_distance)})
+                    c.append({i: (Tables[i], Tables[j], cosine_sim, euclidean_distance)})
                 else:
                     c.append({j: (Tables[i], Tables[j])})
     cb = pd.concat([pd.Series(c), pd.Series(b)], axis=1)
@@ -420,7 +418,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
 def inputData(data_path, threshold, k, embedding_mode=2):
     print("embed mode is ", embedding_mode)
-    indexes = create_or_find_indexes(data_path,threshold, embedding_mode=embedding_mode)
+    indexes = create_or_find_indexes(data_path, threshold, embedding_mode=embedding_mode)
     Z, T = distance_matrix(data_path, indexes, k)
     return Z, T
 
@@ -446,7 +444,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     clusters = cluster_discovery(parameters, tables)
     cluster_dict = cluster_Dict(clusters)
     table_dict = None
-    table_dict = {tables[i]: input_data[i] for i in range(0,len(tables))}
+    table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
     print(metrics_value)
     return metrics_value
