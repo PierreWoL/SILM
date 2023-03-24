@@ -35,7 +35,7 @@ def try_parallel(dataPath):
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['open_data', 'Test_corpus','T2DV2', 'SOTAB']  # 1'open_data', 'Test_corpus','T2DV2', 'SOTAB'
+    DATA_PATH = [ 'Test_corpus','T2DV2']  # 1'open_data', 'Test_corpus','T2DV2', 'SOTAB'
     #
     # TARGET_PATH = []
     # pool = Pool(processes=3)  # create a pool of 4 processes

@@ -412,10 +412,10 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             results.append([key, clusterDict[key], clusters_label[key]])
         df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
         # baselinePath = os.getcwd() + "/result/subject_column/"
-        df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
-        df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
-        cb_pairs.to_csv(folder + filename + 'HeaderLSH_cb.csv', encoding='utf-8', index=False)
-        print(cb_pairs)
+        #df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
+        #df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
+        #cb_pairs.to_csv(folder + filename + 'HeaderLSH_cb.csv', encoding='utf-8', index=False)
+        #print(cb_pairs)
     return metric_dict
 
 
