@@ -28,33 +28,36 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
         # sep=",",
         encoding='latin-1'
     )
-
+    """
     # NameIndex
     # if os.path.isfile(os.path.join(data_path, './name.lsh')):
     #   name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
     # else:
     name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(name_index, os.path.join(data_path, './name.lsh'))
+    """
     # FormatIndex
     # if os.path.isfile(os.path.join(data_path, './format.lsh')):
     #   format_index = unpickle_python_object(os.path.join(data_path, './format.lsh'))
     # else:
     format_index = FormatIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(format_index, os.path.join(data_path, './format.lsh'))
+
+    """
     # ValueIndex
     # if os.path.isfile(os.path.join(data_path, './value.lsh')):
     #   value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
     # else:
     value_index = ValueIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(value_index, os.path.join(data_path, './value.lsh'))
-
+    
     # DistributionIndex
     # if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
     #   distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
     # else:
     distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
     pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
-
+    
     # EmbeddingIndex
     embed_lsh = './embedding' + str(embedding_mode) + '.lsh'
     # if os.path.isfile(os.path.join(data_path, embed_lsh)):
@@ -62,8 +65,8 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     # else:
     embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode, index_similarity_threshold=threshold)
     pickle_python_object(distribution_index, os.path.join(data_path, embed_lsh))
-
-    return [distribution_index, format_index, value_index, name_index, embeddingIndex]  #
+    """
+    return [format_index]  # distribution_index , format_index, value_index, name_index, embeddingIndex
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):

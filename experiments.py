@@ -88,7 +88,7 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold, k
     print(e_df)
     store_path = os.getcwd() + "/result/metrics/" + targetFolder
     mkdir(store_path)
-    e_df.to_csv(store_path + experiment_name + 'AllTableLSH_metrics.csv', encoding='utf-8')
+    e_df.to_csv(store_path + experiment_name + 'formatLSH_metrics.csv', encoding='utf-8')
 
 
 """

@@ -253,7 +253,8 @@ class FormatIndex(SimilarityIndex):
         )
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
-
+            if table_data.shape[0]>10000:
+                table_data = table_data.sample(n=400, random_state=2020)
             column_signatures = [
                 (c, self.transformer.transform(table_data[c].tolist()))
                 for c in table_data.columns
@@ -378,7 +379,8 @@ class ValueIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
-
+            if table_data.shape[0]>10000:
+                table_data = table_data.sample(n=400, random_state=2020)
             column_signatures = [
                 (c, self.transformer.transform(table_data[c].tolist()))
                 for c in table_data.columns
@@ -539,6 +541,8 @@ class EmbeddingIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
+            if table_data.shape[0]>10000:
+                table_data = table_data.sample(n=400, random_state=2020)
             column_signatures = [
                 (table_data.iloc[:, i].name, self.transformer.transform(
                     table_data.iloc[:, i]))
@@ -669,6 +673,8 @@ class DistributionIndex(SimilarityIndex):
 
         for table in tqdm(self.dataloader.get_tables(self.data_root)):
             table_data = self.dataloader.read_table(table_name=table)
+            if table_data.shape[0]>10000:
+                table_data = table_data.sample(n=400, random_state=2020)
             column_signatures = [
                 (c, self.transformer.transform(table_data[c].tolist()))
                 for c in table_data.columns
