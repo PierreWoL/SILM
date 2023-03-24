@@ -3,10 +3,7 @@ import os
 import numpy
 import pandas as pd
 import clustering
-import numpy as np
-from datasketch.datasketch.minhash import MinHash
-from datasketch.datasketch.weighted_minhash import WeightedMinHashGenerator
-from datasketch.datasketch.lsh import MinHashLSH
+
 
 
 def experiment(Z, T, data_path, ground_truth, folderName, filename):
