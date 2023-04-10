@@ -100,9 +100,13 @@ def train(trainset, hp):
 
             # save the checkpoints for each component
             if hp.single_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
+               #ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
+               ckpt_path = os.getcwd()+"/"+ hp.logdir +"/"+hp.method+"/model_" + str(hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt"
             else:
-                ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
+                #ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
+                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(
+                    hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
+                    hp.run_id) + ".pt"
 
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
