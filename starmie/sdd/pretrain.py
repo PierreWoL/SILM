@@ -35,7 +35,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     for i, batch in enumerate(train_iter):
         x_ori, x_aug, cls_indices = batch
         optimizer.zero_grad()
-
+        print(x_ori, x_aug, cls_indices)
         if hp.fp16:
             with torch.cuda.amp.autocast():
                 loss = model(x_ori, x_aug, cls_indices, mode='simclr')
@@ -48,7 +48,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
             optimizer.step()
 
         scheduler.step()
-        if i % 10 == 0: # monitoring
+        if i % 10 == 0:  # monitoring
             print(f"step: {i}, loss: {loss.item()}")
         del loss
 
@@ -71,7 +71,7 @@ def train(trainset, hp):
                                  shuffle=True,
                                  num_workers=0,
                                  collate_fn=padder)
-    print(train_iter)
+
     # initialize model, optimizer, and LR scheduler
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm)
@@ -87,7 +87,8 @@ def train(trainset, hp):
                                                 num_warmup_steps=0,
                                                 num_training_steps=num_steps)
 
-    for epoch in range(1, hp.n_epochs+1):
+    for epoch in range(1, hp.n_epochs + 1):
+        print("epoch is ", epoch)
         # train
         model.train()
         train_step(train_iter, model, optimizer, scheduler, scaler, hp)
@@ -100,10 +101,12 @@ def train(trainset, hp):
 
             # save the checkpoints for each component
             if hp.single_column:
-               #ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
-               ckpt_path = os.getcwd()+"/"+ hp.logdir +"/"+hp.method+"/model_" + str(hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt"
+                # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
+                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(
+                    hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
+                    hp.run_id) + "singleCol.pt"
             else:
-                #ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
+                # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
                 ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
                     hp.run_id) + ".pt"
@@ -124,7 +127,7 @@ def train(trainset, hp):
             mlflow.log_metrics(metrics_dict)
 
             print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v) \
-                                    for k, v in metrics_dict.items()]))
+                                                    for k, v in metrics_dict.items()]))
 
         # evaluate on column clustering
         if hp.method in ['viznet']:
@@ -134,8 +137,7 @@ def train(trainset, hp):
             # log metrics
             mlflow.log_metrics(metrics_dict)
             print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v) \
-                                    for k, v in metrics_dict.items()]))
-
+                                                    for k, v in metrics_dict.items()]))
 
 
 def inference_on_tables(tables: List[pd.DataFrame],
@@ -154,7 +156,7 @@ def inference_on_tables(tables: List[pd.DataFrame],
     Returns:
         List of np.array: the column vectors
     """
-    total=total if total is not None else len(tables)
+    total = total if total is not None else len(tables)
     batch = []
     results = []
     for tid, table in tqdm(enumerate(tables), total=total):
@@ -200,14 +202,14 @@ def load_checkpoint(ckpt):
     model.load_state_dict(ckpt['model'])
 
     # dataset paths, depending on benchmark for the current task
-    ds_path = os.getcwd()+'/datasets/Test_corpus'
+    ds_path = os.getcwd() + '/datasets/Test_corpus'
     if hp.dataset == "open_data":
         # Change the data paths to where the benchmarks are stored
-        ds_path =  os.getcwd()+'/datasets/open_data'
+        ds_path = os.getcwd() + '/datasets/open_data'
     elif hp.dataset == "SOTAB":
-        ds_path =  os.getcwd()+'/datasets/SOTAB'
+        ds_path = os.getcwd() + '/datasets/SOTAB'
     elif hp.dataset == "T2DV2":
-        ds_path = os.getcwd()+'/datasets/T2DV2'
+        ds_path = os.getcwd() + '/datasets/T2DV2'
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
 
     return model, dataset
@@ -236,7 +238,7 @@ def evaluate_pretrain(model: BarlowTwinsSimCLR,
             tables = []
             for table_id, col_id in zip(table_ids, column_ids):
                 table = pd.read_csv(os.path.join(table_path, \
-                                    "table_%d.csv" % table_id))
+                                                 "table_%d.csv" % table_id))
                 if model.hp.single_column:
                     table = table[[table.columns[col_id]]]
                 tables.append(table)
@@ -297,13 +299,13 @@ def evaluate_column_clustering(model: BarlowTwinsSimCLR,
     def table_iter():
         for table_id, col_id in zip(table_ids, column_ids):
             table = pd.read_csv(os.path.join(table_path, \
-                                "table_%d.csv" % table_id))
+                                             "table_%d.csv" % table_id))
             if model.hp.single_column:
                 table = table[[table.columns[col_id]]]
             yield table
 
     vectors = inference_on_tables(table_iter(), model, unlabeled,
-                                    batch_size=128, total=len(table_ids))
+                                  batch_size=128, total=len(table_ids))
 
     # # assert all columns exist
     # for vec, table in zip(vectors, tables):
