@@ -111,6 +111,7 @@ def train(trainset, hp):
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
             torch.save(ckpt, ckpt_path)
+            print("Save models! to the path", ckpt_path)
 
             # test loading checkpoints
             # load_checkpoint(ckpt_path)

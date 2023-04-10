@@ -206,7 +206,7 @@ class PretrainTableDataset(data.Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
-        print("max tokens and buget",max_tokens,budget)
+        #print("max tokens and buget",max_tokens,budget)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         #print(table)
         #print(tfidfDict)

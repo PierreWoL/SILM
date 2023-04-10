@@ -22,10 +22,10 @@ def extractVectors(dfs, dataFolder, augment, sample, table_order, run_id, single
         list of features for the dataframe
     '''
     if singleCol:
-        model_path = "results/%s/model_%s_%s_%s_%dsingleCol.pt" % (dataFolder, augment, sample, table_order,run_id)
+        model_path = "model/%s/model_%s_%s_%s_%dsingleCol.pt" % (dataFolder, augment, sample, table_order,run_id)
 
     else:
-        model_path = "results/%s/model_%s_%s_%s_%d.pt" % (dataFolder, augment, sample, table_order,run_id)
+        model_path = "model/%s/model_%s_%s_%s_%d.pt" % (dataFolder, augment, sample, table_order,run_id)
     print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain

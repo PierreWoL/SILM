@@ -9,10 +9,9 @@ from starmie.sdd.pretrain import train
 import pandas as pd
 import os
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="starmie") #Valerie starmie
+    parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
     parser.add_argument("--dataset", type=str, default="open_data")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
@@ -29,9 +28,9 @@ if __name__ == '__main__':
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
     # row / column-ordered for preprocessing
-    parser.add_argument("--table_order", type=str, default='column')#column
+    parser.add_argument("--table_order", type=str, default='column')  # column
     # for sampling
-    parser.add_argument("--sample_meth", type=str, default='head') #head tfidfrow
+    parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
     # mlflow tag
     parser.add_argument("--mlflow_tag", type=str, default=None)
 
@@ -62,7 +61,8 @@ if __name__ == '__main__':
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
-    print(os.getcwd()+"/"+ hp.logdir +"/"+hp.method+"/model_" + str(hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
+    print(os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(hp.augment_op) + "_" + str(
+        hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
     train(trainset, hp)
     """
     
