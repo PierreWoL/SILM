@@ -65,7 +65,6 @@ if __name__ == '__main__':
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
     train(trainset, hp)
     """
-    
     total =None
     tables=[]
     for table in trainset.tables:

@@ -126,7 +126,7 @@ def train(trainset, hp):
             # log metrics
             mlflow.log_metrics(metrics_dict)
 
-            print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v) \
+            print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v)\
                                                     for k, v in metrics_dict.items()]))
 
         # evaluate on column clustering
