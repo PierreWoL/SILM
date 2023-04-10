@@ -187,7 +187,7 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            table = pd.read_csv(fn, lineterminator='\n')
+            table = pd.read_csv(fn, lineterminator='\n',encoding="latin-1")
             self.table_cache[table_id] = table
         #print(table_id, table)
 
