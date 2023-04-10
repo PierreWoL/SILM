@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_len", type=int, default=128)
     parser.add_argument("--size", type=int, default=10000)
     parser.add_argument("--lr", type=float, default=5e-5)
-    parser.add_argument("--n_epochs", type=int, default=5)
+    parser.add_argument("--n_epochs", type=int, default=15)
     parser.add_argument("--lm", type=str, default='roberta')
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='drop_col,sample_row')
