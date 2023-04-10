@@ -12,9 +12,9 @@ import os
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="starmie") #Valerie
+    parser.add_argument("--method", type=str, default="starmie") #Valerie starmie
     parser.add_argument("--dataset", type=str, default="open_data")
-    parser.add_argument("--logdir", type=str, default="results/")
+    parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--max_len", type=int, default=128)
@@ -62,6 +62,9 @@ if __name__ == '__main__':
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
+    train(trainset, hp)
+    """
+    
     total =None
     tables=[]
     for table in trainset.tables:
@@ -75,7 +78,8 @@ if __name__ == '__main__':
         x, _ = trainset._tokenize(table)
         print(x,_)
         batch.append((x, x, []))
+        
+        
     print(batch)
-    padder = trainset.pad(batch)
-
-    train(trainset, hp)
+  padder = trainset.pad(batch)
+     """

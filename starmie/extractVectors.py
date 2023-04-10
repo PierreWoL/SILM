@@ -23,8 +23,10 @@ def extractVectors(dfs, dataFolder, augment, sample, table_order, run_id, single
     '''
     if singleCol:
         model_path = "results/%s/model_%s_%s_%s_%dsingleCol.pt" % (dataFolder, augment, sample, table_order,run_id)
+
     else:
         model_path = "results/%s/model_%s_%s_%s_%d.pt" % (dataFolder, augment, sample, table_order,run_id)
+    print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
     model, trainset = load_checkpoint(ckpt)
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     ''' Get the model features by calling model inference from sdd/pretrain
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument("--benchmark", type=str, default="santos") # can be 'santos', 'santosLarge', 'tus', 'tusLarge', 'wdc'
+    parser.add_argument("--dataset", type=str, default="open_data") # can be 'santos', 'santosLarge', 'tus', 'tusLarge', 'wdc'
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
     parser.add_argument("--run_id", type=int, default=0)
@@ -64,7 +66,7 @@ if __name__ == '__main__':
 
     # START PARAMETER: defining the benchmark (dataFolder), if it is a single column baseline,
     # run_id, table_order, and augmentation operators and sampling method if they are different from default
-    dataFolder = hp.benchmark
+    dataFolder = hp.dataset
     isSingleCol = hp.single_column
     if 'santos' in dataFolder or dataFolder == 'wdc':
         ao = 'drop_col'
@@ -83,21 +85,19 @@ if __name__ == '__main__':
     # END PARAMETER
 
     # Change the data paths to where the benchmarks are stored
-    if dataFolder == 'santos':
-        DATAPATH = "data/santos/"
+    if dataFolder == 'open_data':
+        DATAPATH = "datasets/open_data/Test/"
         dataDir = ['query', 'datalake']
-    elif dataFolder == 'santosLarge':
-        DATAPATH = 'data/santos-benchmark/real-benchmark/'
+    elif dataFolder == 'SOTAB':
+        DATAPATH = 'datasets/SOTAB/Test/'
         dataDir = ['query', 'datalake']
-    elif dataFolder == 'tus':
-        DATAPATH = 'data/table-union-search-benchmark/small/'
+    elif dataFolder == 'T2DV2':
+        DATAPATH = 'datasets/T2DV2/Test/'
         dataDir = ['santos-query', 'benchmark']
-    elif dataFolder == 'tusLarge':
-        DATAPATH = 'data/table-union-search-benchmark/large/'
+    elif dataFolder == 'Test_corpus':
+        DATAPATH = 'datasets/Test_corpus/Test/'
         dataDir = ['query', 'benchmark']
-    elif dataFolder == 'wdc':
-        DATAPATH = {'query': 'data/wdc/query', 'benchmark': 'data/wdc/0/'}
-        dataDir = ['query', 'benchmark']
+
 
     inference_times = 0
     # dataDir is the query and data lake

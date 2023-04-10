@@ -64,14 +64,14 @@ def train(trainset, hp):
         The pre-trained table model
     """
     padder = trainset.pad
-    print(padder)
+
     # create the DataLoaders
     train_iter = data.DataLoader(dataset=trainset,
                                  batch_size=hp.batch_size,
                                  shuffle=True,
                                  num_workers=0,
                                  collate_fn=padder)
-
+    print(train_iter)
     # initialize model, optimizer, and LR scheduler
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm)
@@ -94,15 +94,15 @@ def train(trainset, hp):
 
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
-            directory = os.path.join(hp.logdir, hp.task)
+            directory = os.path.join(hp.logdir, hp.dataset)
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
             # save the checkpoints for each component
             if hp.single_column:
-                ckpt_path = os.path.join(hp.logdir, hp.task, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
+                ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
             else:
-                ckpt_path = os.path.join(hp.logdir, hp.task, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
+                ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
 
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
@@ -111,7 +111,7 @@ def train(trainset, hp):
             # test loading checkpoints
             # load_checkpoint(ckpt_path)
         # intrinsic evaluation with column matching
-        if hp.task in ['small', 'large']:
+        if hp.method in ['small', 'large']:
             # Train column matching models using the learned representations
             metrics_dict = evaluate_pretrain(model, trainset)
 
@@ -122,7 +122,7 @@ def train(trainset, hp):
                                     for k, v in metrics_dict.items()]))
 
         # evaluate on column clustering
-        if hp.task in ['viznet']:
+        if hp.method in ['viznet']:
             # Train column matching models using the learned representations
             metrics_dict = evaluate_column_clustering(model, trainset)
 
@@ -196,12 +196,12 @@ def load_checkpoint(ckpt):
 
     # dataset paths, depending on benchmark for the current task
     ds_path = os.getcwd()+'/datasets/Test_corpus'
-    if hp.task == "open_data":
+    if hp.dataset == "open_data":
         # Change the data paths to where the benchmarks are stored
         ds_path =  os.getcwd()+'/datasets/open_data'
-    elif hp.task == "SOTAB":
+    elif hp.dataset == "SOTAB":
         ds_path =  os.getcwd()+'/datasets/SOTAB'
-    elif hp.task == "T2DV2":
+    elif hp.dataset == "T2DV2":
         ds_path = os.getcwd()+'/datasets/T2DV2'
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
 
@@ -219,13 +219,13 @@ def evaluate_pretrain(model: BarlowTwinsSimCLR,
     Returns:
         Dict: the dictionary of metrics (e.g., valid_f1)
     """
-    table_path = 'data/%s/tables' % model.hp.task
+    table_path = 'dataset/%s/Test' % model.hp.dataset
 
     # encode each dataset
     featurized_datasets = []
     for dataset in ["train", "valid", "test"]:
-        ds_path = 'data/%s/%s.csv' % (model.hp.task, dataset)
-        ds = pd.read_csv(ds_path)
+        ds_path = 'data/%s/%s.csv' % (model.hp.method, dataset)
+        ds = pd.read_csv(ds_path, encoding="latin-1")
 
         def encode_tables(table_ids, column_ids):
             tables = []
