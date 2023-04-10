@@ -12,7 +12,7 @@ def experiment(Z, T, data_path, ground_truth, folderName, filename):
     for method in clustering_method:
         print(method)
         metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-        for i in range(0, 4):
+        for i in range(0, 2):
             mkdir(os.getcwd() + "/result/" + method + "/" + folderName + "/")
             metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method,
                                                         os.getcwd() + "/result/" + method + "/" + folderName + "/",
@@ -85,7 +85,7 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold, k
     print(e_df)
     store_path = os.getcwd() + "/result/metrics/" + targetFolder
     mkdir(store_path)
-    e_df.to_csv(store_path + experiment_name + 'formatLSH_metrics.csv', encoding='utf-8')
+    e_df.to_csv(store_path + experiment_name + 'DistributionLSH_metrics.csv', encoding='utf-8')
 
 
 """
