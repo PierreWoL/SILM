@@ -63,7 +63,7 @@ if __name__ == '__main__':
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
     print(os.getcwd()+"/"+ hp.logdir +"/"+hp.method+"/model_" + str(hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
-    #train(trainset, hp)
+    train(trainset, hp)
     """
     
     total =None
