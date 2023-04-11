@@ -95,6 +95,7 @@ def train(trainset, hp):
 
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
+            print()
             directory = os.path.join(hp.logdir, hp.dataset)
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -102,12 +103,12 @@ def train(trainset, hp):
             # save the checkpoints for each component
             if hp.single_column:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
-                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(
+                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
                     hp.run_id) + "singleCol.pt"
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
-                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(
+                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
                     hp.run_id) + ".pt"
 

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument("--lm", type=str, default='roberta')
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='drop_col,sample_row')
-    parser.add_argument("--save_model", dest="save_model", action="store_true")
+    parser.add_argument("--save_model", dest="save_model", action="store_true",default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
@@ -61,8 +61,10 @@ if __name__ == '__main__':
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
-    print(os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(hp.augment_op) + "_" + str(
+    print(os.getcwd() + "/" + hp.logdir + "/" + hp.method + "model_" + str(hp.augment_op) + "_" + str(
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
+    trainset[1]
+    print(hp.save_model)
     train(trainset, hp)
     """
     total =None

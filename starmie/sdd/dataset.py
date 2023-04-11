@@ -136,7 +136,7 @@ class PretrainTableDataset(data.Dataset):
 
         # assuming tables are in csv format
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
-        self.table_mapping = {i: value for i, value in enumerate(self.tables)}
+
         # only keep the first n tables
         if size is not None:
             self.tables = self.tables[:size]
@@ -282,7 +282,7 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-
+        print(table_ori)
         # single-column mode: only keep one random column
         if self.single_column:
             col = random.choice(table_ori.columns)
@@ -311,6 +311,7 @@ class PretrainTableDataset(data.Dataset):
         for col in mp_ori:
             if col in mp_aug:
                 cls_indices.append((mp_ori[col], mp_aug[col]))
+                print(cls_indices)
 
         return x_ori, x_aug, cls_indices
 
@@ -326,6 +327,7 @@ class PretrainTableDataset(data.Dataset):
             tuple of List: the cls indices
         """
         x_ori, x_aug, cls_indices = zip(*batch)
+        print(cls_indices)
         max_len_ori = max([len(x) for x in x_ori])
         max_len_aug = max([len(x) for x in x_aug])
         maxlen = max(max_len_ori, max_len_aug)
@@ -335,6 +337,7 @@ class PretrainTableDataset(data.Dataset):
         # decompose the column alignment
         cls_ori = []
         cls_aug = []
+        print("cls_indices is ",cls_indices)
         for item in cls_indices:
             cls_ori.append([])
             cls_aug.append([])
@@ -342,5 +345,6 @@ class PretrainTableDataset(data.Dataset):
             for idx1, idx2 in item:
                 cls_ori[-1].append(idx1)
                 cls_aug[-1].append(idx2)
+                print("cls_ori and cls_aug   ", cls_ori, cls_aug)
 
         return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new), (cls_ori, cls_aug)
