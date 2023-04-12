@@ -4,7 +4,7 @@ import random
 import torch
 import mlflow
 from tqdm import tqdm
-from starmie.sdd.dataset import PretrainTableDataset
+from pretrainData import PretrainTableDataset
 from starmie.sdd.pretrain import train
 import pandas as pd
 import os
