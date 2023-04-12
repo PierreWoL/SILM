@@ -43,7 +43,7 @@ class PretrainTableDataset(data.Dataset):
         #print(special_tokens_dict)
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
         """
-        additional_special_tokens = ['<header>','<\header>', '<sc>', '<\sc>']
+        additional_special_tokens = ['<header>','<sc>']
         self.tokenizer.add_tokens(additional_special_tokens)
 
         self.max_len = max_len
@@ -76,6 +76,7 @@ class PretrainTableDataset(data.Dataset):
         # tokenizer cache
         self.tokenizer_cache = {}
 
+
     @staticmethod
     def from_hp(path: str, hp: Namespace):
         """Construct a PretrainTableDataset from hyperparameters
@@ -103,7 +104,7 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            table = pd.read_csv(fn, encoding="latin-1")#  lineterminator='\n'
+            table = pd.read_csv(fn, encoding="latin-1")  # lineterminator='\n'
             self.table_cache[table_id] = table
         # print(table_id, table)
 
@@ -122,9 +123,8 @@ class PretrainTableDataset(data.Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
-        # print("max tokens and buget",max_tokens,budget)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
-        # print(table)
+        #print(table.transpose())
         # print(tfidfDict)
         # a map from column names to special token indices
         column_mp = {}
@@ -138,34 +138,55 @@ class PretrainTableDataset(data.Dataset):
             else:
                 anno = TA.TableColumnAnnotation(table)
                 types = anno.annotation
-                print(types)
+                #print(types)
                 for key, type in types.items():
                     if type == ColumnType.named_entity:
                         Sub_cols_header = [table.columns[key]]
                         break
-        print(Sub_cols_header)
         # column-ordered preprocessing
         if self.table_order == 'column':
             if 'row' in self.sample_meth:
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
                 # print("table after tfidf row sample \n", table)
             for column in table.columns:
-                col_text = self.tokenizer.cls_token + " "
                 tokens = preprocess(table[column], tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
+                string_token = ' '.join(tokens[:max_tokens])
+                if len(string_token)>=500:
+                    string_token = string_token[:500]
+
+                col_text = self.tokenizer.cls_token + " " + string_token+ " "
+                if 'subject' in self.check_subject_Column and column in Sub_cols_header:
+                    col_text = '<sc>' + " " + string_token + " "
                 if 'header' in self.check_subject_Column:
-                    col_text +=  '<header>' + " " + column + " "
-                if 'subject' in self.check_subject_Column:
-                    if column in Sub_cols_header:
-                        col_text += '<sc>' + " "
-                col_text += ' '.join(tokens[:max_tokens]) + " "
-                print(col_text)
-                column_mp[column] = len(res)
-                # print(col_text,column_mp,column)
-                encoding = self.tokenizer.encode(text=col_text,
-                                                 max_length=budget,
-                                                 add_special_tokens=False,
-                                                 truncation=True)
-                res += encoding
+                    head_text = '<header>' + " " + column + " "
+                    column_mp[column] = len(res)
+                    #print(head_text)
+                    encoding = self.tokenizer.encode(text=head_text,
+                                                     max_length=budget,
+                                                     add_special_tokens=False,
+                                                     truncation=True)
+                    res += encoding
+                    if 'subject' in self.check_subject_Column and column not in Sub_cols_header:
+                        col_text = self.tokenizer.pad_token + " " + string_token + " "
+                    encoding = self.tokenizer.encode(text=col_text,
+                                                     max_length=budget,
+                                                     add_special_tokens=False,
+                                                     truncation=True)
+                    res += encoding
+
+                else:
+
+                    column_mp[column] = len(res)
+
+                    encoding = self.tokenizer.encode(text=col_text,
+                                                     max_length=budget,
+                                                     add_special_tokens=False,
+                                                     truncation=True)
+                    res += encoding
+                #print(len(res))
+
+
+
 
 
         else:
@@ -173,7 +194,7 @@ class PretrainTableDataset(data.Dataset):
             reached_max_len = False
             for rid in range(len(table)):
                 row = table.iloc[rid:rid + 1]
-                #print(row)
+                # print(row)
                 for column in table.columns:
                     col_text = ''
                     tokens = preprocess(row[column], tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
@@ -195,7 +216,7 @@ class PretrainTableDataset(data.Dataset):
                                                               add_special_tokens=False,
                                                               truncation=True)
                             res += tokenized
-                            #print(header_text)#, tokenized, res
+                            # print(header_text)#, tokenized, res
 
                         else:
                             if 'subject' in self.check_subject_Column and column in Sub_cols_header:
@@ -210,7 +231,7 @@ class PretrainTableDataset(data.Dataset):
                                        '<sc>' + ' '.join(tokens[:max_tokens]) + '<\sc>' + " "
                         else:
                             col_text = self.tokenizer.pad_token + " " + \
-                                   ' '.join(tokens[:max_tokens]) + " "
+                                       ' '.join(tokens[:max_tokens]) + " "
 
                     tokenized = self.tokenizer.encode(text=col_text,
                                                       max_length=budget,
@@ -219,7 +240,7 @@ class PretrainTableDataset(data.Dataset):
 
                     if len(tokenized) + len(res) <= self.max_len:
                         res += tokenized
-                        #print(col_text)#,tokenized,res
+                        # print(col_text)#,tokenized,res
                     else:
                         reached_max_len = True
                         break
@@ -248,7 +269,7 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-        #print(table_ori)
+        # print(table_ori)
         # single-column mode: only keep one random column
         if self.single_column:
             col = random.choice(table_ori.columns)

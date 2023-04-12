@@ -75,6 +75,7 @@ def train(trainset, hp):
     # initialize model, optimizer, and LR scheduler
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm)
+
     model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
     if hp.fp16:
