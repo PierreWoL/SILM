@@ -64,9 +64,8 @@ if __name__ == '__main__':
     trainset = PretrainTableDataset.from_hp(path, hp)
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
-    trainset[1]
     print(hp.save_model)
-    #train(trainset, hp)
+    train(trainset, hp)
     """
     total =None
     tables=[]
