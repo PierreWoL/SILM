@@ -8,7 +8,7 @@ from pretrainData import PretrainTableDataset
 from starmie.sdd.pretrain import train
 import pandas as pd
 import os
-
+from Encodings import table_features
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
-    parser.add_argument("--check_subject_Column",type=str, default='subjectheader')
+    parser.add_argument("--check_subject_Column",type=str, default='Raw')#subjectheader
     # row / column-ordered for preprocessing
     parser.add_argument("--table_order", type=str, default='column')  # column
     # for sampling
@@ -62,10 +62,14 @@ if __name__ == '__main__':
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
+    """
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
-    print(hp.save_model)
-    train(trainset, hp)
+    """
+
+    #print(hp.save_model,hp.check_subject_Column)
+    # train(trainset, hp)
+    #table_features(hp)
     """
     total =None
     tables=[]

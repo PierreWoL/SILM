@@ -5,7 +5,7 @@ import numpy as np
 import glob
 import pickle
 import time
-
+from Utils import mkdir
 from argparse import Namespace
 
 
@@ -32,6 +32,7 @@ def extractVectors(dfs, method, augment, sample, table_order, run_id, singleCol=
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
     model, trainset = load_checkpoint(ckpt)
+    print(trainset.tables)
     return inference_on_tables(dfs, model, trainset, batch_size=1024)
 
 
@@ -75,19 +76,21 @@ def table_features(hp: Namespace):
     # Extract model vectors
     cl_features = extractVectors(list(tables.values()), hp.method, hp.augment_op, hp.sample_meth,
                                  hp.table_order, hp.run_id, singleCol=hp.single_column)
-
+    output_path = "result/embedding/%s/vectors/" % (hp.method)
+    mkdir(output_path)
     for i, file in enumerate(tables):
         dfs_count += 1
         # get features for this file / dataset
         cl_features_file = np.array(cl_features[i])
         dataEmbeds.append((file, cl_features_file))
+        print((file, len(cl_features_file)))
 
     if hp.single_column:
-        output_path = "result/embedding/%s/vectors/cl_%s_%s_%s_%d_singleCol.pkl" % \
-                      (hp.method, hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)
+        output_file  ="cl_%s_%s_%s_%d_singleCol.pkl" %(hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)
     else:
-        output_path = "result/embedding/%s/vectors/cl_%s_%s_%s_%d.pkl" % \
-                      (hp.method, hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)
+        output_file = "cl_%s_%s_%s_%d.pkl" %  ( hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)
+
+    output_path += output_file
     if hp.save_model:
         pickle.dump(dataEmbeds, open(output_path, "wb"))
 """

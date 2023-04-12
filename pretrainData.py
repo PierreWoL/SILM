@@ -142,7 +142,6 @@ class PretrainTableDataset(data.Dataset):
         #print(Sub_cols_header)
         # column-ordered preprocessing
         if self.table_order == 'column':
-
             if 'row' in self.sample_meth:
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
                 # print("table after tfidf row sample \n", table)

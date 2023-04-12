@@ -161,14 +161,17 @@ def inference_on_tables(tables: List[pd.DataFrame],
     batch = []
     results = []
     for tid, table in tqdm(enumerate(tables), total=total):
+        #print(tid, table)
         x, _ = unlabeled._tokenize(table)
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:
             # model inference
             with torch.no_grad():
                 x, _, _ = unlabeled.pad(batch)
+                #print(x, _, _)
                 # all column vectors in the batch
                 column_vectors = model.inference(x)
+                #print("column_vectors ", column_vectors)
                 ptr = 0
                 for xi in x:
                     current = []
@@ -201,16 +204,15 @@ def load_checkpoint(ckpt):
     model.load_state_dict(ckpt['model'])
 
     # dataset paths, depending on benchmark for the current task
-    ds_path = os.getcwd() + '/datasets/Test_corpus'
+    ds_path = os.getcwd() + '/datasets/Test_corpus/Test'
     if hp.dataset == "open_data":
         # Change the data paths to where the benchmarks are stored
-        ds_path = os.getcwd() + '/datasets/open_data'
+        ds_path = os.getcwd() + '/datasets/open_data/Test'
     elif hp.dataset == "SOTAB":
-        ds_path = os.getcwd() + '/datasets/SOTAB'
+        ds_path = os.getcwd() + '/datasets/SOTAB/Test'
     elif hp.dataset == "T2DV2":
-        ds_path = os.getcwd() + '/datasets/T2DV2'
+        ds_path = os.getcwd() + '/datasets/T2DV2/Test'
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
-
     return model, dataset
 
 

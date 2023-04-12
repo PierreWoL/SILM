@@ -226,7 +226,6 @@ class PretrainTableDataset(data.Dataset):
 
                 col_text = self.tokenizer.cls_token + " " + \
                            ' '.join(tokens[:max_tokens]) + " "
-                print(self.tokenizer.cls_token,self.tokenizer.pad_token, self.tokenizer.sep_token, self.tokenizer.additional_special_tokens)
                 # print(col_text)
                 column_mp[column] = len(res)
                 # print(col_text,column_mp,column)
@@ -289,7 +288,7 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-        print(table_ori)
+        #print(table_ori)
         # single-column mode: only keep one random column
         if self.single_column:
             col = random.choice(table_ori.columns)
