@@ -43,7 +43,7 @@ class PretrainTableDataset(data.Dataset):
         #print(special_tokens_dict)
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
         """
-        additional_special_tokens = ['<header>', '<sc>', '<\sc>']
+        additional_special_tokens = ['<header>','<\header>', '<sc>', '<\sc>']
         self.tokenizer.add_tokens(additional_special_tokens)
 
         self.max_len = max_len
@@ -150,15 +150,15 @@ class PretrainTableDataset(data.Dataset):
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
                 # print("table after tfidf row sample \n", table)
             for column in table.columns:
-                col_text = ''
+                col_text = self.tokenizer.cls_token + " "
                 tokens = preprocess(table[column], tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
                 if 'header' in self.check_subject_Column:
-                    col_text = self.tokenizer.cls_token + " " + '<header>' + " " + column + " "
+                    col_text +=  '<header>' + " " + column + " "
                 if 'subject' in self.check_subject_Column:
                     if column in Sub_cols_header:
                         col_text += '<sc>' + " "
                 col_text += ' '.join(tokens[:max_tokens]) + " "
-                # print(col_text)
+                print(col_text)
                 column_mp[column] = len(res)
                 # print(col_text,column_mp,column)
                 encoding = self.tokenizer.encode(text=col_text,
