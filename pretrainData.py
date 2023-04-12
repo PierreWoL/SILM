@@ -156,7 +156,7 @@ class PretrainTableDataset(data.Dataset):
                 col_text += ' '.join(tokens[:max_tokens]) + " "
                 # print(col_text)
                 column_mp[column] = len(res)
-                print(col_text,column_mp,column)
+                #print(col_text,column_mp,column)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
                                                  add_special_tokens=False,
