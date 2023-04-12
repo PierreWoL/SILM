@@ -105,12 +105,12 @@ def train(trainset, hp):
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
                 ckpt_path = os.getcwd() + "/" + hp.logdir + hp.method + "/model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
-                    hp.run_id) + "singleCol.pt"
+                    hp.run_id)+"_"+str(hp.check_subject_Column)+"singleCol.pt"
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
                 ckpt_path = os.getcwd() + "/" + hp.logdir+ hp.method + "/model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
-                    hp.run_id) + ".pt"
+                    hp.run_id) +"_"+str(hp.check_subject_Column)+ ".pt"
 
             ckpt = {'model': model.state_dict(),
                     'hp': hp}

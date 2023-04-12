@@ -33,7 +33,8 @@ class PretrainTableDataset(data.Dataset):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])  # , additional_special_tokens=['[header]', '[SC]']
         # additional_special_tokens = ['<header>', '<SC>']
         # self.tokenizer.add_tokens(additional_special_tokens)
-        header_token = '<header>'
+        """
+         header_token = '<header>'
         subject_column_token = '<sc>'
         end_subject_column_token = '<\sc>'
         # Add the special tokens to the tokenizer
@@ -41,6 +42,9 @@ class PretrainTableDataset(data.Dataset):
             'additional_special_tokens': [header_token, subject_column_token, end_subject_column_token]}
         #print(special_tokens_dict)
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
+        """
+        additional_special_tokens = ['<header>', '<sc>', '<\sc>']
+        self.tokenizer.add_tokens(additional_special_tokens)
 
         self.max_len = max_len
         self.path = path
@@ -99,7 +103,7 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            table = pd.read_csv(fn, lineterminator='\n', encoding="latin-1")
+            table = pd.read_csv(fn, encoding="latin-1")#  lineterminator='\n'
             self.table_cache[table_id] = table
         # print(table_id, table)
 
@@ -139,7 +143,7 @@ class PretrainTableDataset(data.Dataset):
                     if type == ColumnType.named_entity:
                         Sub_cols_header = [table.columns[key]]
                         break
-        #print(Sub_cols_header)
+        print(Sub_cols_header)
         # column-ordered preprocessing
         if self.table_order == 'column':
             if 'row' in self.sample_meth:
