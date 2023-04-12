@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import TableAnnotation as TA
 from torch.utils import data
-from transformers import AutoTokenizer, BertTokenizer
+from transformers import AutoTokenizer
 from starmie.sdd.augment import augment
 from typing import List
 from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess

@@ -7,7 +7,7 @@ import SubjectColumnDetection as scd
 from sentence_transformers import SentenceTransformer
 import d3l.utils.functions as fun
 import JSON
-from experiments import mkdir
+from Utils import mkdir
 
 
 def SBERT(data_path, feature_csv):

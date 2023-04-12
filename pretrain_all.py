@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
-    parser.add_argument("--check_subject_Column",type=str, default='Raw')#subjectheader
+    parser.add_argument("--check_subject_Column",type=str, default='subjectheader')#subjectheader
     # row / column-ordered for preprocessing
     parser.add_argument("--table_order", type=str, default='column')  # column
     # for sampling
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     """
 
     #print(hp.save_model,hp.check_subject_Column)
-    # train(trainset, hp)
+    train(trainset, hp)
     #table_features(hp)
     """
     total =None
