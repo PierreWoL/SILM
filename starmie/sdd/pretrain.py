@@ -35,7 +35,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     for i, batch in enumerate(train_iter):
         x_ori, x_aug, cls_indices = batch
         optimizer.zero_grad()
-        print(x_ori, x_aug, cls_indices)
+
         if hp.fp16:
             with torch.cuda.amp.autocast():
                 loss = model(x_ori, x_aug, cls_indices, mode='simclr')
@@ -95,7 +95,7 @@ def train(trainset, hp):
 
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
-            print()
+
             directory = os.path.join(hp.logdir, hp.dataset)
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -103,12 +103,12 @@ def train(trainset, hp):
             # save the checkpoints for each component
             if hp.single_column:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
-                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "model_" + str(
+                ckpt_path = os.getcwd() + "/" + hp.logdir + hp.method + "/model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
                     hp.run_id) + "singleCol.pt"
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
-                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "model_" + str(
+                ckpt_path = os.getcwd() + "/" + hp.logdir + "/" + hp.method + "/model_" + str(
                     hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
                     hp.run_id) + ".pt"
 
@@ -162,7 +162,6 @@ def inference_on_tables(tables: List[pd.DataFrame],
     results = []
     for tid, table in tqdm(enumerate(tables), total=total):
         x, _ = unlabeled._tokenize(table)
-
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:
             # model inference
@@ -178,7 +177,6 @@ def inference_on_tables(tables: List[pd.DataFrame],
                             current.append(column_vectors[ptr].cpu().numpy())
                             ptr += 1
                     results.append(current)
-
             batch.clear()
 
     return results
@@ -197,7 +195,7 @@ def load_checkpoint(ckpt):
     hp = ckpt['hp']
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(device)
+    #print(device)
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm)
     model = model.to(device)
     model.load_state_dict(ckpt['model'])

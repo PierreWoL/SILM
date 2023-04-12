@@ -7,6 +7,7 @@ from transformers import AutoModel, AutoTokenizer
 lm_mp = {'roberta': 'roberta-base',
          'distilbert': 'distilbert-base-uncased'}
 
+
 class TableModel(nn.Module):
     """A baseline model for Table/Column matching"""
 
@@ -29,10 +30,10 @@ class TableModel(nn.Module):
         Returns:
             Tensor: binary prediction
         """
-        x = x.to(self.device) # (batch_size, seq_len)
+        x = x.to(self.device)  # (batch_size, seq_len)
 
         # left+right
-        enc_pair = self.bert(x)[0][:, 0, :] # (batch_size, emb_size)
+        enc_pair = self.bert(x)[0][:, 0, :]  # (batch_size, emb_size)
 
         batch_size = len(x)
         # left and right
@@ -46,7 +47,6 @@ class TableModel(nn.Module):
         return self.fc(enc)
 
 
-
 def off_diagonal(x):
     """Return a flattened view of the off-diagonal elements of a square matrix.
     """
@@ -58,6 +58,7 @@ def off_diagonal(x):
 class BarlowTwinsSimCLR(nn.Module):
     """Barlow Twins or SimCLR encoder for contrastive learning.
     """
+
     def __init__(self, hp, device='cuda', lm='roberta'):
         super().__init__()
         self.hp = hp
@@ -80,11 +81,10 @@ class BarlowTwinsSimCLR(nn.Module):
         # cls token id
         self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
 
-
     def info_nce_loss(self, features,
-            batch_size,
-            n_views,
-            temperature=0.07):
+                      batch_size,
+                      n_views,
+                      temperature=0.07):
         """Copied from https://github.com/sthalles/SimCLR/blob/master/simclr.py
         """
         labels = torch.cat([torch.arange(batch_size) for i in range(n_views)], dim=0)
@@ -104,7 +104,7 @@ class BarlowTwinsSimCLR(nn.Module):
         # select and combine multiple positives
         positives = similarity_matrix[labels.bool()].view(labels.shape[0], -1)
 
-        # select only the negatives the negatives
+        # select only the negatives
         negatives = similarity_matrix[~labels.bool()].view(similarity_matrix.shape[0], -1)
 
         logits = torch.cat([positives, negatives], dim=1)
@@ -121,7 +121,7 @@ class BarlowTwinsSimCLR(nn.Module):
 
         if cls_indices is None:
             indices = [idx for idx, token_id in enumerate(x_flat) \
-                if token_id == self.cls_token_id]
+                       if token_id == self.cls_token_id]
         else:
             indices = []
             seq_len = x.shape[-1]
@@ -129,7 +129,6 @@ class BarlowTwinsSimCLR(nn.Module):
                 indices += [idx + rid * seq_len for idx in cls_indices[rid]]
 
         return column_vectors[indices]
-
 
     def inference(self, x):
         """Apply the model on a serialized table.
@@ -142,9 +141,8 @@ class BarlowTwinsSimCLR(nn.Module):
         """
         x = x.to(self.device)
         z = self.bert(x)[0]
-        z = self.projector(z) # optional
+        z = self.projector(z)  # optional
         return self._extract_columns(x, z)
-
 
     def forward(self, x_ori, x_aug, cls_indices, mode="simclr"):
         """Apply the model for contrastive learning.
@@ -162,25 +160,25 @@ class BarlowTwinsSimCLR(nn.Module):
             # pre-training
             # encode
             batch_size = len(x_ori)
-            x_ori = x_ori.to(self.device) # original, (batch_size, seq_len)
-            x_aug = x_aug.to(self.device) # augment, (batch_size, seq_len)
+            x_ori = x_ori.to(self.device)  # original, (batch_size, seq_len)
+            x_aug = x_aug.to(self.device)  # augment, (batch_size, seq_len)
 
             # encode each table (all columns)
-            x = torch.cat((x_ori, x_aug)) # (2*batch_size, seq_len)
-            z = self.bert(x)[0] # (2*batch_size, seq_len, hidden_size)
+            x = torch.cat((x_ori, x_aug))  # (2*batch_size, seq_len)
+            z = self.bert(x)[0]  # (2*batch_size, seq_len, hidden_size)
 
             # assert that x_ori and x_aug have the same number of columns
-            z_ori = z[:batch_size] # (batch_size, seq_len, hidden_size)
-            z_aug = z[batch_size:] # (batch_size, seq_len, hidden_size)
+            z_ori = z[:batch_size]  # (batch_size, seq_len, hidden_size)
+            z_aug = z[batch_size:]  # (batch_size, seq_len, hidden_size)
 
             cls_ori, cls_aug = cls_indices
 
-            z_ori = self._extract_columns(x_ori, z_ori, cls_ori) # (total_num_columns, hidden_size)
-            z_aug = self._extract_columns(x_aug, z_aug, cls_aug) # (total_num_columns, hidden_size)
+            z_ori = self._extract_columns(x_ori, z_ori, cls_ori)  # (total_num_columns, hidden_size)
+            z_aug = self._extract_columns(x_aug, z_aug, cls_aug)  # (total_num_columns, hidden_size)
             assert z_ori.shape == z_aug.shape
 
             z = torch.cat((z_ori, z_aug))
-            z = self.projector(z) # (2*total_num_columns, projector_size)
+            z = self.projector(z)  # (2*total_num_columns, projector_size)
 
             if mode == "simclr":
                 # simclr

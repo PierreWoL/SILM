@@ -72,7 +72,7 @@ class ColumnDetection:
         self.ws = 0
         self.acronym_id_num = 0
 
-    def column_type_judge(self, fraction=3):
+    def column_type_judge(self, fraction=200):
         """
         Check the type of given column's data type.
 
@@ -96,11 +96,11 @@ class ColumnDetection:
         except ValueError as e:
             print("column_type_judge terminate.", self.column.name, repr(e))
             pass
-
+        checkpoint = fraction
         # iterate and judge the element belong to which category
         for index, element in self.column.items():
-            checkpoint= math.ceil(len(self.column) / fraction)
-            if checkpoint>=len(self.column):
+
+            if checkpoint>= len(self.column):
                 checkpoint = len(self.column)-1
             if index == checkpoint:
                 if temp_count_text_cell != 0:

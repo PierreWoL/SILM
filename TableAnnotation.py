@@ -39,7 +39,7 @@ class TableColumnAnnotation:
         # self.table.shape[1] is the length of columns
         for i in range(self.table.shape[1]):
             column_detection = SCD.ColumnDetection(self.table.iloc[:, i])
-            candidate_type = column_detection.column_type_judge(3)
+            candidate_type = column_detection.column_type_judge(100)
             self.annotation[i] = candidate_type
         """
         # since a lot of tables have no headers so that i use iloc

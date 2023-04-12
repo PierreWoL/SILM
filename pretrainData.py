@@ -3,119 +3,18 @@ import torch
 import random
 import pandas as pd
 import os
-
+import TableAnnotation as TA
 from torch.utils import data
-from transformers import AutoTokenizer
-from .augment import augment
+from transformers import AutoTokenizer, BertTokenizer
+from starmie.sdd.augment import augment
 from typing import List
-from .preprocessor import computeTfIdf, tfidfRowSample, preprocess
+from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
+from SubjectColumnDetection import ColumnType
 
 # map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased'}
-
-
-class TableDataset(data.Dataset):
-    """Table dataset"""
-
-    def __init__(self,
-                 path,
-                 max_len=256,
-                 lm='roberta'):
-        # 初始化一个bert模型
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
-        self.pairs = []
-        self.max_len = max_len
-        self.samples = pd.read_csv(path)
-
-        self.labels = self.samples['match']
-        self.table_path = os.path.join(os.path.split(path)[0], "tables")
-        self.table_cache = {}
-
-    def _read_table(self, table_id):
-        """Read a table"""
-        if table_id in self.table_cache:
-            table = self.table_cache[table_id]
-        else:
-            table = pd.read_csv(os.path.join(self.table_path,
-                                             "table_%d.csv" % table_id))
-            self.table_cache[table_id] = table
-
-        return table
-
-    def __len__(self):
-        """Return the size of the dataset."""
-        return len(self.samples)
-
-    def __getitem__(self, idx):
-        """Return a tokenized item of the dataset.
-
-        Args:
-            idx (int): the index of the item
-
-        Returns:
-            List of int: token ID's of the two entities combined
-            int: the label of the pair (0: unmatch, 1: match)
-        """
-        # idx = random.randint(0, len(self.pairs)-1)
-        l_table_id = self.samples['l_table_id'][idx]
-        r_table_id = self.samples['r_table_id'][idx]
-        l_column_id = self.samples['l_column_id'][idx]
-        r_column_id = self.samples['r_column_id'][idx]
-
-        l_table = self._read_table(l_table_id)
-        r_table = self._read_table(r_table_id)
-
-        l_column = l_table[l_table.columns[l_column_id]].astype(str)
-        r_column = r_table[r_table.columns[r_column_id]].astype(str)
-
-        # baseline: simple concatenation
-        left = ' '.join(l_column)
-        right = ' '.join(r_column)
-
-        x = self.tokenizer.encode(text=left,
-                                  text_pair=right,
-                                  max_length=self.max_len,
-                                  truncation=True)
-        return x, self.labels[idx]
-
-    def pad(self, batch):
-        """Merge a list of dataset items into a train/test batch
-
-        Args:
-            batch (list of tuple): a list of dataset items
-
-        Returns:
-            LongTensor: x1 of shape (batch_size, seq_len)
-            LongTensor: x2 of shape (batch_size, seq_len).
-                        Elements of x1 and x2 are padded to the same length
-            LongTensor: x12 of shape (batch_size, seq_len').
-                        Elements of x12 are padded to the same length
-            LongTensor: a batch of labels, (batch_size,)
-        """
-        if len(batch[0]) == 4:
-            # em
-            x1, x2, x12, y = zip(*batch)
-
-            maxlen = max([len(x) for x in x1 + x2])
-
-            x1 = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x1]
-            x2 = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x2]
-
-            maxlen = max([len(x) for x in x12])
-            x12 = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x12]
-
-            return torch.LongTensor(x1), \
-                torch.LongTensor(x2), \
-                torch.LongTensor(x12), \
-                torch.LongTensor(y)
-        else:
-            # cleaning
-            x1, y = zip(*batch)
-            maxlen = max([len(x) for x in x1])
-            x1 = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x1]
-            return torch.LongTensor(x1), torch.LongTensor(y)
 
 
 class PretrainTableDataset(data.Dataset):
@@ -129,10 +28,17 @@ class PretrainTableDataset(data.Dataset):
                  lm='roberta',
                  single_column=False,
                  sample_meth='wordProb',
-                 table_order='column'):
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm]) #, additional_special_tokens=['[header]', '[SC]']
-        additional_special_tokens = ['<header>', '<SC>']
-        self.tokenizer.add_tokens(additional_special_tokens)
+                 table_order='column',
+                 check_subject_Column = 'subjectheader'):
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])  # , additional_special_tokens=['[header]', '[SC]']
+        # additional_special_tokens = ['<header>', '<SC>']
+        # self.tokenizer.add_tokens(additional_special_tokens)
+        header_token = '<header>'
+        subject_column_token = '<sc>'
+        # Add the special tokens to the tokenizer
+        special_tokens_dict = {'additional_special_tokens': [header_token, subject_column_token]}
+        num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
+
         self.max_len = max_len
         self.path = path
 
@@ -144,7 +50,7 @@ class PretrainTableDataset(data.Dataset):
             self.tables = self.tables[:size]
 
         self.table_cache = {}
-
+        self.check_subject_Column = check_subject_Column
         # augmentation operators
         self.augment_op = augment_op
 
@@ -181,7 +87,8 @@ class PretrainTableDataset(data.Dataset):
                                     size=hp.size,
                                     single_column=hp.single_column,
                                     sample_meth=hp.sample_meth,
-                                    table_order=hp.table_order)
+                                    table_order=hp.table_order,
+                                    check_subject_Column = hp.check_subject_Column)
 
     def _read_table(self, table_id):
         """Read a table"""
@@ -189,13 +96,13 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            table = pd.read_csv(fn, lineterminator='\n',encoding="latin-1")
+            table = pd.read_csv(fn, lineterminator='\n', encoding="latin-1")
             self.table_cache[table_id] = table
-        #print(table_id, table)
+        # print(table_id, table)
 
         return table
 
-    def _tokenize(self, table: pd.DataFrame):  # -> List[int]
+    def _tokenize(self, table: pd.DataFrame, idx=-1):  # -> List[int]
         """Tokenize a DataFrame table
 
         Args:
@@ -208,28 +115,48 @@ class PretrainTableDataset(data.Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
-        #print("max tokens and buget",max_tokens,budget)
+        # print("max tokens and buget",max_tokens,budget)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
-        #print(table)
-        #print(tfidfDict)
+        # print(table)
+        # print(tfidfDict)
         # a map from column names to special token indices
         column_mp = {}
-
+        Sub_cols_header = []
         # column-ordered preprocessing
         if self.table_order == 'column':
+
             if 'row' in self.sample_meth:
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
                 # print("table after tfidf row sample \n", table)
+            if 'subject' in self.check_subject_Column:
+                # TODO  we need to think where to put the subject column detection, in get_item or in the tokenize
+                if 'subject' in self.check_subject_Column:
+                    if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if '.csv' in fn]:
+                        Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx],
+                                               encoding="latin-1")
+                        original = pd.read_csv(self.path + "/" + self.tables[idx],
+                                               encoding="latin-1")
+                        Sub_cols_header = Sub_cols.columns.tolist()
+                    else:
+                        anno = TA.TableColumnAnnotation(table)
+                        types = anno.annotation
+                        print(types)
+                        for key, type in types.items():
+                            if type == ColumnType.named_entity:
+                                Sub_cols_header = [table.columns[key]]
+                                break
 
             for column in table.columns:
                 tokens = preprocess(table[column], tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
-
-                col_text = self.tokenizer.cls_token + " " + \
-                           ' '.join(tokens[:max_tokens]) + " "
-                print(self.tokenizer.cls_token,self.tokenizer.pad_token, self.tokenizer.sep_token, self.tokenizer.additional_special_tokens)
+                if 'header' in self.check_subject_Column:
+                    col_text = self.tokenizer.cls_token + " "+ '<header> ' + column+" "
+                if 'subject' in self.check_subject_Column:
+                    if column in Sub_cols_header:
+                        col_text += '<sc>'+ " "
+                col_text += ' '.join(tokens[:max_tokens]) + " "
                 # print(col_text)
                 column_mp[column] = len(res)
-                # print(col_text,column_mp,column)
+                print(col_text,column_mp,column)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
                                                  add_special_tokens=False,
@@ -271,7 +198,7 @@ class PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
-        #print(res, column_mp)
+        # print(res, column_mp)
         return res, column_mp
 
     def __len__(self):
@@ -305,8 +232,8 @@ class PretrainTableDataset(data.Dataset):
             table_aug = augment(table_ori, self.augment_op)
 
         # convert table into string
-        x_ori, mp_ori = self._tokenize(table_ori)
-        x_aug, mp_aug = self._tokenize(table_aug)
+        x_ori, mp_ori = self._tokenize(table_ori, idx=idx)
+        x_aug, mp_aug = self._tokenize(table_aug, idx=idx)
 
         # make sure that x_ori and x_aug has the same number of cls tokens
         # x_ori_cnt = sum([int(x == self.tokenizer.cls_token_id) for x in x_ori])
@@ -318,7 +245,7 @@ class PretrainTableDataset(data.Dataset):
         for col in mp_ori:
             if col in mp_aug:
                 cls_indices.append((mp_ori[col], mp_aug[col]))
-                #print(cls_indices)
+                # print(cls_indices)
 
         return x_ori, x_aug, cls_indices
 
@@ -344,7 +271,7 @@ class PretrainTableDataset(data.Dataset):
         # decompose the column alignment
         cls_ori = []
         cls_aug = []
-        #print("cls_indices is ",cls_indices)
+        # print("cls_indices is ",cls_indices)
         for item in cls_indices:
             cls_ori.append([])
             cls_aug.append([])
@@ -352,6 +279,6 @@ class PretrainTableDataset(data.Dataset):
             for idx1, idx2 in item:
                 cls_ori[-1].append(idx1)
                 cls_aug[-1].append(idx2)
-                #print("cls_ori and cls_aug   ", cls_ori, cls_aug)
+                # print("cls_ori and cls_aug   ", cls_ori, cls_aug)
 
         return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new), (cls_ori, cls_aug)

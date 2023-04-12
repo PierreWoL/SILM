@@ -37,7 +37,7 @@ class WebSearch:
         except ValueError:
             pass
 
-    def search_result(self, search_term: str, top_n: int, **kwargs) -> Any | None:
+    def search_result(self, search_term: str, top_n: int, **kwargs) :
         """
         crawl the top n results of searched item
         Parameters

@@ -22,7 +22,7 @@ def extractVectors(dfs, dataFolder, augment, sample, table_order, run_id, single
         list of features for the dataframe
     '''
     if singleCol:
-        model_path = "model/%s/model_%s_%s_%s_%dsingleCol.pt" % (dataFolder, augment, sample, table_order,run_id)
+        model_path = "model/%s/model_%s_%s_%s_%dsingleCol.pt" % (dataFolder, augment, sample, table_order, run_id)
 
     else:
         model_path = "model/%s/model_%s_%s_%s_%d.pt" % (dataFolder, augment, sample, table_order,run_id)
@@ -42,10 +42,11 @@ def get_df(dataFolder):
     dataFiles = glob.glob(dataFolder+"/*.csv")
     dataDFs = {}
     for file in dataFiles:
-        df = pd.read_csv(file,lineterminator='\n')
+        df = pd.read_csv(file,lineterminator='\n',encoding='latin-1')
         if len(df) > 1000:
             # get first 1000 rows
-            df = df.head(1000)
+            df = df.head(2000)
+            # df = df.sample(n=2000)
         filename = file.split("/")[-1]
         dataDFs[filename] = df
     return dataDFs
@@ -107,6 +108,10 @@ if __name__ == '__main__':
             DATAFOLDER = DATAPATH[dir]
         else:
             DATAFOLDER = DATAPATH+dir
+
+        """
+        important! we need to add dataframes
+        """
         dfs = get_df(DATAFOLDER)
         print("num dfs:",len(dfs))
 
