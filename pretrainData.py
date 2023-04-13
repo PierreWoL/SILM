@@ -30,10 +30,30 @@ class PretrainTableDataset(data.Dataset):
                  sample_meth='wordProb',
                  table_order='column',
                  check_subject_Column='subjectheader'):
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])  # , additional_special_tokens=['[header]', '[SC]']
-        # additional_special_tokens = ['<header>', '<SC>']
-        # self.tokenizer.add_tokens(additional_special_tokens)
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
+                                                       selectable_pos=1)  # , additional_special_tokens=['[header]', '[SC]']
+
+        if lm != 'roberta' :
+            self.tokenizer.add_special_tokens({"additional_special_tokens": ["[SC]", "[HEADER]"]})
+        special_tokens = self.tokenizer.special_tokens_map.items()
+        for token_name, token_id in special_tokens:
+            print(f"{token_name}: {token_id}")
+
         """
+           
+        original_id_to_token = dict(zip(original_vocab.values(), original_vocab.keys()))
+        new_id_to_token = {}
+        new_id_to_token_backup = {}
+        new_id_to_token[0] = '<s>'
+        new_id_to_token[1] = '<header>'
+        new_id_to_token[2] = '</header>'
+        new_id_to_token[3] = '<sc>'
+        new_id_to_token[4] = '</sc>'
+        for i in range(1, len(original_vocab) - 1):
+            new_id_to_token[i + 4] = original_id_to_token[i]
+        new_token_to_id = {v: k for k, v in new_id_to_token.items()}
+        print(new_token_to_id)
+        self.tokenizer.save_vocabulary("vocab.txt", new_vocab=new_token_to_id)
          header_token = '<header>'
         subject_column_token = '<sc>'
         end_subject_column_token = '<\sc>'
@@ -43,9 +63,17 @@ class PretrainTableDataset(data.Dataset):
         #print(special_tokens_dict)
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
         """
-        additional_special_tokens = ['<header>','<sc>']
-        self.tokenizer.add_tokens(additional_special_tokens)
+        # additional_special_tokens = ['<header>','<sc>']
+        # additional_special_tokens = {'additional_special_tokens': ['<header>','<sc>']}
+        # self.tokenizer.add_special_tokens(additional_special_tokens)
+        """
+        sc_token_id = self.tokenizer.convert_tokens_to_ids('<sc>')
+        assert sc_token_id == 1
+        sc_token_id = self.tokenizer.convert_tokens_to_ids('<header>')
+        assert sc_token_id == 2
+        """
 
+        # print("token is" ,self.tokenizer.get_vocab()[self.tokenizer.cls_token], self.tokenizer.get_vocab()['<header>'],self.tokenizer.get_vocab()['<sc>'])
         self.max_len = max_len
         self.path = path
 
@@ -76,7 +104,6 @@ class PretrainTableDataset(data.Dataset):
         # tokenizer cache
         self.tokenizer_cache = {}
 
-
     @staticmethod
     def from_hp(path: str, hp: Namespace):
         """Construct a PretrainTableDataset from hyperparameters
@@ -106,8 +133,6 @@ class PretrainTableDataset(data.Dataset):
             fn = os.path.join(self.path, self.tables[table_id])
             table = pd.read_csv(fn, encoding="latin-1")  # lineterminator='\n'
             self.table_cache[table_id] = table
-        # print(table_id, table)
-
         return table
 
     def _tokenize(self, table: pd.DataFrame, idx=-1):  # -> List[int]
@@ -121,10 +146,11 @@ class PretrainTableDataset(data.Dataset):
             Dictionary: a map from column names to special tokens
         """
         res = []
+        #print(table.transpose())
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
-        #print(table.transpose())
+        # print(table.transpose())
         # print(tfidfDict)
         # a map from column names to special token indices
         column_mp = {}
@@ -138,7 +164,7 @@ class PretrainTableDataset(data.Dataset):
             else:
                 anno = TA.TableColumnAnnotation(table)
                 types = anno.annotation
-                #print(types)
+                # print(types)
                 for key, type in types.items():
                     if type == ColumnType.named_entity:
                         Sub_cols_header = [table.columns[key]]
@@ -151,39 +177,26 @@ class PretrainTableDataset(data.Dataset):
             for column in table.columns:
                 tokens = preprocess(table[column], tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
                 string_token = ' '.join(tokens[:max_tokens])
-                if len(string_token)>=500:
+                if len(string_token) >= 500:
                     string_token = string_token[:500]
-
-                col_text = self.tokenizer.cls_token + " " + string_token+ " "
-                if 'subject' in self.check_subject_Column and column in Sub_cols_header:
-                    col_text = '<sc>' + " " + string_token + " "
+                col_text = self.tokenizer.cls_token + " "
                 if 'header' in self.check_subject_Column:
-                    head_text = '<header>' + " " + column + " "
+                    col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "  # '<header>'  col_text += column + " "+ self.tokenizer.sep_token +" "+ self.tokenizer.cls_token + " "
                     column_mp[column] = len(res)
-                    #print(head_text)
-                    encoding = self.tokenizer.encode(text=head_text,
-                                                     max_length=budget,
-                                                     add_special_tokens=False,
-                                                     truncation=True)
-                    res += encoding
-                    if 'subject' in self.check_subject_Column and column not in Sub_cols_header:
-                        col_text = self.tokenizer.pad_token + " " + string_token + " "
-                    encoding = self.tokenizer.encode(text=col_text,
-                                                     max_length=budget,
-                                                     add_special_tokens=False,
-                                                     truncation=True)
-                    res += encoding
-
+                    if 'subject' in self.check_subject_Column and column in Sub_cols_header:
+                        col_text += self.tokenizer.mask_token+ " " + string_token + " "  # self.tokenizer.mask_token+ " " + string_token + " "
+                    else:
+                        col_text +=  string_token + " " # string_token + " "
                 else:
-
-                    column_mp[column] = len(res)
-
-                    encoding = self.tokenizer.encode(text=col_text,
-                                                     max_length=budget,
-                                                     add_special_tokens=False,
-                                                     truncation=True)
-                    res += encoding
-                #print(len(res))
+                    col_text += string_token + " "
+                #print(col_text)
+                column_mp[column] = len(res)
+                encoding = self.tokenizer.encode(text=col_text,
+                                                 max_length=budget,
+                                                 add_special_tokens=False,
+                                                 truncation=True)
+                res += encoding
+                # print(len(res))
 
 
 

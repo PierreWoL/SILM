@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
 lm_mp = {'roberta': 'roberta-base',
+         'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased'}
 
 
