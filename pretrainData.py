@@ -33,10 +33,10 @@ class PretrainTableDataset(data.Dataset):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
                                                        selectable_pos=1)  # , additional_special_tokens=['[header]', '[SC]']
 
-        special_tokens = self.tokenizer.special_tokens_map.items()
+        
 
         if lm == 'roberta':
-            special_tokens_dict = {'additional_special_tokens': ["<sc>", "<header>", "<s/c>", "</header>"]}
+            special_tokens_dict = {'additional_special_tokens': ["<sc>", "<header>", "</sc>", "</header>"]}
             self.header_token = ('<header>', '</header>')
             self.SC_token = ('<sc>', '</sc>')
         else:
@@ -44,8 +44,9 @@ class PretrainTableDataset(data.Dataset):
             self.header_token = ('[HEADER]', '[HEADERE]')
             self.SC_token = ('"[SC]"', '[SCE]')
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
-        for token_name, token_id in special_tokens:
-            print(f"{token_name}: {token_id}")
+        special_tokens = self.tokenizer.special_tokens_map.items()
+        #for token_name, token_id in special_tokens:
+        #    print(f"{token_name}: {token_id}")
         """
            
         original_id_to_token = dict(zip(original_vocab.values(), original_vocab.keys()))
@@ -190,15 +191,14 @@ class PretrainTableDataset(data.Dataset):
                 if 'header' in self.check_subject_Column:
                     #  col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "
                     col_text += self.header_token[0] + " " + column + " " + self.header_token[1] + " "
-                    column_mp[column] = len(res)
-                    if 'subject' in self.check_subject_Column and column in Sub_cols_header:
-                        # col_text += self.tokenizer.mask_token+ " " + string_token + " "
-                        col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "
-                    else:
-                        col_text += string_token + " "  # string_token + " "
+                    
+                
+                if 'subject' in self.check_subject_Column and column in Sub_cols_header:
+                    # col_text += self.tokenizer.mask_token+ " " + string_token + " "
+                    col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "
                 else:
-                    col_text += string_token + " "
-                print(col_text)
+                    col_text += string_token + " "  # string_token + " "
+                #print(col_text)
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
