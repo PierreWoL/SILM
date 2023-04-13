@@ -74,7 +74,7 @@ def train(trainset, hp):
 
     # initialize model, optimizer, and LR scheduler
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm)
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=len(trainset.tokenizer))
 
     model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
@@ -97,21 +97,22 @@ def train(trainset, hp):
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
 
-            directory = os.path.join(hp.logdir, hp.dataset)
+            directory = os.path.join(hp.logdir, hp.method, hp.dataset)
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
             # save the checkpoints for each component
             if hp.single_column:
-                # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'singleCol.pt')
-                ckpt_path = os.getcwd() + "/" + hp.logdir + hp.method + "/model_" + str(
-                    hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
-                    hp.run_id)+"_"+str(hp.check_subject_Column)+"singleCol.pt"
+                ckpt_path = os.path.join(directory, "/",
+                                         str(hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(
+                                             hp.table_order) + '_' + str(
+                                             hp.run_id) + "_" + str(hp.check_subject_Column) + "singleCol.pt")
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
-                ckpt_path = os.getcwd() + "/" + hp.logdir+ hp.method + "/model_" + str(
-                    hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(
-                    hp.run_id) +"_"+str(hp.check_subject_Column)+ ".pt"
+                ckpt_path = os.path.join(directory, "/",
+                                         str(hp.augment_op) + "_" + str(hp.sample_meth) + "_" + str(
+                                             hp.table_order) + '_' + str(
+                                             hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
 
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
@@ -128,7 +129,7 @@ def train(trainset, hp):
             # log metrics
             mlflow.log_metrics(metrics_dict)
 
-            print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v)\
+            print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v) \
                                                     for k, v in metrics_dict.items()]))
 
         # evaluate on column clustering
@@ -162,17 +163,17 @@ def inference_on_tables(tables: List[pd.DataFrame],
     batch = []
     results = []
     for tid, table in tqdm(enumerate(tables), total=total):
-        #print(tid, table)
+        # print(tid, table)
         x, _ = unlabeled._tokenize(table)
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:
             # model inference
             with torch.no_grad():
                 x, _, _ = unlabeled.pad(batch)
-                #print(x, _, _)
+                # print(x, _, _)
                 # all column vectors in the batch
                 column_vectors = model.inference(x)
-                #print("column_vectors ", column_vectors)
+                # print("column_vectors ", column_vectors)
                 ptr = 0
                 for xi in x:
                     current = []
@@ -199,7 +200,7 @@ def load_checkpoint(ckpt):
     hp = ckpt['hp']
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    #print(device)
+    # print(device)
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm)
     model = model.to(device)
     model.load_state_dict(ckpt['model'])

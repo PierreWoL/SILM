@@ -33,11 +33,18 @@ class PretrainTableDataset(data.Dataset):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
                                                        selectable_pos=1)  # , additional_special_tokens=['[header]', '[SC]']
 
-        if lm != 'roberta' :
-            self.tokenizer.add_special_tokens({"additional_special_tokens": ["[SC]", "[HEADER]"]})
         special_tokens = self.tokenizer.special_tokens_map.items()
         for token_name, token_id in special_tokens:
             print(f"{token_name}: {token_id}")
+        if lm == 'roberta':
+            special_tokens_dict = {'additional_special_tokens': ["<sc>", "<header>", "<s/c>", "</header>"]}
+            self.header_token = ('<header>', '</header>')
+            self.SC_token = ('<sc>', '</sc>')
+        else:
+            special_tokens_dict = {'additional_special_tokens': ["[SC]", "[HEADER],[SCE],[HEADERE]"]}
+            self.header_token = ('[HEADER]', '[HEADERE]')
+            self.SC_token = ('"[SC]"', '[SCE]')
+        num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
 
         """
            
@@ -146,7 +153,7 @@ class PretrainTableDataset(data.Dataset):
             Dictionary: a map from column names to special tokens
         """
         res = []
-        #print(table.transpose())
+        # print(table.transpose())
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
@@ -181,15 +188,17 @@ class PretrainTableDataset(data.Dataset):
                     string_token = string_token[:500]
                 col_text = self.tokenizer.cls_token + " "
                 if 'header' in self.check_subject_Column:
-                    col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "  # '<header>'  col_text += column + " "+ self.tokenizer.sep_token +" "+ self.tokenizer.cls_token + " "
+                    #  col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "
+                    col_text += self.header_token[0] + " " + column + " " + self.header_token[1] + " "
                     column_mp[column] = len(res)
                     if 'subject' in self.check_subject_Column and column in Sub_cols_header:
-                        col_text += self.tokenizer.mask_token+ " " + string_token + " "  # self.tokenizer.mask_token+ " " + string_token + " "
+                        # col_text += self.tokenizer.mask_token+ " " + string_token + " "
+                        col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "
                     else:
-                        col_text +=  string_token + " " # string_token + " "
+                        col_text += string_token + " "  # string_token + " "
                 else:
                     col_text += string_token + " "
-                #print(col_text)
+                print(col_text)
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
