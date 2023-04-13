@@ -34,8 +34,7 @@ class PretrainTableDataset(data.Dataset):
                                                        selectable_pos=1)  # , additional_special_tokens=['[header]', '[SC]']
 
         special_tokens = self.tokenizer.special_tokens_map.items()
-        for token_name, token_id in special_tokens:
-            print(f"{token_name}: {token_id}")
+
         if lm == 'roberta':
             special_tokens_dict = {'additional_special_tokens': ["<sc>", "<header>", "<s/c>", "</header>"]}
             self.header_token = ('<header>', '</header>')
@@ -45,7 +44,8 @@ class PretrainTableDataset(data.Dataset):
             self.header_token = ('[HEADER]', '[HEADERE]')
             self.SC_token = ('"[SC]"', '[SCE]')
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
-
+        for token_name, token_id in special_tokens:
+            print(f"{token_name}: {token_id}")
         """
            
         original_id_to_token = dict(zip(original_vocab.values(), original_vocab.keys()))
