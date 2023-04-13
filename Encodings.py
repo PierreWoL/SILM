@@ -9,7 +9,7 @@ from Utils import mkdir
 from argparse import Namespace
 
 
-def extractVectors(dfs, method, augment, sample, table_order, run_id, singleCol=False):
+def extractVectors(dfs, method,dataset, augment, sample, table_order, run_id, check_subject_Column, singleCol=False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -24,10 +24,10 @@ def extractVectors(dfs, method, augment, sample, table_order, run_id, singleCol=
     '''
     if singleCol:
 
-        model_path = "model/%s/model_%s_%s_%s_%dsingleCol.pt" % (method, augment, sample, table_order, run_id)
+        model_path = "model/%s/%s/model_%s_%s_%s_%d_%ssingleCol.pt" % (method, dataset,augment, sample, table_order, run_id,check_subject_Column)
 
     else:
-        model_path = "model/%s/model_%s_%s_%s_%d.pt" % (method, augment, sample, table_order, run_id)
+        model_path = "model/%s/%s/model_%s_%s_%s_%d_%s.pt" % (method,dataset, augment, sample, table_order, run_id,check_subject_Column)
     print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
@@ -44,6 +44,7 @@ def get_df(dataFolder):
         dataDfs (dict): key is the filename, value is the dataframe of that table
     '''
     dataFiles = glob.glob(dataFolder + "/*.csv")
+    print(dataFiles)
     dataDFs = {}
     for file in dataFiles:
         df = pd.read_csv(file, lineterminator='\n', encoding='latin-1')
@@ -74,16 +75,17 @@ def table_features(hp: Namespace):
     table_number = len(tables)
     dfs_count = 0
     # Extract model vectors
-    cl_features = extractVectors(list(tables.values()), hp.method, hp.augment_op, hp.sample_meth,
-                                 hp.table_order, hp.run_id, singleCol=hp.single_column)
-    output_path = "result/embedding/%s/vectors/" % (hp.method)
+    cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset,hp.augment_op, hp.sample_meth,
+                                 hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column)
+    output_path = "result/embedding/%s/vectors/%s" % (hp.method,hp.dataset)
     mkdir(output_path)
+    print(output_path)
     for i, file in enumerate(tables):
         dfs_count += 1
         # get features for this file / dataset
         cl_features_file = np.array(cl_features[i])
         dataEmbeds.append((file, cl_features_file))
-        print((file, len(cl_features_file)))
+        #print(len(tables[file].columns),len(cl_features_file), cl_features_file)
 
     if hp.single_column:
         output_file  ="cl_%s_%s_%s_%d_singleCol.pkl" %(hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)

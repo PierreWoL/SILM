@@ -15,14 +15,14 @@ if __name__ == '__main__':
     parser.add_argument("--dataset", type=str, default="open_data")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--size", type=int, default=10000)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--n_epochs", type=int, default=20)
     parser.add_argument("--lm", type=str, default='roberta')
     parser.add_argument("--projector", type=int, default=768)
-    parser.add_argument("--augment_op", type=str, default='drop_col,sample_row')
+    parser.add_argument("--augment_op", type=str, default='shuffle_col,sample_row')
     parser.add_argument("--save_model", dest="save_model", action="store_true",default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # single-column mode without table context
@@ -61,15 +61,15 @@ if __name__ == '__main__':
     #                      size=hp.size,
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
-    trainset = PretrainTableDataset.from_hp(path, hp)
+    #trainset = PretrainTableDataset.from_hp(path, hp)
     """
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
     """
 
     #print(hp.save_model,hp.check_subject_Column)
-    train(trainset, hp)
-    #table_features(hp)
+    #train(trainset, hp)
+    table_features(hp)
     """
     total =None
     tables=[]
