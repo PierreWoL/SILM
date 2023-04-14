@@ -73,7 +73,7 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
 
 
 def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
-    print(L)
+    #print(L)
     D = np.ones((dim, dim))
     T = ed.get_files(data_path)
     # Things are the same as themselves
@@ -276,7 +276,7 @@ def SMC(labels_true, labels_pred):
     # Get the number of pairs that are in different clusters in both the predicted and true labels (d)
     d = (len(labels_pred) * (len(labels_pred) - 1) // 2) - (a + b + c)
     # Calculate the SMC
-    print(a, b, c, d)
+    #print(a, b, c, d)
     smc = a / (a + b + c + d)
     return smc
 
@@ -423,16 +423,18 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
 
 def inputData(data_path, threshold, k, embedding_mode=2):
-    print("embed mode is ", embedding_mode)
+    #print("embed mode is ", embedding_mode)
     indexes = create_or_find_indexes(data_path, threshold, embedding_mode=embedding_mode)
     Z, T = distance_matrix(data_path, indexes, k)
+    #print("Z,T is ",Z,T )
     return Z, T
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName, filename):
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName = None, filename =None):
     # clustering的ground truth
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
-    print(len(gt_clusters), len(ground_t))
+    #print(input_data)
+    #print(gt_clusters, ground_t, gt_cluster_dict)
     # 实现LSH indexes 为数据
     parameters = []
     if clusteringName == "DBSCAN":
@@ -451,8 +453,9 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     cluster_dict = cluster_Dict(clusters)
     table_dict = None
     table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
+    #print(tables)
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
-    print(metrics_value)
+    #print(metrics_value)
     return metrics_value
 
 

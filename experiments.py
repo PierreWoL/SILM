@@ -26,7 +26,6 @@ def experiment(Z, T, data_path, ground_truth, folderName, filename):
 
 
 
-
 # samplePath3 = os.getcwd() + "/T2DV2/test/"
 # samplePath2 = os.getcwd() + "/result/t2dv2_Subject_Columns/"
 # T2DV2GroundTruth = os.getcwd() + "/T2DV2/classes_GS.csv"
@@ -45,8 +44,11 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold, k
     T3 = []
     if method == 1:
         features = pd.read_csv(samplePath)
+        print(features)
         T3 = features.iloc[:, 0]
         Z3 = numpy.array([ast.literal_eval(x) for x in features.iloc[:, 1]])
+        print(Z3,T3)
+
         """
         D = np.ones((len(T3), len(T3)))
         for i in range(len(T3)):
@@ -68,7 +70,6 @@ def run_exp(experiment_name, GroundTruth, targetFolder, samplePath, threshold, k
         Z3 = D
         """
 
-        print(Z3)
     else:
         Z3, T3 = clustering.inputData(samplePath, threshold, k, embedding_mode=embedding_mode)
     e = experiment(Z3, T3, samplePath, GroundTruth, targetFolder, experiment_name)
