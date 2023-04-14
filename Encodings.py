@@ -164,12 +164,12 @@ def starmie_clustering(hp: Namespace):
                 metric_value_df = pd.concat([metric_value_df, metric_df])
             mean_metric = metric_value_df.mean()
             methods_metrics[method] = mean_metric
-            print("methods_metrics is", methods_metrics)
+            #print("methods_metrics is", methods_metrics)
         e_df = pd.DataFrame()
         for i, v in methods_metrics.items():
-            print(v.rename(i))
+            #print(v.rename(i))
             e_df = pd.concat([e_df, v.rename(i)], axis=1)
-        print(e_df)
+        #print(e_df)
         store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
         mkdir(store_path)
         e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
