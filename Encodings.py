@@ -106,6 +106,8 @@ def table_features(hp: Namespace):
 def starmie_clustering(hp: Namespace):
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+
+
     data_path = os.getcwd() + "/datasets/"+hp.dataset+"/Test/"
     subject_path = os.getcwd() + "/datasets/"+hp.dataset+"/SubjectColumn/"
     if hp.method == "starmie":
@@ -171,6 +173,10 @@ def starmie_clustering(hp: Namespace):
             e_df = pd.concat([e_df, v.rename(i)], axis=1)
         #print(e_df)
         store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+        if hp.is_sub is True:
+            store_path += "Subject_Col/"
+        else:
+            store_path += "All/"
         mkdir(store_path)
         e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
 
