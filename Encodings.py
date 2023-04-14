@@ -125,24 +125,24 @@ def starmie_clustering(hp: Namespace):
                                     encoding="latin-1")
                 Sub_cols_header = []
                 if vectors[0] in [fn for fn in os.listdir(subject_path) if
-                                        '.csv' in fn]:
+                                        '.csv' in fn and 'Metadata' not in fn]:
                     Sub_cols = pd.read_csv(subject_path + vectors[0],
                                            encoding="latin-1")
                     for column in Sub_cols.columns.tolist():
-                        Sub_cols_header.append(table.columns.tolist().index(column))
+                            if column in table.columns.tolist():
+                                    Sub_cols_header.append(table.columns.tolist().index(column))
 
                 else:
                     anno = TA.TableColumnAnnotation(table)
                     types = anno.annotation
-                    # print(types)
-                    if ColumnType.named_entity not in types.values():
-                        Sub_cols_header = list(types.keys())
-                    else:
-                        for key, type in types.items():
+                    for key, type in types.items():
                             if type == ColumnType.named_entity:
                                 Sub_cols_header = [key]
                                 break
-                sub_vec = vectors[1][Sub_cols_header, :]
+                if len(Sub_cols_header) !=0:
+                    sub_vec = vectors[1][Sub_cols_header, :]
+                else:
+                    sub_vec = vectors[1]
                 vec_table = np.mean(sub_vec, axis=0)
                 Z.append(vec_table)
 
