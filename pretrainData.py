@@ -190,12 +190,12 @@ class PretrainTableDataset(data.Dataset):
                 col_text = self.tokenizer.cls_token + " "
                 if 'header' in self.check_subject_Column:
                     #  col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "
-                    col_text += self.header_token[0] + " " + column + " " + self.header_token[1] + " "
+                    col_text +=   column + " "+ self.header_token[0] + " " #self.header_token[0] + " " + column + " "+ self.header_token[1] + " "
                     
                 
                 if 'subject' in self.check_subject_Column and column in Sub_cols_header:
                     # col_text += self.tokenizer.mask_token+ " " + string_token + " "
-                    col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "
+                    col_text += string_token + " "+ self.SC_token[0] + " " # self.SC_token[0] + " " + string_token + " "+ self.SC_token[1] + " "
                 else:
                     col_text += string_token + " "  # string_token + " "
                 #print(col_text)
