@@ -20,6 +20,9 @@ for dataset in datasets:
 
             source_file = os.path.join(path, dataset, "Test", filename)
             destination_file = os.path.join(dest_path + "Test/", f"{os.path.basename(dataset)}_{i}.csv")
+
+            source_file_sc = os.path.join(path, dataset, "SubjectColumn/", filename)
+            destination_file_sc = os.path.join(dest_path + "SubjectColumn/", f"{os.path.basename(dataset)}_{i}.csv")
             with open(Label_path, mode='a', newline='') as csv_file:
                 writer = csv.writer(csv_file)
                 writer.writerow([dataset + "_" + str(i), file_label])
@@ -44,3 +47,8 @@ for dataset in datasets:
             # Construct the full path of the source and destination files
             # Use shutil.copy() to copy the file to the destination folder
             shutil.copy(source_file, destination_file)
+            scs = os.listdir(os.path.join(path, dataset, "SubjectColumn"))
+
+            if filename in scs:
+                print(filename)
+                shutil.copy(source_file_sc, destination_file_sc)
