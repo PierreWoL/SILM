@@ -14,7 +14,8 @@ from SubjectColumnDetection import ColumnType
 # map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
-         'distilbert': 'distilbert-base-uncased'}
+         'distilbert': 'distilbert-base-uncased',
+         'sbert': 'all-MiniLM-L6-v2'}
 
 
 class PretrainTableDataset(data.Dataset):
@@ -184,7 +185,8 @@ class PretrainTableDataset(data.Dataset):
                 row_text = self.tokenizer.cls_token + " "
                 for column, cell in row.items():
                     cell_token = str(column) + " " + str(cell) if 'sentence' in self.table_order else str(cell)
-                    row_text += self.SC_token[0] + " " + cell_token + " " if column in Sub_cols_header else cell_token + " "
+                    row_text += self.SC_token[
+                                    0] + " " + cell_token + " " if column in Sub_cols_header else cell_token + " "
                 if len(row_text.split(" ")) > max_tokens:
                     row_text = " ".join(row_text.split(" ")[:max_tokens - 1])
                 print(row_text)

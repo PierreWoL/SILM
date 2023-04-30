@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     #print(hp.save_model,hp.check_subject_Column)
     train(trainset, hp)
-    table_features(hp)
+    #table_features(hp)
     """
     total =None
     tables=[]
