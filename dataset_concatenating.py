@@ -33,7 +33,7 @@ for dataset in datasets:
                     writer = csv.writer(csv_file)
                     writer.writerow([dataset + "_" + str(i), file_feature.iloc[0,1]])
             else:
-                print("No feature exists! ",dataset + "_" + str(i),filename)
+                print("No feature exists! " ,dataset + "_" + str(i),filename)
             if file_feature_all.shape[0] > 0:
                 feature_all_path = os.path.join(dest_path, "featureAll.csv")
                 with open(feature_all_path, mode='a', newline='') as csv_file:
