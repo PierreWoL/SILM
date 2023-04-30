@@ -1,6 +1,6 @@
 import pandas as pd
 import random
-
+from d3l.utils.functions import tokenize_str
 def augment(table: pd.DataFrame, op: str):
     """Apply an augmentation operator on a table.
 
@@ -105,17 +105,12 @@ def augment(table: pd.DataFrame, op: str):
         textCols = sorted(textCols,key=list(table.columns).index)
         table = table[textCols]
     elif op == 'drop_ne_col':  # All non-entity type/ long text columns is not preserved
-        numTable = table.select_dtypes(include=['number'])
-        numCols = numTable.columns.tolist()
-        textTable = table.select_dtypes(exclude=['number'])
+        textTable = table.select_dtypes(include=['object'])
         textCols = textTable.columns.tolist()
-        addedCols = 0
-        while addedCols <= len(numCols) // 2 and len(numCols) > 0:
-            numRandCol = numCols.pop(random.randrange(len(numCols)))
-            textCols.append(numRandCol)
-            addedCols += 1
-        textCols = sorted(textCols, key=list(table.columns).index)
-        table = table[textCols]
+        for col in textTable.columns:
+            if len(tokenize_str(table[col][0]))<2:
+                textTable.drop(col, axis=1)
+        table = textTable
 
     elif op == 'drop_nan_col': # number of columns is not preserved
         # remove a half of the number of columns that contain nan values
