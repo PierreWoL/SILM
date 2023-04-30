@@ -30,13 +30,13 @@ def try_parallel(dataPath):
                     experiment_Name = "Method" + str(method) + "_MODE" + str(
                         embed_mode) + "Sim" + str(threshold)
                     print(experiment_Name, ground_Truth, samplePath, targetPath)
-                    #run_exp(experiment_Name, ground_Truth, targetPath,
-                     #       samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
+                    run_exp(experiment_Name, ground_Truth, targetPath,
+                            samplePath, threshold, k=k, method=method, embedding_mode=embed_mode)
 
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['T2DV2']  # 1'open_data','SOTAB', 'Test_corpus','T2DV2'
+    DATA_PATH = ['SOTAB']  # 1'open_data','SOTAB', 'Test_corpus','T2DV2'
     #
     # TARGET_PATH = []
     # pool = Pool(processes=3)  # create a pool of 4 processes

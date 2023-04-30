@@ -12,7 +12,7 @@ from Encodings import table_features
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="open_data")
+    parser.add_argument("--dataset", type=str, default="T2DV2")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("--single_column", dest="single_column", action="store_true")
     parser.add_argument("--check_subject_Column",type=str, default='subjectheader')#subjectheader
     # row / column-ordered for preprocessing
-    parser.add_argument("--table_order", type=str, default='column')  # column
+    parser.add_argument("--table_order", type=str, default='sentence_row')  # column
     # for sampling
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
     # mlflow tag
@@ -61,14 +61,14 @@ if __name__ == '__main__':
     #                      size=hp.size,
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
-    #trainset = PretrainTableDataset.from_hp(path, hp)
+    trainset = PretrainTableDataset.from_hp(path, hp)
     """
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
     """
 
     #print(hp.save_model,hp.check_subject_Column)
-    #train(trainset, hp)
+    train(trainset, hp)
     table_features(hp)
     """
     total =None
