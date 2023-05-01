@@ -13,7 +13,9 @@ from Utils import mkdir
 from SubjectColumnDetection import ColumnType
 import TableAnnotation as TA
 
-def extractVectors(dfs, method, dataset, augment, sample, table_order, run_id, check_subject_Column, singleCol=False):
+
+def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column,
+                   singleCol=False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -28,12 +30,12 @@ def extractVectors(dfs, method, dataset, augment, sample, table_order, run_id, c
     '''
     if singleCol:
 
-        model_path = "model/%s/%s/model_%s_%s_%s_%d_%ssingleCol.pt" % (
-        method, dataset, augment, sample, table_order, run_id, check_subject_Column)
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%ssingleCol.pt" % (
+            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
 
     else:
-        model_path = "model/%s/%s/model_%s_%s_%s_%d_%s.pt" % (
-        method, dataset, augment, sample, table_order, run_id, check_subject_Column)
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s.pt" % (
+            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
     print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
@@ -53,11 +55,7 @@ def get_df(dataFolder):
     print(dataFiles)
     dataDFs = {}
     for file in dataFiles:
-        df = pd.read_csv(file, lineterminator='\n', encoding='latin-1')
-        if len(df) > 1000:
-            # get first 1000 rows
-            df = df.head(2000)
-            # df = df.sample(n=2000)
+        df = pd.read_csv(file, lineterminator='\n')
         filename = file.split("/")[-1]
         dataDFs[filename] = df
     return dataDFs
@@ -74,6 +72,8 @@ def table_features(hp: Namespace):
         DATAFOLDER = 'datasets/T2DV2/Test/'
     elif dataFolder == 'Test_corpus':
         DATAFOLDER = 'datasets/Test_corpus/Test/'
+    elif dataFolder == 'WDC':
+        DATAFOLDER = 'datasets/WDC/Test/'
     tables = get_df(DATAFOLDER)
     print("num dfs:", len(tables))
 
@@ -81,7 +81,7 @@ def table_features(hp: Namespace):
     table_number = len(tables)
     dfs_count = 0
     # Extract model vectors
-    cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.sample_meth,
+    cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column)
     output_path = "result/embedding/%s/vectors/%s" % (hp.method, hp.dataset)
     mkdir(output_path)
@@ -94,9 +94,11 @@ def table_features(hp: Namespace):
         # print(len(tables[file].columns),len(cl_features_file), cl_features_file)
 
     if hp.single_column:
-        output_file = "cl_%s_%s_%s_%d_singleCol.pkl" % (hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_singleCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+                                                                 hp.table_order, hp.run_id, hp.check_subject_Column)
     else:
-        output_file = "cl_%s_%s_%s_%d.pkl" % (hp.augment_op, hp.sample_meth, hp.table_order, hp.run_id)
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+                                                       hp.table_order, hp.run_id, hp.check_subject_Column)
 
     output_path += output_file
     if hp.save_model:
@@ -107,12 +109,11 @@ def starmie_clustering(hp: Namespace):
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
 
-
-    data_path = os.getcwd() + "/datasets/"+hp.dataset+"/Test/"
-    subject_path = os.getcwd() + "/datasets/"+hp.dataset+"/SubjectColumn/"
+    data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
+    subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
     if hp.method == "starmie":
         files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
-    ground_truth = os.getcwd() + "/datasets/"+hp.dataset+"/groundTruth.csv"
+    ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     for file in files:
         F = open(datafile_path + file, 'rb')
         content = pickle.load(F)
@@ -125,21 +126,21 @@ def starmie_clustering(hp: Namespace):
                                     encoding="latin-1")
                 Sub_cols_header = []
                 if vectors[0] in [fn for fn in os.listdir(subject_path) if
-                                        '.csv' in fn and 'Metadata' not in fn]:
+                                  '.csv' in fn and 'Metadata' not in fn]:
                     Sub_cols = pd.read_csv(subject_path + vectors[0],
                                            encoding="latin-1")
                     for column in Sub_cols.columns.tolist():
-                            if column in table.columns.tolist():
-                                    Sub_cols_header.append(table.columns.tolist().index(column))
+                        if column in table.columns.tolist():
+                            Sub_cols_header.append(table.columns.tolist().index(column))
 
                 else:
                     anno = TA.TableColumnAnnotation(table)
                     types = anno.annotation
                     for key, type in types.items():
-                            if type == ColumnType.named_entity:
-                                Sub_cols_header = [key]
-                                break
-                if len(Sub_cols_header) !=0:
+                        if type == ColumnType.named_entity:
+                            Sub_cols_header = [key]
+                            break
+                if len(Sub_cols_header) != 0:
                     sub_vec = vectors[1][Sub_cols_header, :]
                 else:
                     sub_vec = vectors[1]
@@ -150,8 +151,8 @@ def starmie_clustering(hp: Namespace):
                 vec_table = np.mean(vectors[1], axis=0)
                 Z.append(vec_table)
             has_nan = np.isnan(Z).any()
-            #if has_nan:
-             #print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)
+            # if has_nan:
+            # print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)
 
         Z = np.array(Z)
 
@@ -166,12 +167,12 @@ def starmie_clustering(hp: Namespace):
                 metric_value_df = pd.concat([metric_value_df, metric_df])
             mean_metric = metric_value_df.mean()
             methods_metrics[method] = mean_metric
-            #print("methods_metrics is", methods_metrics)
+            # print("methods_metrics is", methods_metrics)
         e_df = pd.DataFrame()
         for i, v in methods_metrics.items():
-            #print(v.rename(i))
+            # print(v.rename(i))
             e_df = pd.concat([e_df, v.rename(i)], axis=1)
-        #print(e_df)
+        # print(e_df)
         store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
         if hp.is_sub is True:
             store_path += "Subject_Col/"
