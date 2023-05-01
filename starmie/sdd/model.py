@@ -97,7 +97,6 @@ class BarlowTwinsSimCLR(nn.Module):
         labels = labels.to(self.device)
 
         features = F.normalize(features, dim=1)
-        print(features)
         similarity_matrix = torch.matmul(features, features.T)
 
         # discard the main diagonal from both: labels and similarities matrix

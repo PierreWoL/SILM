@@ -117,7 +117,7 @@ class PretrainTableDataset(data.Dataset):
             Dictionary: a map from column names to special tokens
         """
         res = []
-        # print(table.transpose())
+        #print(table.transpose(),table.shape)
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
@@ -130,7 +130,7 @@ class PretrainTableDataset(data.Dataset):
             if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
                                     '.csv' in fn]:
                 Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx],
-                                       encoding="latin-1")
+                                       )#encoding="latin-1"
                 Sub_cols_header = Sub_cols.columns.tolist()
             else:
                 anno = TA.TableColumnAnnotation(table)
@@ -148,8 +148,6 @@ class PretrainTableDataset(data.Dataset):
             for column in table.columns:
                 tokens = preprocess(table[column], tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
                 string_token = ' '.join(tokens[:max_tokens])
-                if len(string_token) >= 500:
-                    string_token = string_token[:500]
                 col_text = self.tokenizer.cls_token + " "
                 if 'header' in self.check_subject_Column:
                     #  col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "
@@ -172,35 +170,45 @@ class PretrainTableDataset(data.Dataset):
                 # print(len(res))
         if 'row' in self.table_order:
             for index, row in table.iterrows():
-                if 'pure' in self.table_order:
-                    if index == 0:
-                        if 'header' in self.check_subject_Column:
+                if "pure" in self.table_order and 'header' in self.check_subject_Column:
+                     if index == 0:
                             header_text = self.header_token[0] + " " + " ".join(table.columns) + " "
-                            column_mp['header'] = len(res)
+                            column_mp[index] = len(res)
                             encoding = self.tokenizer.encode(text=header_text,
                                                              max_length=budget,
                                                              add_special_tokens=False,
                                                              truncation=True)
                             res += encoding
+                            continue
                 row_text = self.tokenizer.cls_token + " "
                 for column, cell in row.items():
                     cell_token = str(column) + " " + str(cell) if 'sentence' in self.table_order else str(cell)
                     row_text += self.SC_token[
                                     0] + " " + cell_token + " " if column in Sub_cols_header else cell_token + " "
-                if len(row_text.split(" ")) > max_tokens:
-                    row_text = " ".join(row_text.split(" ")[:max_tokens - 1])
-                #print(row_text)
-                column_mp[index] = len(res)
+                    if len(row_text.split(" ")) > max_tokens:
+                        row_text = " ".join(row_text.split(" ")[:max_tokens - 1])
+                        break
                 encoding = self.tokenizer.encode(text=row_text,
                                                  max_length=budget,
                                                  add_special_tokens=False,
-                                                 truncation=True)
+                                                 truncation=True)                
+                """
+                column_mp[index] = len(res)
                 res += encoding
+                """
+                if len(res)+len(encoding)<500:
+                   column_mp[index] = len(res)
+                   res += encoding
+                else:      
+                  table = table.iloc[:len(column_mp), :]
+                  #print("break",len(column_mp),len(table))
+                  break
+                
 
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
-        print(len(res), len(column_mp))
+        #print(len(res), len(column_mp))
         return res, column_mp
 
     def __len__(self):
@@ -220,6 +228,9 @@ class PretrainTableDataset(data.Dataset):
         table_ori = self._read_table(idx)
         # print(table_ori)
         # single-column mode: only keep one random column
+        if "row" in self.table_order:
+                if len(table_ori) > 50:
+                    table_ori = table_ori.sample(n=50)
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
@@ -232,11 +243,21 @@ class PretrainTableDataset(data.Dataset):
             table_aug = augment(table_tmp, op2)
         else:
             table_aug = augment(table_ori, self.augment_op)
-
         # convert table into string
+        
+        #add in here!!!!!!!!!!
+        if "pure" in self.table_order and 'header' in self.check_subject_Column:
+            header = table_ori.columns.tolist()
+            table_ori = pd.DataFrame([header] + table_ori.values.tolist(),columns =header)
+            table_aug = pd.DataFrame([header] + table_aug.values.tolist(),columns =header)
+            
         x_ori, mp_ori = self._tokenize(table_ori, idx=idx)
+        if "row" in self.table_order:
+          table_ori = table_ori.iloc[:len(mp_ori), :]
+          table_aug = table_aug.iloc[:len(mp_ori), :]
         x_aug, mp_aug = self._tokenize(table_aug, idx=idx)
-
+        #print("now tables' length are",len(table_ori),len(table_aug))
+        
         # make sure that x_ori and x_aug has the same number of cls tokens
         # x_ori_cnt = sum([int(x == self.tokenizer.cls_token_id) for x in x_ori])
         # x_aug_cnt = sum([int(x == self.tokenizer.cls_token_id) for x in x_aug])
