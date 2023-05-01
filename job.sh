@@ -10,8 +10,8 @@ module load libs/cuda
 conda activate py39
 source /mnt/iusers01/fatpou01/compsci01/c29770zw/test/CurrentDataset/datavenv/bin/activate
 datasets=("open_data" "WDC")
-check_subject_Columns=("subjectheader" "header" "none")
-table_orders=("column") #"pure_row" "sentence_row"
+check_subject_Columns=("subjectheader" "header" "none") 
+table_orders=("column") 
 echo dataset check_subject_Column
 for dataset in "${datasets[@]}"
 do
@@ -25,7 +25,7 @@ do
         --dataset $dataset \
         --batch_size 32 \
         --lr 5e-5 \
-        --lm sbert \
+        --lm roberta \
         --n_epochs 20 \
         --max_len 256 \
         --size 10000 \

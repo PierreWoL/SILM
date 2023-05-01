@@ -15,7 +15,7 @@ from SubjectColumnDetection import ColumnType
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased',
-         'sbert': 'sentence-transformers/all-MiniLM-L6-v2'}
+         'sbert': 'sentence-transformers/all-mpnet-base-v2'}
 
 
 class PretrainTableDataset(data.Dataset):
@@ -102,7 +102,7 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            table = pd.read_csv(fn, encoding="latin-1")  # lineterminator='\n'
+            table = pd.read_csv(fn,lineterminator='\n')  #  encoding="latin-1",
             self.table_cache[table_id] = table
         return table
 
