@@ -7,7 +7,7 @@ from transformers import AutoModel, AutoTokenizer
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased',
-         'sbert': 'all-MiniLM-L6-v2'}
+         'sbert': 'sentence-transformers/all-MiniLM-L6-v2'}
 
 
 class TableModel(nn.Module):

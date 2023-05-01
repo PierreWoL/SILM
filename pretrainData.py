@@ -15,7 +15,7 @@ from SubjectColumnDetection import ColumnType
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased',
-         'sbert': 'all-MiniLM-L6-v2'}
+         'sbert': 'sentence-transformers/all-MiniLM-L6-v2'}
 
 
 class PretrainTableDataset(data.Dataset):
@@ -117,7 +117,7 @@ class PretrainTableDataset(data.Dataset):
             Dictionary: a map from column names to special tokens
         """
         res = []
-        print(table.transpose())
+        # print(table.transpose())
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
@@ -189,7 +189,7 @@ class PretrainTableDataset(data.Dataset):
                                     0] + " " + cell_token + " " if column in Sub_cols_header else cell_token + " "
                 if len(row_text.split(" ")) > max_tokens:
                     row_text = " ".join(row_text.split(" ")[:max_tokens - 1])
-                print(row_text)
+                #print(row_text)
                 column_mp[index] = len(res)
                 encoding = self.tokenizer.encode(text=row_text,
                                                  max_length=budget,
@@ -200,6 +200,7 @@ class PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
+        print(len(res), len(column_mp))
         return res, column_mp
 
     def __len__(self):
