@@ -13,7 +13,8 @@ from .preprocessor import computeTfIdf, tfidfRowSample, preprocess
 # map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
-         'distilbert': 'distilbert-base-uncased'}
+         'distilbert': 'distilbert-base-uncased',
+         'sbert': 'sentence-transformers/all-mpnet-base-v2'}
 
 
 class TableDataset(data.Dataset):

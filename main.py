@@ -20,8 +20,8 @@ def try_parallel(dataPath):
             samplePath = absolute_path + dataPath + "/Test/"
             Max_K = len(get_files(samplePath))
         print(samplePath)
-        for k in [100]:  # 3,5, 50, 100 , -20
-            for embed_mode in [2]:  #
+        for k in [5]:  # 3,5, 50, 100 , -20
+            for embed_mode in [1]:  #
                 targetPath = dataPath + "/Method" + str(method) + "/"
                 if method != 1:
                     targetPath = targetPath + ("MODE" + str(embed_mode) + "/")
@@ -36,7 +36,7 @@ def try_parallel(dataPath):
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['SOTAB']  # 1'open_data','SOTAB', 'Test_corpus','T2DV2'
+    DATA_PATH = ['WDC']  # 1'open_data','SOTAB', 'Test_corpus','T2DV2'
     #
     # TARGET_PATH = []
     # pool = Pool(processes=3)  # create a pool of 4 processes

@@ -208,7 +208,7 @@ class PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
-        #print(len(res), len(column_mp))
+        print(len(res), len(column_mp))
         return res, column_mp
 
     def __len__(self):
@@ -249,14 +249,12 @@ class PretrainTableDataset(data.Dataset):
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
             table_ori = pd.DataFrame([header] + table_ori.values.tolist(),columns =header)
-            table_aug = pd.DataFrame([header] + table_aug.values.tolist(),columns =header)
-            
+            table_aug = pd.DataFrame([header] + table_aug.values.tolist(),columns =header)            
         x_ori, mp_ori = self._tokenize(table_ori, idx=idx)
         if "row" in self.table_order:
           table_ori = table_ori.iloc[:len(mp_ori), :]
           table_aug = table_aug.iloc[:len(mp_ori), :]
         x_aug, mp_aug = self._tokenize(table_aug, idx=idx)
-        #print("now tables' length are",len(table_ori),len(table_aug))
         
         # make sure that x_ori and x_aug has the same number of cls tokens
         # x_ori_cnt = sum([int(x == self.tokenizer.cls_token_id) for x in x_ori])

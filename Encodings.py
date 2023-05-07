@@ -83,7 +83,7 @@ def table_features(hp: Namespace):
     # Extract model vectors
     cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column)
-    output_path = "result/embedding/%s/vectors/%s" % (hp.method, hp.dataset)
+    output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
     mkdir(output_path)
     print(output_path)
     for i, file in enumerate(tables):
@@ -122,13 +122,11 @@ def starmie_clustering(hp: Namespace):
         for vectors in content:
             T.append(vectors[0][:-4])
             if hp.is_sub is True:
-                table = pd.read_csv(data_path + vectors[0],
-                                    encoding="latin-1")
+                table = pd.read_csv(data_path + vectors[0])
                 Sub_cols_header = []
                 if vectors[0] in [fn for fn in os.listdir(subject_path) if
                                   '.csv' in fn and 'Metadata' not in fn]:
-                    Sub_cols = pd.read_csv(subject_path + vectors[0],
-                                           encoding="latin-1")
+                    Sub_cols = pd.read_csv(subject_path + vectors[0])
                     for column in Sub_cols.columns.tolist():
                         if column in table.columns.tolist():
                             Sub_cols_header.append(table.columns.tolist().index(column))
@@ -155,31 +153,33 @@ def starmie_clustering(hp: Namespace):
             # print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)
 
         Z = np.array(Z)
-
-        clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
-        methods_metrics = {}
-        for method in clustering_method:
-            print(method)
-            metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-            for i in range(0, 3):
-                metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method)
-                metric_df = pd.DataFrame([metric_dict])
-                metric_value_df = pd.concat([metric_value_df, metric_df])
-            mean_metric = metric_value_df.mean()
-            methods_metrics[method] = mean_metric
-            # print("methods_metrics is", methods_metrics)
-        e_df = pd.DataFrame()
-        for i, v in methods_metrics.items():
-            # print(v.rename(i))
-            e_df = pd.concat([e_df, v.rename(i)], axis=1)
-        # print(e_df)
-        store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-        if hp.is_sub is True:
-            store_path += "Subject_Col/"
-        else:
-            store_path += "All/"
-        mkdir(store_path)
-        e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
+        try:
+            clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
+            methods_metrics = {}
+            for method in clustering_method:
+                print(method)
+                metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
+                for i in range(0, 3):
+                    metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method)
+                    metric_df = pd.DataFrame([metric_dict])
+                    metric_value_df = pd.concat([metric_value_df, metric_df])
+                mean_metric = metric_value_df.mean()
+                methods_metrics[method] = mean_metric
+                # print("methods_metrics is", methods_metrics)
+            e_df = pd.DataFrame()
+            for i, v in methods_metrics.items():
+                # print(v.rename(i))
+                e_df = pd.concat([e_df, v.rename(i)], axis=1)
+            # print(e_df)
+            store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+            if hp.is_sub is True:
+                store_path += "Subject_Col/"
+            else:
+                store_path += "All/"
+            mkdir(store_path)
+            e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
+        except ValueError as e:
+           continue
 
 
 """

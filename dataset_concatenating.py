@@ -25,7 +25,7 @@ for dataset in datasets:
             destination_file_sc = os.path.join(dest_path + "SubjectColumn/", f"{os.path.basename(dataset)}_{i}.csv")
             with open(Label_path, mode='a', newline='') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow([dataset + "_" + str(i), file_label])
+                writer.writerow([dataset + "_" + str(i)+".csv", file_label])
             #print(file)
             file_feature = feature[feature.iloc[:, 0].str.contains(file)]
             file_feature_all = feature_all[feature_all.iloc[:, 0].str.contains(file)]
@@ -50,5 +50,5 @@ for dataset in datasets:
             scs = os.listdir(os.path.join(path, dataset, "SubjectColumn"))
 
             if filename in scs:
-                print(filename)
+                 
                 shutil.copy(source_file_sc, destination_file_sc)
