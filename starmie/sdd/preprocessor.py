@@ -157,7 +157,7 @@ def tfidfSample(column, tfidfDict, method, max_tokens):
     return tokens
 
 
-def tfidfRowSample(table, tfidfDict, max_tokens):
+def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
     '''TFIDF sampling: Take rows with tokens that have highest idf scores
         For sampling method 'tfidf_row'
         Called in _tokenize() method in dataset.py
