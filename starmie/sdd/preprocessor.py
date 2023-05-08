@@ -188,6 +188,7 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
             sortedRowInds = list(a1.keys())
         else:
             sortedRowInds = list(tokenFreq.keys())[:max_tokens]
+    print("putput rows: ",sortedRowInds)
     table = table.reindex(sortedRowInds)
     return table
 
@@ -229,5 +230,5 @@ def preprocess(column: pd.Series, tfidfDict: dict, max_tokens: int, method: str)
         tokens = frequentSample(colVals, max_tokens)
     elif "tfidf" in method and method != "tfidf_row":
         tokens = tfidfSample(column, tfidfDict, method, max_tokens)
-    print(column, tfidfDict, tokens)
+    #print(column, tfidfDict, tokens)
     return tokens

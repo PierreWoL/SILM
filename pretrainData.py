@@ -120,7 +120,7 @@ class PretrainTableDataset(data.Dataset):
         # print(table.transpose(),table.shape)
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
-        print(max_tokens,budget)
+        print("max_tokens,budget",max_tokens,budget)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         # print(table.transpose())
         # print(tfidfDict)
@@ -224,12 +224,12 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-        print(len(table_ori),table_ori)
+        print("table_ori",len(table_ori))
         # single-column mode: only keep one random column
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
-            print(len(table_ori),table_ori)
+            print("table_ori",len(table_ori))
             #if len(table_ori) > 50:
              #   table_ori = table_ori.sample(n=50)
         if self.single_column:
