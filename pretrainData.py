@@ -102,7 +102,7 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            table = pd.read_csv(fn,lineterminator='\n')  #  encoding="latin-1",
+            table = pd.read_csv(fn, lineterminator='\n')  # encoding="latin-1",
             self.table_cache[table_id] = table
         return table
 
@@ -117,7 +117,7 @@ class PretrainTableDataset(data.Dataset):
             Dictionary: a map from column names to special tokens
         """
         res = []
-        #print(table.transpose(),table.shape)
+        # print(table.transpose(),table.shape)
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
@@ -130,7 +130,7 @@ class PretrainTableDataset(data.Dataset):
             if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
                                     '.csv' in fn]:
                 Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx],
-                                       )#encoding="latin-1"
+                                       )  # encoding="latin-1"
                 Sub_cols_header = Sub_cols.columns.tolist()
             else:
                 anno = TA.TableColumnAnnotation(table)
@@ -150,14 +150,11 @@ class PretrainTableDataset(data.Dataset):
                 string_token = ' '.join(tokens[:max_tokens])
                 col_text = self.tokenizer.cls_token + " "
                 if 'header' in self.check_subject_Column:
-                    #  col_text += column + " " + self.tokenizer.sep_token + " " + self.tokenizer.cls_token + " "
-                    col_text += column + " " + self.header_token[
-                        0] + " "  # self.header_token[0] + " " + column + " "+ self.header_token[1] + " "
+                    col_text += self.header_token[0] + " " + column + " " + self.header_token[1] + " "  #
 
                 if 'subject' in self.check_subject_Column and column in Sub_cols_header:
-                    # col_text += self.tokenizer.mask_token+ " " + string_token + " "
-                    col_text += string_token + " " + self.SC_token[
-                        0] + " "  # self.SC_token[0] + " " + string_token + " "+ self.SC_token[1] + " "
+
+                    col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                 else:
                     col_text += string_token + " "  # string_token + " "
                 # print(col_text)
@@ -169,42 +166,43 @@ class PretrainTableDataset(data.Dataset):
                 res += encoding
                 # print(len(res))
         if 'row' in self.table_order:
+            max_tokens = self.max_len * 2 // len(table)
+            budget = max(1, self.max_len // len(table) - 1)
             for index, row in table.iterrows():
-                if "pure" in self.table_order and 'header' in self.check_subject_Column:
-                     if index == 0:
-                            header_text = self.header_token[0] + " " + " ".join(table.columns) + " "
-                            column_mp[index] = len(res)
-                            encoding = self.tokenizer.encode(text=header_text,
-                                                             max_length=budget,
-                                                             add_special_tokens=False,
-                                                             truncation=True)
-                            res += encoding
-                            continue
+                if index == 0:
+                    if "pure" in self.table_order and 'header' in self.check_subject_Column:
+                        header_text = self.tokenizer.cls_token + " "+\
+                                      self.header_token[0] + " " + " ".join(table.columns) +\
+                                      " "+self.header_token[1]+" "
+                        column_mp[index] = len(res)
+                        encoding = self.tokenizer.encode(text=header_text,
+                                                         max_length=budget,
+                                                         add_special_tokens=False,
+                                                         truncation=True)
+                        res += encoding
+                        continue
+
                 row_text = self.tokenizer.cls_token + " "
                 for column, cell in row.items():
                     cell_token = str(column) + " " + str(cell) if 'sentence' in self.table_order else str(cell)
                     row_text += self.SC_token[
-                                    0] + " " + cell_token + " " if column in Sub_cols_header else cell_token + " "
+                                    0] + " " + cell_token + " " \
+                                    + self.SC_token[1] + " "\
+                                    if column in Sub_cols_header else cell_token + " "
                     if len(row_text.split(" ")) > max_tokens:
                         row_text = " ".join(row_text.split(" ")[:max_tokens - 1])
                         break
                 encoding = self.tokenizer.encode(text=row_text,
                                                  max_length=budget,
                                                  add_special_tokens=False,
-                                                 truncation=True)                
-                """
-                column_mp[index] = len(res)
-                res += encoding
-                """
-                if len(res)+len(encoding)<500:
-                   column_mp[index] = len(res)
-                   res += encoding
-                else:      
-                  table = table.iloc[:len(column_mp), :]
-                  #print("break",len(column_mp),len(table))
-                  break
-                
-
+                                                 truncation=True)
+                if len(res) + len(encoding) < 500:
+                    column_mp[index] = len(res)
+                    res += encoding
+                else:
+                    table = table.iloc[:len(column_mp), :]
+                    # print("break",len(column_mp),len(table))
+                    break
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
@@ -226,11 +224,15 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-        # print(table_ori)
+        print(table_ori)
         # single-column mode: only keep one random column
         if "row" in self.table_order:
-                if len(table_ori) > 50:
-                    table_ori = table_ori.sample(n=50)
+            tfidfDict = computeTfIdf(table_ori)
+            max_tokens = self.max_len * 2 // len(table_ori)
+            table_ori = tfidfRowSample(table_ori, tfidfDict, max_tokens)
+            print(len(table_ori),table_ori)
+            #if len(table_ori) > 50:
+             #   table_ori = table_ori.sample(n=50)
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
@@ -244,18 +246,18 @@ class PretrainTableDataset(data.Dataset):
         else:
             table_aug = augment(table_ori, self.augment_op)
         # convert table into string
-        
-        #add in here!!!!!!!!!!
+
+        # add in here!!!!!!!!!!
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
-            table_ori = pd.DataFrame([header] + table_ori.values.tolist(),columns =header)
-            table_aug = pd.DataFrame([header] + table_aug.values.tolist(),columns =header)            
+            table_ori = pd.DataFrame([header] + table_ori.values.tolist(), columns=header)
+            table_aug = pd.DataFrame([header] + table_aug.values.tolist(), columns=header)
         x_ori, mp_ori = self._tokenize(table_ori, idx=idx)
         if "row" in self.table_order:
-          table_ori = table_ori.iloc[:len(mp_ori), :]
-          table_aug = table_aug.iloc[:len(mp_ori), :]
+            table_ori = table_ori.iloc[:len(mp_ori), :]
+            table_aug = table_aug.iloc[:len(mp_ori), :]
         x_aug, mp_aug = self._tokenize(table_aug, idx=idx)
-        
+
         # make sure that x_ori and x_aug has the same number of cls tokens
         # x_ori_cnt = sum([int(x == self.tokenizer.cls_token_id) for x in x_ori])
         # x_aug_cnt = sum([int(x == self.tokenizer.cls_token_id) for x in x_aug])
