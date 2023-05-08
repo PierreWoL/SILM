@@ -228,6 +228,7 @@ class PretrainTableDataset(data.Dataset):
         # single-column mode: only keep one random column
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
+            print(tfidfDict)
             max_tokens = self.max_len * 2 // len(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, max_tokens)
             print(len(table_ori),table_ori)

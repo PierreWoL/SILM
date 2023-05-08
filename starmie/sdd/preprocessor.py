@@ -4,6 +4,7 @@ import collections
 import string
 from pandas.api.types import infer_dtype
 
+
 def computeTfIdf(tableDf):
     """ Compute tfIdf of each column independently
         Called by _tokenize() method in dataset.py
@@ -11,6 +12,7 @@ def computeTfIdf(tableDf):
         table (DataFrame): input table
     Return: tfIdf dict containing tfIdf scores for all columns
     """
+
     # tfidf that considers each column (document) independently
     def computeTf(wordDict, doc):
         # input doc is a list
@@ -19,6 +21,7 @@ def computeTfIdf(tableDf):
         for word, count in wordDict.items():
             tfDict[word] = count / float(docCount)
         return tfDict
+
     def computeIdf(docList):
         idfDict = {}
         N = len(docList)
@@ -29,6 +32,7 @@ def computeTfIdf(tableDf):
         for word, val in idfDict.items():
             idfDict[word] = math.log10(N / float(val))
         return idfDict
+
     idf = {}
     for column in tableDf.columns:
         colVals = [val for entity in tableDf[column] for val in str(entity).split(' ')]
@@ -91,6 +95,7 @@ def constantSample(colVals, max_tokens):
         tokens = colVals[::step]
     return tokens
 
+
 def frequentSample(colVals, max_tokens):
     '''Frequent sampling: Take most frequently occuring tokens
         For sampling method 'frequent'
@@ -106,6 +111,7 @@ def frequentSample(colVals, max_tokens):
         if t in tokenFreq and t not in tokens:
             tokens.append(t)
     return tokens
+
 
 def tfidfSample(column, tfidfDict, method, max_tokens):
     '''TFIDF sampling: Take tokens with highest idf scores
@@ -129,14 +135,14 @@ def tfidfSample(column, tfidfDict, method, max_tokens):
         for t in tokenList:
             if t in tokenFreq and t not in tokens:
                 tokens.append(t)
-                
+
     elif method == "tfidf_entity":
         # entity level
         for colVal in column.unique():
             valIdfs = []
             for val in str(colVal).split(' '):
                 valIdfs.append(tfidfDict[val])
-            idf = sum(valIdfs)/len(valIdfs)
+            idf = sum(valIdfs) / len(valIdfs)
             tokenFreq[colVal] = idf
             tokenList.append(colVal)
         tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)}
@@ -167,17 +173,18 @@ def tfidfRowSample(table, tfidfDict, max_tokens):
         index = row.Index
         valIdfs = []
         rowVals = [val for entity in list(row[1:]) for val in str(entity).split(' ')]
-        #print(rowVals)
+        # print(rowVals)
         for val in rowVals:
             valIdfs.append(tfidfDict[val])
-        idf = sum(valIdfs)/len(valIdfs)
+        idf = sum(valIdfs) / len(valIdfs)
         tokenFreq[index] = idf
         tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)}
         sortedRowInds = list(tokenFreq.keys())[:max_tokens]
     table = table.reindex(sortedRowInds)
     return table
 
-def preprocess(column: pd.Series, tfidfDict: dict, max_tokens: int, method: str): 
+
+def preprocess(column: pd.Series, tfidfDict: dict, max_tokens: int, method: str):
     '''Preprocess a column into list of max_tokens number of tokens 
        Possible methods = "head", "alphaHead", "random", "constant", "frequent", "tfidf_token", "tfidf_entity", "tfidf_row"
     Args:
@@ -207,12 +214,12 @@ def preprocess(column: pd.Series, tfidfDict: dict, max_tokens: int, method: str)
                 if len(tokens) >= max_tokens:
                     break
     elif method == "random":
-        tokens = pd.Series(colVals).sample(min(len(colVals),max_tokens)).sort_index().tolist()
+        tokens = pd.Series(colVals).sample(min(len(colVals), max_tokens)).sort_index().tolist()
     elif method == "constant":
         tokens = constantSample(colVals, max_tokens)
     elif method == "frequent":
-        tokens = frequentSample(colVals, max_tokens) 
+        tokens = frequentSample(colVals, max_tokens)
     elif "tfidf" in method and method != "tfidf_row":
         tokens = tfidfSample(column, tfidfDict, method, max_tokens)
-    #print(column, tfidfDict,tokens)
+    print(column, tfidfDict, tokens)
     return tokens
