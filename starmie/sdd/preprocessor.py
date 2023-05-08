@@ -198,7 +198,7 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
                 step += 1
                 tokens = table.index.tolist()[::step]
             sortedRowInds = tokens
-    print("output rows: ",sortedRowInds)
+    #print("output rows: ",sortedRowInds)
     table = table.reindex(sortedRowInds)
     return table
 
