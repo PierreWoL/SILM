@@ -186,7 +186,7 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
                 if value not in a1.values():
                     a1[key] = value
             sortedRowInds = list(a1.keys())
-            print(a1,tokenFreq)
+           # print(a1,tokenFreq)
     else:
             sortedRowInds = list(tokenFreq.keys())[:max_tokens]
     if max_tokens==0 and len(sortedRowInds) < 2:
