@@ -186,8 +186,10 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
                 if value not in a1.values():
                     a1[key] = value
             sortedRowInds = list(a1.keys())
+
             if len(sortedRowInds)<2:
-                max_tokens = 6
+                max_tokens = 15
+                print(len(sortedRowInds))
                 step = math.ceil(len(tokenFreq.keys()) / max_tokens)
                 tokens = table.index.tolist()[::step]
                 while len(tokens) > max_tokens:
