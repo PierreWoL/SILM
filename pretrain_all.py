@@ -61,7 +61,8 @@ if __name__ == '__main__':
     #                      size=hp.size,
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
-    #trainset = PretrainTableDataset.from_hp(path, hp)
+    trainset = PretrainTableDataset.from_hp(path, hp)
+    trainset[1]
     """
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(
         hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 
     #print(hp.save_model,hp.check_subject_Column)
     #train(trainset, hp)
-    table_features(hp)
+    #table_features(hp)
     """
     total =None
     tables=[]
