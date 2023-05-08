@@ -187,17 +187,18 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
                     a1[key] = value
             sortedRowInds = list(a1.keys())
             print(a1,tokenFreq)
-            if len(sortedRowInds)<2:
-                max_tokens = 15
-                print(len(sortedRowInds))
-                step = math.ceil(len(tokenFreq.keys()) / max_tokens)
-                tokens = table.index.tolist()[::step]
-                while len(tokens) > max_tokens:
-                    step += 1
-                    tokens = table.index.tolist()[::step]
-                sortedRowInds = tokens
+
         else:
             sortedRowInds = list(tokenFreq.keys())[:max_tokens]
+        if max_tokens==0 and len(sortedRowInds) < 2:
+            max_tokens = 15
+            print(len(sortedRowInds))
+            step = math.ceil(len(tokenFreq.keys()) / max_tokens)
+            tokens = table.index.tolist()[::step]
+            while len(tokens) > max_tokens:
+                step += 1
+                tokens = table.index.tolist()[::step]
+            sortedRowInds = tokens
     print("output rows: ",sortedRowInds)
     table = table.reindex(sortedRowInds)
     return table
