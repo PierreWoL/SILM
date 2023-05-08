@@ -167,6 +167,7 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
         max_tokens: maximum tokens specified in pretrain argument
     Return table with sampled rows using tfidf
     '''
+
     tokenFreq = {}
     sortedRowInds = []
     for row in table.itertuples():
@@ -179,7 +180,14 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
         idf = sum(valIdfs) / len(valIdfs)
         tokenFreq[index] = idf
         tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)}
-        sortedRowInds = list(tokenFreq.keys())[:max_tokens]
+        if max_tokens==0:
+            a1 = {}
+            for key, value in tokenFreq.items():
+                if value not in a1.values():
+                    a1[key] = value
+            sortedRowInds = list(a1.keys())
+        else:
+            sortedRowInds = list(tokenFreq.keys())[:max_tokens]
     table = table.reindex(sortedRowInds)
     return table
 

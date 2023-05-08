@@ -120,6 +120,7 @@ class PretrainTableDataset(data.Dataset):
         # print(table.transpose(),table.shape)
         max_tokens = self.max_len * 2 // len(table.columns)
         budget = max(1, self.max_len // len(table.columns) - 1)
+        print(max_tokens,budget)
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         # print(table.transpose())
         # print(tfidfDict)
@@ -166,7 +167,6 @@ class PretrainTableDataset(data.Dataset):
                 res += encoding
                 # print(len(res))
         if 'row' in self.table_order:
-            max_tokens = self.max_len * 2 // len(table)
             budget = max(1, self.max_len // len(table) - 1)
             for index, row in table.iterrows():
                 if index == 0:
@@ -228,16 +228,13 @@ class PretrainTableDataset(data.Dataset):
         # single-column mode: only keep one random column
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
-
-            max_tokens = self.max_len * 2 // len(table_ori)
-            table_ori = tfidfRowSample(table_ori, tfidfDict, max_tokens)
+            table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
             print(len(table_ori),table_ori)
             #if len(table_ori) > 50:
              #   table_ori = table_ori.sample(n=50)
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
-
         # apply the augmentation operator
         if ',' in self.augment_op:
             op1, op2 = self.augment_op.split(',')
@@ -247,7 +244,6 @@ class PretrainTableDataset(data.Dataset):
         else:
             table_aug = augment(table_ori, self.augment_op)
         # convert table into string
-
         # add in here!!!!!!!!!!
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
