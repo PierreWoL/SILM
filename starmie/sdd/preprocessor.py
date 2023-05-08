@@ -180,17 +180,16 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
         idf = sum(valIdfs) / len(valIdfs)
         tokenFreq[index] = idf
         tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)}
-        if max_tokens==0:
+    if max_tokens==0:
             a1 = {}
             for key, value in tokenFreq.items():
                 if value not in a1.values():
                     a1[key] = value
             sortedRowInds = list(a1.keys())
             print(a1,tokenFreq)
-
-        else:
+    else:
             sortedRowInds = list(tokenFreq.keys())[:max_tokens]
-        if max_tokens==0 and len(sortedRowInds) < 2:
+    if max_tokens==0 and len(sortedRowInds) < 2:
             max_tokens = 15
             print(len(sortedRowInds))
             step = math.ceil(len(tokenFreq.keys()) / max_tokens)
