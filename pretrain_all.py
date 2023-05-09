@@ -12,7 +12,7 @@ from Encodings import table_features
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="T2DV2")
+    parser.add_argument("--dataset", type=str, default="open_data")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -62,6 +62,10 @@ if __name__ == '__main__':
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
+    """
+    for i in range(0,len(trainset)):
+      trainset[i]
+    """
     train(trainset, hp)
     
     """

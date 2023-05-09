@@ -169,12 +169,14 @@ class PretrainTableDataset(data.Dataset):
         if 'row' in self.table_order:
             max_tokens = self.max_len * 2 // len(table)
             budget = max(1, self.max_len // len(table) - 1)
+            #print("row based max_tokens and budget, and table size", max_tokens,budget,len(table))
             for index, row in table.iterrows():
                 if index == 0:
                     if "pure" in self.table_order and 'header' in self.check_subject_Column:
                         header_text = self.tokenizer.cls_token + " "+\
                                       self.header_token[0] + " " + " ".join(table.columns) +\
                                       " "+self.header_token[1]+" "
+                        #print("header", header_text)
                         column_mp[index] = len(res)
                         encoding = self.tokenizer.encode(text=header_text,
                                                          max_length=budget,
@@ -197,6 +199,7 @@ class PretrainTableDataset(data.Dataset):
                                                  max_length=budget,
                                                  add_special_tokens=False,
                                                  truncation=True)
+                #print(row_text)
                 if len(res) + len(encoding) < 500:
                     column_mp[index] = len(res)
                     res += encoding
@@ -230,7 +233,7 @@ class PretrainTableDataset(data.Dataset):
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
-            #print("table_ori",len(table_ori))
+            #print("table_ori", table_ori.T )
             #if len(table_ori) > 50:
              #   table_ori = table_ori.sample(n=50)
         if self.single_column:
@@ -250,10 +253,13 @@ class PretrainTableDataset(data.Dataset):
             header = table_ori.columns.tolist()
             table_ori = pd.DataFrame([header] + table_ori.values.tolist(), columns=header)
             table_aug = pd.DataFrame([header] + table_aug.values.tolist(), columns=header)
+            
         x_ori, mp_ori = self._tokenize(table_ori, idx=idx)
-        if "row" in self.table_order:
+        """
+         if "row" in self.table_order:
             table_ori = table_ori.iloc[:len(mp_ori), :]
             table_aug = table_aug.iloc[:len(mp_ori), :]
+        """
         x_aug, mp_aug = self._tokenize(table_aug, idx=idx)
 
         # make sure that x_ori and x_aug has the same number of cls tokens

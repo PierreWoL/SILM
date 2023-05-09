@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument("--size", type=int, default=10000)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--n_epochs", type=int, default=20)
-    parser.add_argument("--lm", type=str, default='roberta')
+    parser.add_argument("--lm", type=str, default='sbert')
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='drop_num_col')
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
