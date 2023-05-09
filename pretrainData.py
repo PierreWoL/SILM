@@ -231,11 +231,14 @@ class PretrainTableDataset(data.Dataset):
         #print("table_ori",len(table_ori))
         # single-column mode: only keep one random column
         if "row" in self.table_order:
+            if len(table_ori) > 200:
+                n = 200
+                interval = len(table_ori) // n
+                table_ori = table_ori.iloc[::interval, :]
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
             #print("table_ori", table_ori.T )
-            #if len(table_ori) > 50:
-             #   table_ori = table_ori.sample(n=50)
+
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
