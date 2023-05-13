@@ -62,11 +62,10 @@ if __name__ == '__main__':
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
     trainset = PretrainTableDataset.from_hp(path, hp)
-    """
+
     for i in range(0,len(trainset)):
       trainset[i]
-    """
-    train(trainset, hp)
+    #train(trainset, hp)
     
     """
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(

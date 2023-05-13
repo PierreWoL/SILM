@@ -179,26 +179,26 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
         idf = sum(valIdfs) / len(valIdfs)
         tokenFreq[index] = idf
         tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)}
-    if max_tokens==0:
-            a1 = {}
-            for key, value in tokenFreq.items():
-                if value not in a1.values():
-                    a1[key] = value
-            sortedRowInds = list(a1.keys())
-            if len(sortedRowInds) < 2 or len(sortedRowInds) >20:
-              max_tokens = 15
-              #row1= table.sample(n=1)
-              #rowVals = [val for entity in list(row1[1:]) for val in str(entity).split(' ')]
-            if max_tokens !=0:
-              step = math.ceil(len(tokenFreq.keys())/ max_tokens)
-              tokens =table.index.tolist()[::step]
-              while len(tokens) > max_tokens:
-                  step += 1
-                  tokens = table.index.tolist()[::step]
-              sortedRowInds = tokens  
+    if max_tokens == 0:
+        a1 = {}
+        for key, value in tokenFreq.items():
+            if value not in a1.values():
+                a1[key] = value
+        sortedRowInds = list(a1.keys())
+        if len(sortedRowInds) < 2 or len(sortedRowInds) > 200:
+            max_tokens = 200
+            # row1= table.sample(n=1)
+            # rowVals = [val for entity in list(row1[1:]) for val in str(entity).split(' ')]
+        if max_tokens != 0:
+            step = math.ceil(len(tokenFreq.keys()) / max_tokens)
+            tokens = table.index.tolist()[::step]
+            while len(tokens) > max_tokens:
+                step += 1
+                tokens = table.index.tolist()[::step]
+            sortedRowInds = tokens
     else:
-            sortedRowInds = list(tokenFreq.keys())[:max_tokens]
-    #print("output rows: ",sortedRowInds)
+        sortedRowInds = list(tokenFreq.keys())[:max_tokens]
+    # print("output rows: ",sortedRowInds)
     table = table.reindex(sortedRowInds)
     return table
 
@@ -240,5 +240,5 @@ def preprocess(column: pd.Series, tfidfDict: dict, max_tokens: int, method: str)
         tokens = frequentSample(colVals, max_tokens)
     elif "tfidf" in method and method != "tfidf_row":
         tokens = tfidfSample(column, tfidfDict, method, max_tokens)
-    #print(column, tfidfDict, tokens)
+    # print(column, tfidfDict, tokens)
     return tokens
