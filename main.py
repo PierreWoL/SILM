@@ -12,7 +12,7 @@ def try_parallel(dataPath):
     for method in Methods:
         samplePath = []
         if method == 1:
-            samplePath = absolute_path + dataPath + "/featureAll.csv"
+            samplePath = absolute_path + dataPath + "/feature.csv"
         if method == 2:
             samplePath = absolute_path + dataPath + "/SubjectColumn/"
             Max_K = len(get_files(samplePath))
@@ -36,7 +36,7 @@ def try_parallel(dataPath):
 
 if __name__ == "__main__":
 
-    DATA_PATH = ['WDC']  # 1'open_data','SOTAB', 'Test_corpus','T2DV2'
+    DATA_PATH = ['open_data','WDC']  # 1'open_data','SOTAB', 'Test_corpus','T2DV2'
     #
     # TARGET_PATH = []
     # pool = Pool(processes=3)  # create a pool of 4 processes

@@ -1,6 +1,6 @@
 #!/bin/bash --login
 #$ -cwd
-#$ -l v100=2      # A 1-GPU request (v100 is just a shorter name for nvidia_v100)
+#$ -l a100=2      # A 1-GPU request (v100 is just a shorter name for nvidia_v100)
                      # Can instead use 'a100' for the A100 GPUs (if permitted!)
 #$ -pe smp.pe 4     # 8 CPU cores available to the host code
                      # Can use up to 12 CPUs with an A100 GPU. open_data
@@ -20,10 +20,10 @@ do
         python pretrain_all.py \
         --method starmie \
         --dataset $dataset \
-        --batch_size 32 \
+        --batch_size 64 \
         --lr 5e-5 \
         --lm roberta \
-        --n_epochs 16 \
+        --n_epochs 64 \
         --max_len 256 \
         --size 10000 \
         --projector 768 \
