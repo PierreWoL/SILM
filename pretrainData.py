@@ -176,8 +176,9 @@ class PretrainTableDataset(data.Dataset):
                     if "pure" in self.table_order and 'header' in self.check_subject_Column:
                         header_text = self.tokenizer.cls_token + " " + \
                                       self.header_token[0] + " " + " ".join(table.columns) + \
-                                      " " + self.header_token[1] + " "
-                        #budget = self.max_len - len(header_text)
+                                      " " + self.header_token[1] + " " 
+                        max_tokens = self.max_len * 2// len(table)  # // len(table)
+                        budget =  max(1, self.max_len)
                         # print("header", header_text)
                         column_mp[index] = len(res)
                         encoding = self.tokenizer.encode(text=header_text,
@@ -185,6 +186,7 @@ class PretrainTableDataset(data.Dataset):
                                                          add_special_tokens=False,
                                                          truncation=True)
                         res += encoding
+                        #table_text += header_text + self.tokenizer.sep_token + " "
                         continue
 
                 row_text = ""
@@ -197,7 +199,7 @@ class PretrainTableDataset(data.Dataset):
                     break
                 else:
                     table_text += row_text + self.tokenizer.sep_token + " "
-            #print(table_text)
+            print(table_text)
             encoding = self.tokenizer.encode(text=table_text,
                                                      max_length=budget,
                                                      add_special_tokens=False,
@@ -231,7 +233,7 @@ class PretrainTableDataset(data.Dataset):
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
-            #print("table_ori", table_ori.T )
+            print("table_ori", table_ori.T )
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
