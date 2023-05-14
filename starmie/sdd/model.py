@@ -107,13 +107,13 @@ class BarlowTwinsSimCLR(nn.Module):
 
         # select and combine multiple positives
         positives = similarity_matrix[labels.bool()].view(labels.shape[0], -1)
-
+        print("positives ",positives)
         # select only the negatives
         negatives = similarity_matrix[~labels.bool()].view(similarity_matrix.shape[0], -1)
-
+        print("negatives ",negatives)
         logits = torch.cat([positives, negatives], dim=1)
         labels = torch.zeros(logits.shape[0], dtype=torch.long).to(self.device)
-
+        print("labels ",labels)
         logits = logits / temperature
         return logits, labels
 

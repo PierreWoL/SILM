@@ -51,6 +51,7 @@ class PretrainTableDataset(data.Dataset):
 
         # assuming tables are in csv format
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        #print(self.tables)
 
         # only keep the first n tables
         if size is not None:
@@ -176,7 +177,7 @@ class PretrainTableDataset(data.Dataset):
                         header_text = self.tokenizer.cls_token + " " + \
                                       self.header_token[0] + " " + " ".join(table.columns) + \
                                       " " + self.header_token[1] + " "
-                        budget = self.max_len - len(header_text)
+                        #budget = self.max_len - len(header_text)
                         # print("header", header_text)
                         column_mp[index] = len(res)
                         encoding = self.tokenizer.encode(text=header_text,
@@ -193,16 +194,17 @@ class PretrainTableDataset(data.Dataset):
                     row_text += self.SC_token[0] + " " + cell_token + " " + self.SC_token[1] + " " \
                         if column in Sub_cols_header else cell_token + " "
                 if len(table_text.split(" ")) > max_tokens:
-                    print(table_text)
-                    encoding = self.tokenizer.encode(text=table_text,
-                                                     max_length=budget,
-                                                     add_special_tokens=False,
-                                                     truncation=True)
-                    column_mp[index] = len(res)
-                    res += encoding
                     break
                 else:
                     table_text += row_text + self.tokenizer.sep_token + " "
+            #print(table_text)
+            encoding = self.tokenizer.encode(text=table_text,
+                                                     max_length=budget,
+                                                     add_special_tokens=False,
+                                                     truncation=True)
+            column_mp[index] = len(res)
+            res += encoding
+                
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
@@ -229,7 +231,7 @@ class PretrainTableDataset(data.Dataset):
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
-            print("table_ori", table_ori.T )
+            #print("table_ori", table_ori.T )
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
@@ -264,8 +266,9 @@ class PretrainTableDataset(data.Dataset):
         cls_indices = []
         for col in mp_ori:
             if col in mp_aug:
+                 
                 cls_indices.append((mp_ori[col], mp_aug[col]))
-                # print(cls_indices)
+                #print(cls_indices)
 
         return x_ori, x_aug, cls_indices
 

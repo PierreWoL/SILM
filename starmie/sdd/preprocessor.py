@@ -185,8 +185,8 @@ def tfidfRowSample(table, tfidfDict, max_tokens) -> pd.DataFrame:
             if value not in a1.values():
                 a1[key] = value
         sortedRowInds = list(a1.keys())
-        if len(sortedRowInds) < 2 or len(sortedRowInds) > 200:
-            max_tokens = 200
+        if len(sortedRowInds) < 2 or len(sortedRowInds) >= 18:
+            max_tokens = 18
             # row1= table.sample(n=1)
             # rowVals = [val for entity in list(row1[1:]) for val in str(entity).split(' ')]
         if max_tokens != 0:
