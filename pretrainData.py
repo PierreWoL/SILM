@@ -29,6 +29,7 @@ class PretrainTableDataset(data.Dataset):
                  size=None,
                  lm='roberta',
                  single_column=False,
+                 subject_column=False,
                  sample_meth='wordProb',
                  table_order='column',
                  check_subject_Column='subjectheader'):
@@ -71,6 +72,9 @@ class PretrainTableDataset(data.Dataset):
         # single-column mode
         self.single_column = single_column
 
+        # subject-column mode
+        self.subject_column = subject_column
+
         # row or column order for preprocessing
         self.table_order = table_order
 
@@ -94,6 +98,7 @@ class PretrainTableDataset(data.Dataset):
                                     max_len=hp.max_len,
                                     size=hp.size,
                                     single_column=hp.single_column,
+                                    subject_column=hp.subject_column,
                                     sample_meth=hp.sample_meth,
                                     table_order=hp.table_order,
                                     check_subject_Column=hp.check_subject_Column)
@@ -237,6 +242,19 @@ class PretrainTableDataset(data.Dataset):
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
+        if self.subject_column:
+            if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
+                                    '.csv' in fn]:
+                Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx])
+                table_ori = table_ori[Sub_cols.columns]
+            else:
+                anno = TA.TableColumnAnnotation(table_ori)
+                types = anno.annotation
+                # print(types)
+                for key, type in types.items():
+                    if type == ColumnType.named_entity:
+                        table_ori = table_ori[[key]]
+                        break
         # apply the augmentation operator
         if ',' in self.augment_op:
             op1, op2 = self.augment_op.split(',')

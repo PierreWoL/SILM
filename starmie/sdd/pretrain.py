@@ -108,6 +108,12 @@ def train(trainset, hp):
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
                                              hp.run_id) + "_" + str(hp.check_subject_Column)+ "singleCol.pt")
+            if hp.subject_column:
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
+                                         str(hp.augment_op) +"lm_"+ str(
+                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
+                                             hp.table_order) + '_' + str(
+                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "subCol.pt")
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
@@ -238,7 +244,7 @@ def evaluate_pretrain(model: BarlowTwinsSimCLR,
     featurized_datasets = []
     for dataset in ["train", "valid", "test"]:
         ds_path = 'data/%s/%s.csv' % (model.hp.method, dataset)
-        ds = pd.read_csv(ds_path) #, encoding="latin-1"
+        ds = pd.read_csv(ds_path)
 
         def encode_tables(table_ids, column_ids):
             tables = []
