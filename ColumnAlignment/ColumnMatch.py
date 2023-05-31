@@ -77,7 +77,8 @@ class ColumnMatch:
                 with torch.no_grad():
                     batch_scores = self.classifier(inputs)
                 scores[i * hp.eval_batch_size:j] = batch_scores.cpu().numpy()
-            results = {samples_mapping[i]: scores[i] for i in range(len(samples_mapping))}
+            results = {samples_mapping[i]: scores[i] for i in range(len(samples_mapping)) if scores[i]  != 0.0}
+
             print(results)
             return results
         else:
