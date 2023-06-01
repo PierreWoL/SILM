@@ -19,6 +19,13 @@ import torch
 from sklearn.metrics.pairwise import cosine_similarity
 
 
+def dataframe_slice(table:pd.DataFrame):
+    table_slice = table
+    # 随机选择10000行作为新的DataFrame
+    if len(table)>1000:
+        table_slice = table.sample(n=1000, random_state=42)
+    return table_slice
+
 def cos_similarity(vectors):
     #cos = torch.nn.CosineSimilarity(dim=0)
     #similarity = cos(vectors[0], vectors[1])
@@ -58,6 +65,9 @@ class SimpleColumnMatch:
         else:
             table1 = pd.read_csv(os.path.join(self.eval_path, tables[0]), lineterminator='\n')
             table2 = pd.read_csv(os.path.join(self.eval_path, tables[1]), lineterminator='\n')
+            table1 = dataframe_slice(table1)
+            table2 = dataframe_slice(table2)
+            print(table1,table2)
             for column_i in table1.columns:
                 score_i = []
                 col_i = col_concate(table1[column_i], token=True)
@@ -66,6 +76,7 @@ class SimpleColumnMatch:
                     score = cos_similarity(self.encoding(col_i,col_j))
                     score_i.append(score)
                 max_score = max(score_i)
+                print(score_i)
                 if max_score >= thre:
                     index_j = score_i.index(max_score)
                     scores[(('table_1', column_i), ('table_2', table2.columns[index_j]))] = max_score
