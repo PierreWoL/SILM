@@ -70,9 +70,9 @@ class SimpleColumnMatch:
             print(table1,table2)
             for column_i in table1.columns:
                 score_i = []
-                col_i = col_concate(table1[column_i], token=True)
+                col_i = col_concate(table1[column_i], token=False)
                 for column_j in table2.columns:
-                    col_j = col_concate(table2[column_j], token=True)
+                    col_j = col_concate(table2[column_j], token=False)
                     score = cos_similarity(self.encoding(col_i,col_j))
                     score_i.append(score)
                 max_score = max(score_i)
