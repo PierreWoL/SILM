@@ -12,12 +12,17 @@ def mk_path(folder_path):
         os.makedirs(folder_path)
 
 
-def Ground_truth(path, matches, save_path,method):
+def Ground_truth(eval_path,path, matches, save_path,method):
     with open(path) as f:
         data = json.load(f)
-    
+
     matches_part = data['matches']
-    ground_truth = [(match['source_column'], match['target_column']) for match in matches_part]
+    tables = [fn for fn in os.listdir(eval_path) if '.csv' in fn]
+    if tables[0] == matches_part[0]["source_table"]+'.csv':
+        ground_truth = [(match['source_column'], match['target_column']) for match in matches_part]
+
+    else:
+        ground_truth = [(match['target_column'], match['source_column']) for match in matches_part]
     print(ground_truth)
     mk_path(save_path)
     metrics = valentine_metrics.all_metrics(matches, ground_truth)

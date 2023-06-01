@@ -72,7 +72,7 @@ class SimpleColumnMatch:
                 #print(score_i)
                 if max_score >= thre:
                     index_j = score_i.index(max_score)
-                    scores[(('table_1', column_i), ('table_2', table2.columns[index_j]))] = max_score
+                    scores[(('table_1', column_i.rstrip()), ('table_2', table2.columns[index_j].rstrip()))] = max_score
                 else:
                     continue
             scores = dict(sorted(scores.items(), key=itemgetter(1), reverse=True))

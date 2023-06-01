@@ -32,7 +32,7 @@ if __name__ == '__main__':
     if hp.method == "M1" or hp.method == "M2":
         match = SimpleColumnMatch(hp.eval_path, hp.method)
         score = match.SimpleMatch(0.55)
-        Ground_truth(hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
+        Ground_truth(hp.eval_path,hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
     if hp.method == "M3":
         current_dir = os.getcwd()
         parent_dir = os.path.dirname(current_dir)
@@ -42,4 +42,4 @@ if __name__ == '__main__':
         M3 = ColumnMatch(absolute_path, hp)
         score = M3.score(hp, 0.54)
         # print(score)
-        Ground_truth(hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
+        Ground_truth(hp.eval_path,hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
