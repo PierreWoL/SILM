@@ -66,7 +66,6 @@ class SimpleColumnMatch:
             table2 = pd.read_csv(os.path.join(self.eval_path, tables[1]), lineterminator='\n')
             table1 = dataframe_slice(table1)
             table2 = dataframe_slice(table2)
-            print(table1,table2)
             for column_i in table1.columns:
                 score_i = []
                 col_i = col_concate(table1[column_i], token=False)
