@@ -40,6 +40,6 @@ if __name__ == '__main__':
         print(absolute_path)
         # M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
         M3 = ColumnMatch(absolute_path, hp)
-        score = M3.score(hp, 0.55)
+        score = M3.score(hp, 0.5)
         # print(score)
         Ground_truth(hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)

@@ -20,17 +20,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def dataframe_slice(table:pd.DataFrame):
     table_slice = table
-    # 随机选择10000行作为新的DataFrame
     if len(table)>1000:
         table_slice = table.sample(n=1000, random_state=42)
     return table_slice
 
 def cos_similarity(vectors):
-    #cos = torch.nn.CosineSimilarity(dim=0)
-    #similarity = cos(vectors[0], vectors[1])
-    # 归一化向量
     normalized_embeddings = torch.nn.functional.normalize(vectors, p=2, dim=1)
-    # 计算余弦相似度
     similarity = cosine_similarity(normalized_embeddings[0].detach().numpy().reshape(1, -1),
                                    normalized_embeddings[1].detach().numpy().reshape(1, -1)).item()
 
