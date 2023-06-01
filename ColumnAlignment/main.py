@@ -31,7 +31,7 @@ if __name__ == '__main__':
     if hp.method == "M1" or hp.method == "M2":
         match = SimpleColumnMatch(hp.eval_path,hp.method)
         score = match.SimpleMatch(0.55)
-        print(score)
+
         Ground_truth(hp.ground_truth_path,score)
 
 

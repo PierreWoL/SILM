@@ -6,6 +6,7 @@ from valentine import valentine_match, valentine_metrics
 # 从JSON文件加载数据
 
 def Ground_truth(path,matches):
+
     with open(path) as f:
         data = json.load(f)
     # 提取source_column和target_column
@@ -20,6 +21,6 @@ def Ground_truth(path,matches):
     metrics = valentine_metrics.all_metrics(matches, ground_truth)
 
     pp = pprint.PrettyPrinter(indent=4)
-
+    pp.pprint(matches)
     print("\nAccording to the ground truth:")
     pp.pprint(metrics)
