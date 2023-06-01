@@ -10,12 +10,10 @@ import pandas as pd
 def read_valentine_csvs(path_folder):
     dataframes = {}
     for root, dirs, files in os.walk(path_folder):
-        # 遍历当前文件夹中的所有文件
-        for file in files:
+        # 遍历当前文件夹中的所有文�?        for file in files:
             # 检查文件扩展名是否为CSV
             if file.endswith('.csv'):
-                # 构建CSV文件的完整路径
-                csv_path = os.path.join(root, file)
+                # 构建CSV文件的完整路�?                csv_path = os.path.join(root, file)
                 # 读取CSV文件
                 df = pd.read_csv(csv_path, lineterminator='\n')
                 dataframes[csv_path] = df
@@ -29,8 +27,8 @@ def dataframe_train(path: str):
     for index, table_name in enumerate(tables):
         fn = os.path.join(path, table_name)
         table = pd.read_csv(fn, lineterminator='\n')
-        if len(table) > 10000:
-            table = table.head(10000)
+        if len(table) > 100:
+            table = table.head(100)
         dataframes[table_name] = table
     return dataframes
 

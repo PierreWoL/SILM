@@ -60,15 +60,17 @@ class ColumnMatchingClassifier:
             #print(self.dataset,type(self.dataset),type(self.dataset["train"]))
             """TODO this may need specified path"""
             save_dict(self.dataset, self.train_path + "/dataset_dict.pkl")
-        self.train = self.load_dataset(self.dataset["train"], max_length=2*max_len)
-        self.eval = self.load_dataset(self.dataset["eval"], max_length=2*max_len)
-        #print(self.train,self.eval)
+        
+        self.train_data = self.load_dataset(self.dataset["train"], max_length=2*max_len)
+        self.eval_data = self.load_dataset(self.dataset["eval"], max_length=2*max_len)
+        
+        print("train and eval datasets are ",self.train_data,self.eval_data)
         self.max_length = max_len
         self.tables = [fn for fn in os.listdir(train_path) if '.csv' in fn]
 
         # methods to create positive samples
         print(f"data files loaded with sizes:")
-        print(f"\t[# Train]: {len(self.train)}")
+        print(f"\t[# Train]: {len(self.train_data)}")
 
         # early stopping
         self.early_stop = early_stop
@@ -102,8 +104,8 @@ class ColumnMatchingClassifier:
         self.trainer = Trainer(
             model=self.model,
             args=train_args,
-            train_dataset=self.train,
-            eval_dataset=self.eval,
+            train_dataset=self.train_data,
+            eval_dataset=self.eval_data,
             compute_metrics=self.compute_metrics,
             tokenizer=self.tokenizer,
         )
@@ -121,7 +123,8 @@ class ColumnMatchingClassifier:
         acc = accuracy_score(labels, preds)
         return {"accuracy": acc}
 
-    def load_dataset(self, dataset: Dataset, max_length: int = 512) -> Dataset:
+    def load_dataset(self, data: Dataset, max_length: int = 512):
+        print("start mapping")
         r""" Preprocess the input data
         Args:
             dataset (Dataset): the training Dataset generated previously from the pairs of columns
@@ -130,7 +133,5 @@ class ColumnMatchingClassifier:
 
         def preprocess_function(examples):
             return self.tokenizer(examples["Col1"], examples["Col2"], max_length=max_length, truncation=True)
-
-        #dataset = dataset.map(preprocess_function, batched=True, num_proc=1, )
-
-        return dataset
+        data = data.map(preprocess_function, batched=True)
+        return data

@@ -17,9 +17,10 @@ class ColumnMatch:
         self.train_path = train_path
         torch.cuda.empty_cache()
         self.bert_trainer = Classifier.from_hp(train_path, hp)
-        epoch_steps = len(self.bert_trainer.train) // hp.batch  # total steps of an epoch
+        epoch_steps = len(self.bert_trainer.train_data) // hp.batch  # total steps of an epoch
         logging_steps = int(epoch_steps * 0.02) if int(epoch_steps * 0.02) > 0 else 5
         eval_steps = 5 * logging_steps
+        print("epoch_steps and logging_steps",logging_steps,eval_steps)
         training_args = TrainingArguments(
             output_dir=hp.output_dir,
             num_train_epochs=hp.num_epochs,
@@ -30,19 +31,18 @@ class ColumnMatch:
             logging_dir=f"{hp.output_dir}/tb",
             eval_steps=eval_steps,
             evaluation_strategy="steps",
-            do_train=True,
-            do_eval=True,
+            #do_train=True,
+            #do_eval=True,
             save_steps=eval_steps,
             load_best_model_at_end=True,
             save_total_limit=1,
             metric_for_best_model="accuracy",
             greater_is_better=True,
         )
-
         self.bert_trainer.train(train_args=training_args, do_fine_tune=hp.fine_tune)
         if hp.fine_tune:
             self.bert_trainer.trainer.save_model(
-                output_dir=os.path.join(hp.output_dir, "FT_columnMatch")
+                output_dir=os.path.join(hp.output_dir, hp.dataset+"_FT_columnMatch")
             )
             print("fine-tuning done, fine-tuned model saved.")
         else:

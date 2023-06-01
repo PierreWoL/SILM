@@ -40,7 +40,7 @@ if __name__ == '__main__':
         absolute_path = parent_dir+"/"+path
         print(absolute_path)
         #M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
-        M3 = ColumnMatch(path, hp)
+        M3 = ColumnMatch(absolute_path, hp)
         """score = M3.score(hp)
         Ground_truth(hp.ground_truth_path, score)"""
 
