@@ -19,14 +19,13 @@ def Ground_truth(path, matches, save_path,method):
     matches_part = data['matches']
     ground_truth = [(match['source_column'], match['target_column']) for match in matches_part]
     print(ground_truth)
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(matches) 
     mk_path(save_path)
     metrics = valentine_metrics.all_metrics(matches, ground_truth)
-    pp.pprint(metrics)
     save_pairs(save_path, matches,method)
     save_metrics(save_path, metrics,method)
-    print("\nAccording to the ground truth:")
+    pp = pprint.PrettyPrinter(indent=4, sort_dicts=False)
+    pp.pprint(matches) 
+    pp.pprint(metrics)
     
 
 
