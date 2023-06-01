@@ -76,7 +76,7 @@ class SimpleColumnMatch:
                     score = cos_similarity(self.encoding(col_i,col_j))
                     score_i.append(score)
                 max_score = max(score_i)
-                print(score_i)
+                #print(score_i)
                 if max_score >= thre:
                     index_j = score_i.index(max_score)
                     scores[(('table_1', column_i), ('table_2', table2.columns[index_j]))] = max_score
