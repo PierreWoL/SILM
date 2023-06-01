@@ -59,8 +59,8 @@ class ColumnMatch:
         self.classifier = lambda x: softmax(self.bert_trainer.model(**x).logits)[:, 1]
 
     def score(self,  hp: Namespace):
-        r"""Score the samples with the classifier.
-
+        r"""
+        Score the samples with the classifier.
             Args:
                 hp: parameters
         """

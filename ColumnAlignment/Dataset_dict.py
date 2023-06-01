@@ -29,8 +29,8 @@ def dataframe_train(path: str):
     for index, table_name in enumerate(tables):
         fn = os.path.join(path, table_name)
         table = pd.read_csv(fn, lineterminator='\n')
-        if len(table) > 20000:
-            table = table.head(20000)
+        if len(table) > 10000:
+            table = table.head(10000)
         dataframes[table_name] = table
     return dataframes
 
@@ -87,7 +87,7 @@ def create_column_pairs_mapping(datas: dict, aug_meth="random"):
     dict_all_mapping = []
     dict_pairs = []
     for tableName, df in datas.items():
-        print("Table name:", tableName, len(df))
+        #print("Table name:", tableName, len(df))
         # 第二个循环从当前位置开始遍历字典的剩余键值对
         for i in range(len(df.columns)):
             column_i = df.columns[i]
@@ -100,9 +100,12 @@ def create_column_pairs_mapping(datas: dict, aug_meth="random"):
     # 创建一个空的Dataset
     dataset_dict = DatasetDict()
     # 将列表转换为Dataset
-    dataset = Dataset.from_pandas(pd.DataFrame(dict_pairs))
-    train_dataset, eval_dataset = dataset.train_test_split(test_size=0.3, shuffle=True)
-    # 将列表转换为Dataset
+    all_pairs = pd.DataFrame(dict_pairs)
+    sample_size = int(0.7 * len(all_pairs))
+    train_df = all_pairs.sample(n=sample_size, random_state=42)
+    eval_df = all_pairs.drop(train_df.index)
+    train_dataset =Dataset.from_pandas(train_df).remove_columns("__index_level_0__")
+    eval_dataset = Dataset.from_pandas(eval_df).remove_columns("__index_level_0__")
     dataset_dict["train"] = train_dataset
     dataset_dict["eval"] = eval_dataset
     return dataset_dict, dict_all_mapping
@@ -134,7 +137,7 @@ def create_column_pairs(pair_path):
 def save_dict(dataset_dict, path):
     with open(path, "wb") as f:
         pickle.dump(dataset_dict, f)
-print(os.getcwd())
+
 
 """path = "D:/CurrentDataset/valentine-data-fabricator/csvfiles/source/"
 dfs = dataframe_train(path)

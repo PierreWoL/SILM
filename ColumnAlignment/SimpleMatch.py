@@ -18,7 +18,6 @@ lm_mp = {'roberta': 'roberta-base',
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
 
-
 def dataframe_slice(table:pd.DataFrame):
     table_slice = table
     # 随机选择10000行作为新的DataFrame

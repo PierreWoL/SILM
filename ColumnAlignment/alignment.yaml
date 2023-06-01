@@ -1,0 +1,29 @@
+model: bertsubs (intra-ontology)
+
+use_one_label: true # true: select only one label
+subsumption_type: named_class # named_class or restriction
+
+test_subsumption_file: test_subsumption.csv
+test_type: prediction
+
+train_subsumption_file:
+valid_subsumption_file:
+valid:
+  valid_ratio: 0.05
+  max_neg_size: 40
+
+# These hyperparameters are about the BERT model and its fine-tuning
+fine_tune:
+  do_fine_tune: true
+  pretrained: bert-base-uncased
+  tokenizer": bert-base-uncased
+  output_dir: fine-tuned-bert
+  warm_up_ratio: 0.0
+  num_epochs: 5.0
+  early_stop: false
+  train_pos_dup: 2
+  train_neg_dup: 2
+  batch_size: 32
+
+evaluation:
+  batch_size: 32

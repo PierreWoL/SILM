@@ -37,7 +37,6 @@ def save_dict(dataset_dict, path):
     with open(path, "wb") as f:
         pickle.dump(dataset_dict, f)
 
-
 class ColumnMatchingClassifier:
     def __init__(self,
                  train_path,
@@ -52,18 +51,18 @@ class ColumnMatchingClassifier:
         self.trainer = None
         self.mapping = []
         self.train_path = train_path
-        if any(file.endswith('.csv') for file in os.listdir(train_path)):
+        if any(file.endswith('.pkl') for file in os.listdir(train_path)):
+            with open(self.train_path+"/dataset_dict.pkl", 'rb') as f:
+                self.dataset = pickle.load(f)
+        else:
             dfs = dataframe_train(self.train_path)
             self.dataset = create_column_pairs_mapping(dfs, positive_op)[0]
-            self.train = self.load_dataset(self.dataset["train"], max_length=512)
-            self.eval = self.load_dataset(self.dataset["eval"], max_length=512)
+            #print(self.dataset,type(self.dataset),type(self.dataset["train"]))
             """TODO this may need specified path"""
-            save_dict(self.dataset, os.getcwd()+"/dataset/dataset_dict.pkl")
-
-        else:
-            with open(os.getcwd()+"/dataset/dataset_dict.pkl", 'rb') as f:
-                self.dataset = pickle.load(f)
-
+            save_dict(self.dataset, self.train_path + "/dataset_dict.pkl")
+        self.train = self.load_dataset(self.dataset["train"], max_length=2*max_len)
+        self.eval = self.load_dataset(self.dataset["eval"], max_length=2*max_len)
+        #print(self.train,self.eval)
         self.max_length = max_len
         self.tables = [fn for fn in os.listdir(train_path) if '.csv' in fn]
 
@@ -74,7 +73,6 @@ class ColumnMatchingClassifier:
         # early stopping
         self.early_stop = early_stop
         self.early_stop_patience = early_stop_patience
-        self.table_cache = {}
 
     @staticmethod
     def from_hp(path: str, hp: Namespace):
@@ -133,5 +131,6 @@ class ColumnMatchingClassifier:
         def preprocess_function(examples):
             return self.tokenizer(examples["Col1"], examples["Col2"], max_length=max_length, truncation=True)
 
-        dataset = dataset.map(preprocess_function, batched=True, num_proc=1, )
+        #dataset = dataset.map(preprocess_function, batched=True, num_proc=1, )
+
         return dataset

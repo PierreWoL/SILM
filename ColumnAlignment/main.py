@@ -1,15 +1,17 @@
 import argparse
 import os.path
-
+from ColumnMatch import ColumnMatch
+from ColumnMatchingClassifier import ColumnMatchingClassifier
 from SimpleMatch import SimpleColumnMatch
 from metrics import Ground_truth
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="M2")  # M1 M2 M3
-    parser.add_argument("--dataset", type=str, default="open_data") # ChEMBL Magellan OpenData TPC-DI Wikidata
-    parser.add_argument("--ground_truth_path", type=str, default=os.getcwd()+"/data/data_mapping.json")#
-    parser.add_argument("--eval_path", type=str, default="data/")#data/
-    parser.add_argument("--fine_tune",dest="fine_tune", action="store_true", default=True)
+    parser.add_argument("--method", type=str, default="M3")  # M1 M2 M3
+    parser.add_argument("--dataset", type=str, default="Wikidata")  # ChEMBL Magellan OpenData TPC-DI Wikidata
+    parser.add_argument("--ground_truth_path", type=str, default=os.getcwd() + "/data/data_mapping.json")  #
+    parser.add_argument("--eval_path", type=str, default="data/")  # data/
+    parser.add_argument("--fine_tune", dest="fine_tune", action="store_true", default=True)
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--output_dir", type=str, default="model/")
     parser.add_argument("--num_epochs", type=int, default=10)
@@ -25,16 +27,21 @@ if __name__ == '__main__':
 
     hp = parser.parse_args()
 
-
     # Change the data paths to where the benchmarks are stored
     path = 'ValentineDatasets/%s/Train/' % hp.dataset
+
     if hp.method == "M1" or hp.method == "M2":
-        match = SimpleColumnMatch(hp.eval_path,hp.method)
+        match = SimpleColumnMatch(hp.eval_path, hp.method)
         score = match.SimpleMatch(0.55)
-
-        Ground_truth(hp.ground_truth_path,score)
-
-
-
+        Ground_truth(hp.ground_truth_path, score)
+    if hp.method == "M3":
+        current_dir = os.getcwd()
+        parent_dir = os.path.dirname(current_dir)
+        absolute_path = parent_dir+"/"+path
+        print(absolute_path)
+        M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
+        """M3 = ColumnMatch(path, hp)
+        score = M3.score(hp)
+        Ground_truth(hp.ground_truth_path, score)"""
 
 
