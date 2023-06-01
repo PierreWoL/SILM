@@ -37,6 +37,7 @@ def save_dict(dataset_dict, path):
     with open(path, "wb") as f:
         pickle.dump(dataset_dict, f)
 
+
 class ColumnMatchingClassifier:
     def __init__(self,
                  train_path,
@@ -46,25 +47,29 @@ class ColumnMatchingClassifier:
                  early_stop: bool = False,
                  early_stop_patience: int = 10):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm], selectable_pos=1)
-        self.model = AutoModelForSequenceClassification.from_pretrained(lm_mp[lm])
+        if lm in lm_mp.keys():
+            self.model = AutoModelForSequenceClassification.from_pretrained(lm_mp[lm])
+        else:
+            self.model = AutoModelForSequenceClassification.from_pretrained(lm)
+
         self.positive_op = positive_op
         self.trainer = None
         self.mapping = []
         self.train_path = train_path
         if any(file.endswith('.pkl') for file in os.listdir(train_path)):
-            with open(self.train_path+"/dataset_dict.pkl", 'rb') as f:
+            with open(self.train_path + "/dataset_dict.pkl", 'rb') as f:
                 self.dataset = pickle.load(f)
         else:
             dfs = dataframe_train(self.train_path)
             self.dataset = create_column_pairs_mapping(dfs, positive_op)[0]
-            #print(self.dataset,type(self.dataset),type(self.dataset["train"]))
+            # print(self.dataset,type(self.dataset),type(self.dataset["train"]))
             """TODO this may need specified path"""
             save_dict(self.dataset, self.train_path + "/dataset_dict.pkl")
-        
-        self.train_data = self.load_dataset(self.dataset["train"], max_length=2*max_len)
-        self.eval_data = self.load_dataset(self.dataset["eval"], max_length=2*max_len)
-        
-        print("train and eval datasets are ",self.train_data,self.eval_data)
+
+        self.train_data = self.load_dataset(self.dataset["train"], max_length=2 * max_len)
+        self.eval_data = self.load_dataset(self.dataset["eval"], max_length=2 * max_len)
+
+        print("train and eval datasets are ", self.train_data, self.eval_data)
         self.max_length = max_len
         self.tables = [fn for fn in os.listdir(train_path) if '.csv' in fn]
 
@@ -133,5 +138,6 @@ class ColumnMatchingClassifier:
 
         def preprocess_function(examples):
             return self.tokenizer(examples["Col1"], examples["Col2"], max_length=max_length, truncation=True)
+
         data = data.map(preprocess_function, batched=True)
         return data

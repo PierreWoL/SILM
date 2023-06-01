@@ -1,7 +1,6 @@
 import argparse
 import os.path
 from ColumnMatch import ColumnMatch
-from ColumnMatchingClassifier import ColumnMatchingClassifier
 from SimpleMatch import SimpleColumnMatch
 from metrics import Ground_truth
 

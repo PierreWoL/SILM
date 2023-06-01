@@ -10,11 +10,9 @@ import pandas as pd
 def read_valentine_csvs(path_folder):
     dataframes = {}
     for root, dirs, files in os.walk(path_folder):
-        # 遍历当前文件夹中的所有文�?        for file in files:
-            # 检查文件扩展名是否为CSV
+        for file in files:
             if file.endswith('.csv'):
-                # 构建CSV文件的完整路�?                csv_path = os.path.join(root, file)
-                # 读取CSV文件
+                csv_path = os.path.join(root, file)
                 df = pd.read_csv(csv_path, lineterminator='\n')
                 dataframes[csv_path] = df
                 print(df)
