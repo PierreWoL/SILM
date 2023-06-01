@@ -46,7 +46,8 @@ class ColumnMatchingClassifier:
                  lm='roberta',
                  early_stop: bool = False,
                  early_stop_patience: int = 10):
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm], selectable_pos=1)
+        "remember to change this"
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp['roberta'], selectable_pos=1)
         if lm in lm_mp.keys():
             self.model = AutoModelForSequenceClassification.from_pretrained(lm_mp[lm])
         else:

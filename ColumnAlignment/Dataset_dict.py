@@ -84,7 +84,7 @@ def create_column_pairs_mapping(datas: dict, aug_meth="random"):
     dict_pairs = []
     for tableName, df in datas.items():
         #print("Table name:", tableName, len(df))
-        # 第二个循环从当前位置开始遍历字典的剩余键值对
+        
         for i in range(len(df.columns)):
             column_i = df.columns[i]
             dict_pairs.append(augmentation_col(df[column_i], aug_meth, 0.5, 0.5, 0.2))
@@ -93,9 +93,9 @@ def create_column_pairs_mapping(datas: dict, aug_meth="random"):
                 column_j = df.columns[j]
                 dict_all_mapping.append({'Col1': {tableName: column_i}, 'Col2': {tableName: column_i}})
                 dict_pairs.append({'Col1': col_concate(df[column_i]), 'Col2': col_concate(df[column_j]), 'label': 0})
-    # 创建一个空的Dataset
+     
     dataset_dict = DatasetDict()
-    # 将列表转换为Dataset
+    
     all_pairs = pd.DataFrame(dict_pairs)
     sample_size = int(0.7 * len(all_pairs))
     train_df = all_pairs.sample(n=sample_size, random_state=42)
@@ -126,7 +126,7 @@ def create_column_pairs(pair_path):
                 data1 = datas[0][1]
                 data2 = datas[1][1]
                 mapping.append((('table_1', column_i), ('table_2', column_j)))
-                pairs.append([data1[column_i], data2[column_j]])
+                pairs.append([col_concate(data1[column_i]), col_concate(data2[column_j])])
         return pairs, mapping
 
 

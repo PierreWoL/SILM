@@ -10,7 +10,7 @@ if __name__ == '__main__':
     parser.add_argument("--dataset", type=str, default="Wikidata")  # ChEMBL Magellan OpenData TPC-DI Wikidata
     parser.add_argument("--ground_truth_path", type=str, default=os.getcwd() + "/data/data_mapping.json")  #
     parser.add_argument("--eval_path", type=str, default="data/")  # data/
-    parser.add_argument("--fine_tune", dest="fine_tune", action="store_true", default=True)
+    parser.add_argument("--fine_tune", dest="fine_tune", action="store_true", default=False)
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--output_dir", type=str, default="model/")
     parser.add_argument("--num_epochs", type=int, default=10)
@@ -40,7 +40,8 @@ if __name__ == '__main__':
         print(absolute_path)
         #M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
         M3 = ColumnMatch(absolute_path, hp)
-        """score = M3.score(hp)
-        Ground_truth(hp.ground_truth_path, score)"""
+        score = M3.score(hp)
+        print(score)
+        """Ground_truth(hp.ground_truth_path, score)"""
 
 

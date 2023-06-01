@@ -53,7 +53,7 @@ class ColumnMatch:
         self.bert_trainer.model.to(self.device)
 
         self.tokenize = lambda x: self.bert_trainer.tokenizer(
-            x, max_length=hp.max_length, truncation=True, padding=True, return_tensors="pt"
+            x, max_length=hp.max_len*2, truncation=True, padding=True, return_tensors="pt"
         )
         softmax = torch.nn.Softmax(dim=1)
         self.classifier = lambda x: softmax(self.bert_trainer.model(**x).logits)[:, 1]
@@ -66,12 +66,6 @@ class ColumnMatch:
         """
         samples, samples_mapping = create_column_pairs(hp.eval_path)
         if len(samples)!=0 and len(samples_mapping)!=0:
-            sample_size = len(samples)
-            scores = np.zeros(sample_size)
-            batch_num = math.ceil(sample_size / hp.eval_batch_size)
-            for i in range(batch_num):
-                j = (i + 1) * hp.eval_batch_size \
-                    if (i + 1) * hp.eval_batch_size <= sample_size else sample_size
                 inputs = self.tokenize(samples[i * hp.eval_batch_size:j])
                 inputs.to(self.device)
                 with torch.no_grad():
