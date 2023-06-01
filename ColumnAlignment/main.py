@@ -39,9 +39,9 @@ if __name__ == '__main__':
         parent_dir = os.path.dirname(current_dir)
         absolute_path = parent_dir+"/"+path
         print(absolute_path)
-        M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
-        """M3 = ColumnMatch(path, hp)
-        score = M3.score(hp)
+        #M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
+        M3 = ColumnMatch(path, hp)
+        """score = M3.score(hp)
         Ground_truth(hp.ground_truth_path, score)"""
 
 
