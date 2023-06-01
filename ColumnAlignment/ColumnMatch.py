@@ -58,23 +58,42 @@ class ColumnMatch:
         softmax = torch.nn.Softmax(dim=1)
         self.classifier = lambda x: softmax(self.bert_trainer.model(**x).logits)[:, 1]
 
-    def score(self,  hp: Namespace):
+
+    def score(self,  hp: Namespace,thres):
         r"""
         Score the samples with the classifier.
             Args:
                 hp: parameters
         """
-        samples, samples_mapping = create_column_pairs(hp.eval_path)
-        if len(samples)!=0 and len(samples_mapping)!=0:
-                inputs = self.tokenize(samples[i * hp.eval_batch_size:j])
-                inputs.to(self.device)
-                with torch.no_grad():
-                    batch_scores = self.classifier(inputs)
-                scores[i * hp.eval_batch_size:j] = batch_scores.cpu().numpy()
-            results = {samples_mapping[i]: scores[i] for i in range(len(samples_mapping)) if scores[i]  != 0.0}
-            print(results)
-            sort_results = dict(sorted(results.items(), key=itemgetter(1), reverse=True))
-            return results
+        all_samples, all_samples_mapping = create_column_pairs(hp.eval_path)
+        print(hp.eval_path)
+        if len(all_samples)!=0 and len(all_samples_mapping)!=0:
+            all_results = []
+            for index in range(0,len(all_samples)):
+                samples = all_samples[index]
+                samples_mapping = all_samples_mapping[index]
+                sample_size = len(samples)
+                scores = np.zeros(sample_size)
+                batch_num = math.ceil(sample_size / hp.eval_batch_size)
+
+                for i in range(batch_num):
+                    j = (i + 1) * hp.eval_batch_size \
+                        if (i + 1) * hp.eval_batch_size <= sample_size else sample_size
+
+                    inputs = self.tokenize(samples[i * hp.eval_batch_size:j])
+                    inputs.to(self.device)
+                    with torch.no_grad():
+                        batch_scores = self.classifier(inputs)
+                    scores[i * hp.eval_batch_size:j] = batch_scores.cpu().numpy()
+                    results = {samples_mapping[x]: scores[x] for x in range(len(samples_mapping)) if scores[x] > thres}
+                    all_results.append(results)
+            results_dict = {}
+            for result in all_results:
+                results_dict.update(result)
+            sort_results = dict(sorted(results_dict.items(), key=itemgetter(1), reverse=True))
+            print(sort_results)
+            return sort_results
         else:
             print("Wrong Path!")
+
 

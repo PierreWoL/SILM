@@ -122,11 +122,16 @@ def create_column_pairs(pair_path):
             table = pd.read_csv(fn, lineterminator='\n')
             datas.append((tables[i], table))
         for column_i in datas[0][1].columns:
+            column_pairs = []
+            mapping_pairs = []
             for column_j in datas[1][1].columns:
+
                 data1 = datas[0][1]
                 data2 = datas[1][1]
-                mapping.append((('table_1', column_i), ('table_2', column_j)))
-                pairs.append([col_concate(data1[column_i]), col_concate(data2[column_j])])
+                mapping_pairs.append((('table_1', column_i), ('table_2', column_j)))
+                column_pairs.append([col_concate(data1[column_i]), col_concate(data2[column_j])])
+            pairs.append(column_pairs)
+            mapping.append(mapping_pairs)
         return pairs, mapping
 
 
