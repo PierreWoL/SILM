@@ -1,12 +1,11 @@
 import argparse
-
-import mlflow
+from SimpleMatch import SimpleColumnMatch
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="M1")  # M1 M2 M3
+    parser.add_argument("--method", type=str, default="M2")  # M1 M2 M3
     parser.add_argument("--dataset", type=str, default="open_data") # ChEMBL Magellan OpenData TPC-DI Wikidata
-    parser.add_argument("--eval_path", type=str, default="open_data")  # ChEMBL Magellan OpenData TPC-DI Wikidata
+    parser.add_argument("--eval_path", type=str, default="data/")  # ChEMBL Magellan OpenData TPC-DI Wikidata
     parser.add_argument("--fine_tune",dest="fine_tune", action="store_true", default=True)
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--output_dir", type=str, default="model/")
@@ -26,4 +25,12 @@ if __name__ == '__main__':
 
     # Change the data paths to where the benchmarks are stored
     path = 'ValentineDatasets/%s/Train/' % hp.dataset
+    if hp.method == "M1" or hp.method == "M2":
+        match = SimpleColumnMatch(hp.eval_path,hp.method)
+        score = match.SimpleMatch(0.5)
+        print(score)
+
+
+
+
 

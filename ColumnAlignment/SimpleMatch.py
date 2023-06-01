@@ -1,9 +1,8 @@
 import os
 import pandas as pd
 from transformers import AutoTokenizer, AutoModel
-from argparse import Namespace
-from scipy.spatial.distance import cosine
 from Dataset_dict import col_concate
+from operator import itemgetter
 
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
@@ -16,15 +15,25 @@ lm_mp = {'roberta': 'roberta-base',
     jaccard = np.sum(intersection) / np.sum(union)
     return jaccard
 """
+import torch
+from sklearn.metrics.pairwise import cosine_similarity
 
 
-def cosine_similarity(vector1, vector2):
-    similarity = 1 - cosine(vector1, vector2)
+def cos_similarity(vectors):
+    #cos = torch.nn.CosineSimilarity(dim=0)
+    #similarity = cos(vectors[0], vectors[1])
+    # 归一化向量
+    normalized_embeddings = torch.nn.functional.normalize(vectors, p=2, dim=1)
+    # 计算余弦相似度
+    similarity = cosine_similarity(normalized_embeddings[0].detach().numpy().reshape(1, -1),
+                                   normalized_embeddings[1].detach().numpy().reshape(1, -1)).item()
+
     return similarity
 
 
 class SimpleColumnMatch:
-    def __init__(self, eval_path, method, lm='roberta'):
+    def __init__(self, eval_path, method):
+        lm = 'roberta'
         self.eval_path = eval_path
         if method == "M1":
             lm = 'roberta'
@@ -33,8 +42,8 @@ class SimpleColumnMatch:
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
         self.model = AutoModel.from_pretrained(lm_mp[lm])
 
-    def encoding(self, text):
-        encoded_input = self.tokenizer(text, padding=True, truncation=True, return_tensors='pt')
+    def encoding(self, text1,text2,):
+        encoded_input = self.tokenizer([text1, text2],max_length=512, padding=True, truncation=True, return_tensors='pt')
         output = self.model(**encoded_input)
         embeddings = output.last_hidden_state
         return embeddings
@@ -54,11 +63,13 @@ class SimpleColumnMatch:
                 col_i = col_concate(table1[column_i], token=True)
                 for column_j in table2.columns:
                     col_j = col_concate(table2[column_j], token=True)
-                    score = cosine_similarity(self.encoding(col_i), self.encoding(col_j))
+                    score = cos_similarity(self.encoding(col_i,col_j))
                     score_i.append(score)
                 max_score = max(score_i)
-                if max_score > thre:
+                if max_score >= thre:
                     index_j = score_i.index(max_score)
                     scores[(('table_1', column_i), ('table_2', table2.columns[index_j]))] = max_score
                 else:
                     continue
+            scores = dict(sorted(scores.items(), key=itemgetter(1), reverse=True))
+            return scores

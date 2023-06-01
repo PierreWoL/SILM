@@ -7,7 +7,7 @@ from ColumnMatchingClassifier import ColumnMatchingClassifier as Classifier
 from transformers import TrainingArguments
 from argparse import Namespace
 from Dataset_dict import create_column_pairs
-
+from operator import itemgetter
 
 class ColumnMatch:
 
@@ -78,8 +78,8 @@ class ColumnMatch:
                     batch_scores = self.classifier(inputs)
                 scores[i * hp.eval_batch_size:j] = batch_scores.cpu().numpy()
             results = {samples_mapping[i]: scores[i] for i in range(len(samples_mapping)) if scores[i]  != 0.0}
-
             print(results)
+            sort_results = dict(sorted(results.items(), key=itemgetter(1), reverse=True))
             return results
         else:
             print("Wrong Path!")
