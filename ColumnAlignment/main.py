@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--early_stop_patience", type=int, default=10)
     parser.add_argument("--lm", type=str, default='roberta')
     parser.add_argument("--positive_op", type=str, default='random')
-    parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
+    parser.add_argument("--save_model", dest="save_model", action="store_true", default=False)
 
     hp = parser.parse_args()
 
@@ -38,8 +38,8 @@ if __name__ == '__main__':
         parent_dir = os.path.dirname(current_dir)
         absolute_path = parent_dir + "/" + path
         print(absolute_path)
-        # M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
+        #M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
         M3 = ColumnMatch(absolute_path, hp)
-        score = M3.score(hp, 0.54)
-        # print(score)
+        score = M3.score(hp, 0)
+        print(score)
         Ground_truth(hp.eval_path,hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
