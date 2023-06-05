@@ -32,7 +32,7 @@ def to_df(column, complex):
 
 data_all = []
 dfs_wiki = {}
-datasets = ["Magellan", "ChEMBL"]  # "ChEMBL",, "Magellan" 'Wikidata'
+datasets = ["Magellan", "ChEMBL","TPC-DI", "OpenData"]  # "ChEMBL",, "Magellan" 'Wikidata'
 
 
 def metadata_true(dataset, data_path,type=''):
@@ -111,7 +111,7 @@ def recall_k_aggregation(metr, dataset, data_path):
     return data
 
 
-types = ['Semantically-Joinable']  # 'Joinable','Semantically-Joinable','Unionable','View-Unionable'
+types = ['Joinable','Semantically-Joinable','Unionable','View-Unionable']  # 'Joinable','Semantically-Joinable','Unionable','View-Unionable'
 ab_path = "D:/CurrentDataset/ValentineDatasets/"
 for dataset in datasets:
     if dataset == 'Wikidata':
