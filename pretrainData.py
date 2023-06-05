@@ -52,7 +52,6 @@ class PretrainTableDataset(data.Dataset):
 
         # assuming tables are in csv format
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
-        #print(self.tables)
 
         # only keep the first n tables
         if size is not None:
@@ -134,7 +133,7 @@ class PretrainTableDataset(data.Dataset):
         # a map from column names to special token indices
         column_mp = {}
         Sub_cols_header = []
-        if 'subject' in self.check_subject_Column:
+        if 'subject' in self.check_subject_Column and self.subject_column is not True:
             if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
                                     '.csv' in fn]:
                 Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx],
@@ -165,7 +164,7 @@ class PretrainTableDataset(data.Dataset):
                     col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                 else:
                     col_text += string_token + " "  # string_token + " "
-                # print(col_text)
+                #print(col_text)
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
@@ -204,7 +203,7 @@ class PretrainTableDataset(data.Dataset):
                     break
                 else:
                     table_text += row_text + self.tokenizer.sep_token + " "
-            print(table_text)
+            #print(table_text)
             encoding = self.tokenizer.encode(text=table_text,
                                                      max_length=budget,
                                                      add_special_tokens=False,
@@ -236,25 +235,30 @@ class PretrainTableDataset(data.Dataset):
         # print("table_ori",len(table_ori))
         # single-column mode: only keep one random column
         if "row" in self.table_order:
+            if len(table_ori)>= 6000:
+                table_ori = table_ori[:2500]
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
-            print("table_ori", table_ori.T )
+            #print("table_ori", table_ori.T )
         if self.single_column:
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
         if self.subject_column:
+            cols = []        
             if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
                                     '.csv' in fn]:
                 Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx])
-                table_ori = table_ori[Sub_cols.columns]
+                cols = [col for col in Sub_cols.columns if col in table_ori.columns]
             else:
                 anno = TA.TableColumnAnnotation(table_ori)
                 types = anno.annotation
-                # print(types)
                 for key, type in types.items():
                     if type == ColumnType.named_entity:
-                        table_ori = table_ori[[key]]
+                        cols = [table_ori.columns[key]]
                         break
+            if len(cols) >0:
+                  table_ori = table_ori[cols]
+                  #print(table_ori.columns,cols,table_ori)
         # apply the augmentation operator
         if ',' in self.augment_op:
             op1, op2 = self.augment_op.split(',')

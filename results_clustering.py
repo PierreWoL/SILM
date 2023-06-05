@@ -10,7 +10,7 @@ from experiments import run_exp
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="WDC")
+    parser.add_argument("--dataset", type=str, default="open_data")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)

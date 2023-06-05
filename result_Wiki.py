@@ -22,7 +22,6 @@ col_meta = ["Dataset_Pair_Name", "Dataset_Pair_relationship",
 
 def to_df(column, complex):
     df = pd.DataFrame(columns=column)
-    # 填充DataFrame
     for sublist in complex:
         row = pd.DataFrame([dict(sublist)], columns=column)
         df = pd.concat([df, row])
@@ -112,7 +111,7 @@ def recall_k_aggregation(metr, dataset, data_path):
 
 
 types = ['Joinable','Semantically-Joinable','Unionable','View-Unionable']  # 'Joinable','Semantically-Joinable','Unionable','View-Unionable'
-ab_path = "D:/CurrentDataset/ValentineDatasets/"
+ab_path = os.path.join(os.getcwd(),'ValentineDatasets') #"D:/CurrentDataset/ValentineDatasets/"
 for dataset in datasets:
     if dataset == 'Wikidata':
         dataframe_metadata = metadata_true(dataset, ab_path)

@@ -62,13 +62,15 @@ if __name__ == '__main__':
     #                      size=hp.size,
     #                      single_column=hp.single_column,
     #                      sample_meth=hp.sample_meth)
+    
+    
     trainset = PretrainTableDataset.from_hp(path, hp)
 
     """
-    for i in range(0,20):
+    for i in range(0,len(trainset)):
       trainset[i]
-   
     """
+    
     train(trainset, hp)
     
     """
@@ -78,7 +80,7 @@ if __name__ == '__main__':
 
     #print(hp.save_model,hp.check_subject_Column)
     #train(trainset, hp)
-    #table_features(hp)
+    table_features(hp)
     """
     total =None
     tables=[]

@@ -15,7 +15,7 @@ import TableAnnotation as TA
 
 
 def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column,
-                   singleCol=False):
+                   singleCol=False,SubCol=False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -25,6 +25,7 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
         table_order (str): 'column' or 'row' ordered
         run_id (int): used in file path
         singleCol (boolean): is this for single column baseline
+        SubCol (boolean): is this for subject column baseline
     Return:
         list of features for the dataframe
     '''
@@ -32,7 +33,9 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
 
         model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%ssingleCol.pt" % (
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
-
+    if SubCol:
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%ssubCol.pt" % (
+            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
     else:
         model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s.pt" % (
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
@@ -82,7 +85,8 @@ def table_features(hp: Namespace):
     dfs_count = 0
     # Extract model vectors
     cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
-                                 hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column)
+                                 hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column,
+                                 SubCol=hp.subject_column)
     output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
     mkdir(output_path)
     print(output_path)
@@ -96,6 +100,9 @@ def table_features(hp: Namespace):
     if hp.single_column:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s_singleCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                                  hp.table_order, hp.run_id, hp.check_subject_Column)
+    if hp.subject_column:
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_subCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+                                                                 hp.table_order, hp.run_id, hp.check_subject_Column)                                                             
     else:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                        hp.table_order, hp.run_id, hp.check_subject_Column)

@@ -210,7 +210,8 @@ def load_checkpoint(ckpt):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # print(device)
     #todo change the resize by passing a parameter
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=50269)#50269 30529
+    
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=30529)#50269 30529
     model = model.to(device)
     model.load_state_dict(ckpt['model'])
 
