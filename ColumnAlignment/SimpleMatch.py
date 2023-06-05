@@ -36,9 +36,9 @@ class SimpleColumnMatch:
     def __init__(self, eval_path, method):
         lm = 'roberta'
         self.eval_path = eval_path
-        if method == "M1":
+        if method == "M1" or method == "M1H":
             lm = 'roberta'
-        if method == "M2":
+        if method == "M2"or method == "M2H":
             lm = 'sbert'
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
         self.model = AutoModel.from_pretrained(lm_mp[lm])
@@ -57,8 +57,8 @@ class SimpleColumnMatch:
             return scores
 
         else:
-            table1 = pd.read_csv(os.path.join(self.eval_path, tables[0]), lineterminator='\n')
-            table2 = pd.read_csv(os.path.join(self.eval_path, tables[1]), lineterminator='\n')
+            table1 = pd.read_csv(os.path.join(self.eval_path, tables[0]))
+            table2 = pd.read_csv(os.path.join(self.eval_path, tables[1]))
             table1 = dataframe_slice(table1)
             table2 = dataframe_slice(table2)
             for column_i in table1.columns:
@@ -77,3 +77,27 @@ class SimpleColumnMatch:
                     continue
             scores = dict(sorted(scores.items(), key=itemgetter(1), reverse=True))
             return scores
+
+    def SimpleMatch_Header(self, thre):
+            scores = {}
+            tables = [fn for fn in os.listdir(self.eval_path) if '.csv' in fn]
+            if len(tables) != 2:
+                print("Wrong schema pair folder! Please check")
+                return scores
+            else:
+                table1 = pd.read_csv(os.path.join(self.eval_path, tables[0]))
+                table2 = pd.read_csv(os.path.join(self.eval_path, tables[1]))
+                for column_i in table1.columns:
+                    score_i = []
+                    for column_j in table2.columns:
+                        score = cos_similarity(self.encoding(column_i, column_j))
+                        score_i.append(score)
+                    max_score = max(score_i)
+                    if max_score >= thre:
+                        index_j = score_i.index(max_score)
+                        scores[
+                            (('table_1', column_i.rstrip()), ('table_2', table2.columns[index_j].rstrip()))] = max_score
+                    else:
+                        continue
+                scores = dict(sorted(scores.items(), key=itemgetter(1), reverse=True))
+                return scores
