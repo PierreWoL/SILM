@@ -14,7 +14,7 @@ import pandas as pd
         "precision_at_90_percent", 
 '''
 
-col = ["Dataset", "M1", "M2", "M3", "EmbDI", "cupid", "distribution_based", "similarity_flooding"]
+col = ["Dataset", "M1", "M2","M1H", "M2H", "M3", "EmbDI", "cupid", "distribution_based", "similarity_flooding"]
 col_meta = ["Dataset_Pair_Name", "Dataset_Pair_relationship",
             "Source_Dataset_shape(Column,Row)", "Target_Dataset_shape(Column,Row)",
             "Number of Ground Truth", 'Number of Column Pairs']
@@ -102,6 +102,14 @@ def recall_k_aggregation(metr, dataset, data_path):
                 if metric in metrics:
                     metric_df = pd.read_csv(os.path.join(path_folder, metric + '_metrics.csv'))
                     value = metric_df.loc[metric_df['Key'] == metr, 'Value'].values[0]
+                    if metric =='M1':
+                        metric = 'RoBERTa_Instance'
+                    if metric =='M2':
+                        metric = 'SBERT_Instance'
+                    if metric =='M1H':
+                        metric = 'RoBERTa_Schema'
+                    if metric =='M2H':
+                        metric = 'SBERT_Schema'
                     valueaa.append((metric, value))
                 else:
                     valueaa.append((metric, ''))
@@ -115,7 +123,7 @@ ab_path = os.path.join(os.getcwd(),'ValentineDatasets') #"D:/CurrentDataset/Vale
 for dataset in datasets:
     if dataset == 'Wikidata':
         dataframe_metadata = metadata_true(dataset, ab_path)
-    if dataset != 'wikidata' and dataset!='Magellan':
+    if dataset != 'Wikidata' and dataset!='Magellan':
         parent_path = os.path.join(ab_path, dataset)
         for type in types:
             dfs = {}
