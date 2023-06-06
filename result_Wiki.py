@@ -15,8 +15,11 @@ import pandas as pd
 '''
 
 col = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based","M1H", "M2H",   "cupid", "similarity_flooding"]
+colM = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
 col1 = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based"]
+col1M = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]
 col2 = ["Dataset","M1H", "M2H",   "cupid", "similarity_flooding"]
+col2M = ["Dataset","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
 col_meta = ["Dataset_Pair_Name", "Dataset_Pair_relationship",
             "Source_Dataset_shape(Column,Row)", "Target_Dataset_shape(Column,Row)",
             "Number of Ground Truth", 'Number of Column Pairs']
@@ -86,7 +89,7 @@ def write_to_xls(dataframes: {pd.DataFrame}, store_path):
 M_all = ["recall_at_sizeof_ground_truth"]
 
 
-def recall_k_aggregation(Col_algorithms,metr, dataset, data_path):
+def recall_k_aggregation(Col_algorithms,Col_algo_M, metr, dataset, data_path):
     """"
     recall summarization for the datasets, not suitable for Wikidata dataset
     """
@@ -108,6 +111,8 @@ def recall_k_aggregation(Col_algorithms,metr, dataset, data_path):
                         metric = 'RoBERTa_Instance'
                     if metric =='M2':
                         metric = 'SBERT_Instance'
+                    if metric =='M3':
+                        metric = 'RoBERTa_FineTune'
                     if metric =='M1H':
                         metric = 'RoBERTa_Schema'
                     if metric =='M2H':
@@ -116,7 +121,7 @@ def recall_k_aggregation(Col_algorithms,metr, dataset, data_path):
                 else:
                     valueaa.append((metric, ''))
         line_m.append(valueaa)
-    data = to_df(col, line_m)
+    data = to_df(Col_algo_M, line_m)
     return data
 
 
@@ -131,22 +136,22 @@ for dataset in datasets:
             dfs = {}
             path_sum = os.path.join(ab_path, dataset)
             dataframe_metadata = metadata_true(dataset, ab_path,type)
-            df_recall_k = recall_k_aggregation(col,M_all[0],type,path_sum)
+            df_recall_k = recall_k_aggregation(col,colM,M_all[0],type,path_sum)
             dfs[dataset+"_"+ type+"_basic_info"] = dataframe_metadata
             dfs[dataset + "_" + type+"_1"] = df_recall_k
-            dfs[dataset + "_" + type + "_2"] =recall_k_aggregation(col1,M_all[0],type,path_sum)
-            dfs[dataset + "_" + type + "_3"] = recall_k_aggregation(col2,M_all[0],type,path_sum)
+            dfs[dataset + "_" + type + "_2"] =recall_k_aggregation(col1,col1M,M_all[0],type,path_sum)
+            dfs[dataset + "_" + type + "_3"] = recall_k_aggregation(col2,col2M,M_all[0],type,path_sum)
             store_path = os.path.join(ab_path, dataset,type, type + ".xlsx")
             write_to_xls(dfs,store_path)
     else:
         dfs = {}
         path_sum = os.path.join(ab_path, dataset)
         dataframe_metadata = metadata_true(dataset, ab_path)
-        df_recall_k = recall_k_aggregation(col,M_all[0], dataset, ab_path)
+        df_recall_k = recall_k_aggregation(col,colM,M_all[0], dataset, ab_path)
         dfs[dataset+ "_basic_info"] = dataframe_metadata
         dfs[dataset + "_1"] = df_recall_k
-        dfs[dataset + "_2"] = recall_k_aggregation(col1, M_all[0], dataset, path_sum)
-        dfs[dataset + "_3"] = recall_k_aggregation(col2, M_all[0], dataset, path_sum)
+        dfs[dataset + "_2"] = recall_k_aggregation(col1,col1M, M_all[0], '', path_sum)
+        dfs[dataset + "_3"] = recall_k_aggregation(col2,col2M, M_all[0], '', path_sum)
         store_path = os.path.join(ab_path, dataset, dataset + ".xlsx")
         write_to_xls(dfs, store_path)
 
