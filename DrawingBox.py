@@ -3,16 +3,18 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+colM = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
+col1M = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]
+col2M = ["Dataset","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
 #data = pd.read_excel('D:\CurrentDataset\ValentineDatasets\TPC-DI\View-Unionable\View-Unionable.xlsx', sheet_name=1)
-def draw(store_path,data_path, dataset, type,sheet_name):
+def draw(columns,store_path,data_path, dataset, type,sheet_name):
 
     if not os.path.exists(data_path):
         print(f"file '{data_path}' not exist")
         return False
     else:
         data = pd.read_excel(data_path, sheet_name=sheet_name)
-        columns = ['M1', 'M2', 'EmbDI', 'cupid', 'distribution_based', 'similarity_flooding']
+        #columns = ['M1', 'M2', 'EmbDI', 'cupid', 'distribution_based', 'similarity_flooding']
         data_to_plot = data[columns]
         print(data_to_plot)
 
@@ -68,9 +70,9 @@ for dataset in datasets:
             xlsx_sum_p = os.path.join(parent_path,type,type+".xlsx")
             store_p= os.path.join(parent_path,type,type+".png")
             try:
-                draw(store_p, xlsx_sum_p,dataset,type,1)
-                draw(store_p, xlsx_sum_p, dataset, type,2)
-                draw(store_p, xlsx_sum_p, dataset, type,3)
+                draw(colM,store_p, xlsx_sum_p,dataset,type,1)
+                draw(col1M,store_p, xlsx_sum_p, dataset, type,2)
+                draw(col2M,store_p, xlsx_sum_p, dataset, type,3)
             except FileNotFoundError as e:
                 print(e)
 
@@ -79,9 +81,9 @@ for dataset in datasets:
         xlsx_sum_p = os.path.join(parent_path, dataset + ".xlsx")
         store_p = os.path.join(parent_path, dataset + ".png")
         try:
-            draw(store_p, xlsx_sum_p,dataset,"Unionable",1)
-            draw(store_p, xlsx_sum_p, dataset, "Unionable",2)
-            draw(store_p, xlsx_sum_p, dataset, "Unionable",3)
+            draw(colM,store_p, xlsx_sum_p,dataset,"Unionable",1)
+            draw(col1M,store_p, xlsx_sum_p, dataset, "Unionable",2)
+            draw(col2M,store_p, xlsx_sum_p, dataset, "Unionable",3)
         except FileNotFoundError as e:
             print(e)
 
