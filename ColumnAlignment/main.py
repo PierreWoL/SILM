@@ -31,11 +31,11 @@ if __name__ == '__main__':
 
     if hp.method == "M1" or hp.method == "M2":
         match = SimpleColumnMatch(hp.eval_path, hp.method)
-        score = match.SimpleMatch(0.1)
+        score = match.SimpleMatch(0,'column')
         Ground_truth(hp.eval_path,hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
     if hp.method == "M1H" or hp.method == "M2H":
         match = SimpleColumnMatch(hp.eval_path, hp.method)
-        score = match.SimpleMatch_Header(0.55)
+        score = match.SimpleMatch(0,'header')
         Ground_truth(hp.eval_path,hp.ground_truth_path, score, hp.eval_path + "/results/", hp.method)
     if hp.method == "M3":
         current_dir = os.getcwd()
