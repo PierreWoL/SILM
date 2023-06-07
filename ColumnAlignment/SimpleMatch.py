@@ -26,8 +26,9 @@ def dataframe_slice(table: pd.DataFrame):
     return table_slice
 
 
-def cos_similarity(vectors):
-    normalized_embeddings = torch.nn.functional.normalize(vectors, p=2, dim=1)
+def cos_similarity(vector1,vector2):
+    normalized_embeddings = [torch.nn.functional.normalize(vector1, p=2, dim=1)]
+    normalized_embeddings.append(torch.nn.functional.normalize(vector2, p=2, dim=1))
     similarity = cosine_similarity(normalized_embeddings[0].detach().numpy().reshape(1, -1),
                                    normalized_embeddings[1].detach().numpy().reshape(1, -1)).item()
 
@@ -45,8 +46,8 @@ class SimpleColumnMatch:
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
         self.model = AutoModel.from_pretrained(lm_mp[lm])
 
-    def encodings(self, text1, text2, ):
-        encoded_input = self.tokenizer([text1, text2], max_length=512, padding=True, truncation=True,
+    def encodings(self,texts:[]):
+        encoded_input = self.tokenizer(texts, max_length=512, padding=True, truncation=True,
                                        return_tensors='pt')
         output = self.model(**encoded_input)
         embeddings = output.last_hidden_state
@@ -55,21 +56,23 @@ class SimpleColumnMatch:
     def encoding(self, text1):
         encoded_input = self.tokenizer(text1, max_length=512, padding=True, truncation=True, return_tensors='pt')
         output = self.model(**encoded_input)
-        embeddings = output.last_hidden_state
-        return embeddings
+        embedding = output.last_hidden_state
+        return embedding
 
-    def embeddings_columns(self, table: pd.DataFrame,type='column'):
+    def embeddings_columns(self, table1: pd.DataFrame, table2:pd.DataFrame, type='column'):
         cols = []
         if type =='column':
-            for column_i in table.columns:
-                col_i = col_concate(table[column_i], token=False)
-                encoding_i = self.encoding(col_i)
-                cols.append(encoding_i)
+            for column_i in table1.columns:
+                col_i = col_concate(table1[column_i], token=False)
+                cols.append(col_i)
+            for column_j in table2.columns:
+                col_j = col_concate(table2[column_j], token=False)
+                cols.append(col_j)
         else:
-            for column_i in table.columns:
-                encoding_i = self.encoding(column_i)
-                cols.append(encoding_i)
-        return cols
+           cols=table1.columns.tolist()
+           cols.append(header for header in table2.columns)
+        cols_embeddings = self.encodings(cols)
+        return cols_embeddings
 
     def SimpleMatch(self, thre,type='column'):
         scores = {}
@@ -84,18 +87,18 @@ class SimpleColumnMatch:
             if type =='column':
                 table1 = dataframe_slice(table1)
                 table2 = dataframe_slice(table2)
-            cols_1 = self.embeddings_columns(table1,type)
-            cols_2 = self.embeddings_columns(table2, type)
-            for column_i in cols_1:
+            embeddings = self.embeddings_columns(table1,table2,type)
+            for index_i in range(0,len(table1.columns)):
                 score_i = []
-                for column_j in cols_2:
-                    score = cos_similarity(self.encodings(column_i, column_j))
+                for index_j in range(0,len(table2.columns)):
+                    score = cos_similarity(embeddings[index_i],embeddings[len(table1.columns)+index_j] )
                     score_i.append(score)
                 for score_col in score_i:
                     if score_col >= thre:
-                        index_j = score_i.index(score_col)
+                        index_score = score_i.index(score_col)
                         scores[
-                            (('table_1', column_i.rstrip()), ('table_2', table2.columns[index_j].rstrip()))] = score_col
+                            (('table_1', table1.columns[index_i].rstrip()),
+                             ('table_2', table2.columns[index_score].rstrip()))] = score_col
                     else:
                         continue
             scores = dict(sorted(scores.items(), key=itemgetter(1), reverse=True))

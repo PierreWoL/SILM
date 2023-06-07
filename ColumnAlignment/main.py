@@ -6,10 +6,10 @@ from metrics import Ground_truth
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="M1H")  # M1 M2 M3
+    parser.add_argument("--method", type=str, default="M1")  # M1 M2 M3
     parser.add_argument("--dataset", type=str, default="Wikidata")  # ChEMBL Magellan OpenData TPC-DI Wikidata
-    parser.add_argument("--ground_truth_path", type=str, default="D:/CurrentDataset/ValentineDatasets/Wikidata/musicians_joinable/musicians_joinable_mapping.json")  #data/data_mapping.json
-    parser.add_argument("--eval_path", type=str, default="D:/CurrentDataset/ValentineDatasets/Wikidata/musicians_joinable")  # data/
+    parser.add_argument("--ground_truth_path", type=str, default="data/data_mapping.json")  #
+    parser.add_argument("--eval_path", type=str, default="data/")  # data/
     parser.add_argument("--fine_tune", dest="fine_tune", action="store_true", default=False)
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--output_dir", type=str, default="model/")
