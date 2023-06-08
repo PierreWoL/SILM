@@ -70,7 +70,7 @@ class SimpleColumnMatch:
                 cols.append(col_j)
         else:
            cols=table1.columns.tolist()
-           cols.append(header for header in table2.columns)
+           for header in table2.columns: cols.append(header)
         cols_embeddings = self.encodings(cols)
         return cols_embeddings
 
