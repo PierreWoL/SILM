@@ -43,11 +43,11 @@ class ColumnMatchingClassifier:
                  train_path,
                  positive_op,
                  max_len=256,
-                 lm='roberta',
+                 lm='distilbert',
                  early_stop: bool = False,
                  early_stop_patience: int = 10):
         "remember to change this"
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp['roberta'], selectable_pos=1)
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm], selectable_pos=1)
         if lm in lm_mp.keys():
             self.model = AutoModelForSequenceClassification.from_pretrained(lm_mp[lm])
         else:
@@ -62,7 +62,7 @@ class ColumnMatchingClassifier:
                 self.dataset = pickle.load(f)
         else:
             dfs = dataframe_train(self.train_path)
-            self.dataset = create_column_pairs_mapping(dfs, positive_op)[0]
+            self.dataset = create_column_pairs_mapping(dfs)
             # print(self.dataset,type(self.dataset),type(self.dataset["train"]))
             """TODO this may need specified path"""
             save_dict(self.dataset, self.train_path + "/dataset_dict.pkl")

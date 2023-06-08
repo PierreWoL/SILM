@@ -24,9 +24,9 @@ def dataframe_train(path: str):
     tables = [fn for fn in os.listdir(path) if '.csv' in fn]
     for index, table_name in enumerate(tables):
         fn = os.path.join(path, table_name)
-        table = pd.read_csv(fn, lineterminator='\n')
-        if len(table) > 100:
-            table = table.head(100)
+        table = pd.read_csv(fn,  lineterminator='\n')#lineterminator='\n')
+        """if len(table) > 1000:
+            table = table.head(1000)"""
         dataframes[table_name] = table
     return dataframes
 
@@ -79,32 +79,42 @@ def augmentation_col(column: pd.Series, aug_method: str, aug_percent1=0.5, aug_p
     return {'Col1': Col1, 'Col2': Col2, 'label': 1}
 
 
-def create_column_pairs_mapping(datas: dict, aug_meth="random"):
-    dict_all_mapping = []
-    dict_pairs = []
+def create_column_pairs_mapping(datas: dict):
+    dict_all_mapping_positive,dict_all_mapping_negative = [],[]
+    dict_pairs_positive, dict_pairs_negative =[],[]
     for tableName, df in datas.items():
-        #print("Table name:", tableName, len(df))
-        
         for i in range(len(df.columns)):
             column_i = df.columns[i]
-            dict_pairs.append(augmentation_col(df[column_i], aug_meth, 0.5, 0.5, 0.2))
-            dict_all_mapping.append({'Col1': {tableName: column_i}, 'Col2': {tableName: column_i}})
+            for percent in [0.1,0.3,0.7,0.9]:
+                dict_pairs_positive.append(augmentation_col(df[column_i], "random", 0.6, 0.4,percent))
+                dict_all_mapping_positive.append({'Col1': {tableName: column_i}, 'Col2': {tableName: column_i}})
+                dict_pairs_positive.append(augmentation_col(df[column_i], "slice", percent, 1-percent))
+                dict_all_mapping_positive.append({'Col1': {tableName: column_i}, 'Col2': {tableName: column_i}})
+
             for j in range(i, len(df.columns)):
                 column_j = df.columns[j]
-                dict_all_mapping.append({'Col1': {tableName: column_i}, 'Col2': {tableName: column_i}})
-                dict_pairs.append({'Col1': col_concate(df[column_i]), 'Col2': col_concate(df[column_j]), 'label': 0})
-     
+                dict_pairs_negative.append({'Col1': col_concate(df[column_i]), 'Col2': col_concate(df[column_j]), 'label': 0})
+                dict_all_mapping_negative.append({'Col1': {tableName: column_i}, 'Col2': {tableName: column_i}})
+
     dataset_dict = DatasetDict()
-    
-    all_pairs = pd.DataFrame(dict_pairs)
-    sample_size = int(0.7 * len(all_pairs))
-    train_df = all_pairs.sample(n=sample_size, random_state=42)
-    eval_df = all_pairs.drop(train_df.index)
-    train_dataset =Dataset.from_pandas(train_df).remove_columns("__index_level_0__")
-    eval_dataset = Dataset.from_pandas(eval_df).remove_columns("__index_level_0__")
+
+    all_pairs_positive = pd.DataFrame(dict_pairs_positive)
+    all_pairs_negative = pd.DataFrame(dict_pairs_negative)
+    sample_size_positive = int(0.7 * len(all_pairs_positive))
+    sample_size_negative = int(0.7 * len(all_pairs_negative))
+
+    train_df_po = all_pairs_positive.sample(n=sample_size_positive, random_state=42)
+    eval_df_po = all_pairs_positive.drop(train_df_po.index)
+
+    train_df_ne = all_pairs_negative.sample(n=sample_size_negative, random_state=42)
+    eval_df_ne = all_pairs_negative.drop(train_df_ne.index)
+
+    train_dataset = Dataset.from_pandas(pd.concat([train_df_po, train_df_ne])).remove_columns("__index_level_0__")
+    eval_dataset = Dataset.from_pandas(pd.concat([eval_df_po, eval_df_ne])).remove_columns("__index_level_0__")
+    print(train_dataset,eval_dataset)
     dataset_dict["train"] = train_dataset
     dataset_dict["eval"] = eval_dataset
-    return dataset_dict, dict_all_mapping
+    return dataset_dict
 
 
 def create_column_pairs(pair_path):
@@ -125,7 +135,6 @@ def create_column_pairs(pair_path):
             column_pairs = []
             mapping_pairs = []
             for column_j in datas[1][1].columns:
-
                 data1 = datas[0][1]
                 data2 = datas[1][1]
                 mapping_pairs.append((('table_1', column_i), ('table_2', column_j)))
@@ -140,7 +149,9 @@ def save_dict(dataset_dict, path):
         pickle.dump(dataset_dict, f)
 
 
-"""path = "D:/CurrentDataset/valentine-data-fabricator/csvfiles/source/"
+path = "D:\CurrentDataset\ValentineDatasets\TPC-DI\Semantically-Joinable\Train"
 dfs = dataframe_train(path)
+print(dfs)
 dataset_dict, dict_all_mapping = create_column_pairs_mapping(dfs)
-save_dict(dataset_dict,"D:/CurrentDataset/ColumnAlignment/dataset/dataset_dict.pkl")"""
+save_dict(dataset_dict,"D:\CurrentDataset\ValentineDatasets\TPC-DI\Semantically-Joinable\Train\dataset_dict.pkl")
+
