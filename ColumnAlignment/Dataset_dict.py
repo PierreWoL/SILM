@@ -4,7 +4,7 @@ import random
 
 from datasets import Dataset, DatasetDict
 import pandas as pd
-
+import io
 
 # This is for read the pairs in the valentine
 def read_valentine_csvs(path_folder):
@@ -24,7 +24,11 @@ def dataframe_train(path: str):
     tables = [fn for fn in os.listdir(path) if '.csv' in fn]
     for index, table_name in enumerate(tables):
         fn = os.path.join(path, table_name)
-        table = pd.read_csv(fn,  lineterminator='\n')#lineterminator='\n')
+        with open(fn, 'r', newline='', encoding='utf-8') as file:
+          data = file.read()
+        data = data.replace('\r\n', '\n')
+        table = pd.read_csv(io.StringIO(data),lineterminator='\n')
+        #table = pd.read_csv(fn,  lineterminator='\r')#lineterminator='\n')
         """if len(table) > 1000:
             table = table.head(1000)"""
         dataframes[table_name] = table
@@ -39,8 +43,9 @@ def col_concate(col: pd.Series, token=False):
         for val in colVals:
             if val not in tokens:
                 tokens.append(val)
-                if len(tokens) >= 512:
+                if len(tokens) >= 256:
                     break
+        #print(tokens,len(tokens))
         col_string = ' '.join(tokens)
     else:
         col = col.astype(str)
@@ -65,6 +70,8 @@ def augmentation_col(column: pd.Series, aug_method: str, aug_percent1=0.5, aug_p
         overlap_values = random.sample(list(series_1), overlap_count)
         random_values_2 = random.sample(list(column), extract_2_percent)
         series_2 = pd.Series(overlap_values + random_values_2)
+        Col1 = col_concate(series_1,True)
+        Col2 = col_concate(series_2,True)
     if aug_method == "slice":
         total_values = len(column)
         select_count1 = int(aug_percent1 * total_values)
@@ -74,8 +81,8 @@ def augmentation_col(column: pd.Series, aug_method: str, aug_percent1=0.5, aug_p
         series_2 = column.tail(select_count2)
     series_1 = series_1.astype(str)
     series_1.str.cat(sep=' ')
-    Col1 = col_concate(series_1)
-    Col2 = col_concate(series_2)
+    Col1 = col_concate(series_1,True)
+    Col2 = col_concate(series_2,True)
     return {'Col1': Col1, 'Col2': Col2, 'label': 1}
 
 
@@ -111,7 +118,7 @@ def create_column_pairs_mapping(datas: dict):
 
     train_dataset = Dataset.from_pandas(pd.concat([train_df_po, train_df_ne])).remove_columns("__index_level_0__")
     eval_dataset = Dataset.from_pandas(pd.concat([eval_df_po, eval_df_ne])).remove_columns("__index_level_0__")
-    print(train_dataset,eval_dataset)
+    #print(train_dataset,eval_dataset)
     dataset_dict["train"] = train_dataset
     dataset_dict["eval"] = eval_dataset
     return dataset_dict
@@ -148,10 +155,15 @@ def save_dict(dataset_dict, path):
     with open(path, "wb") as f:
         pickle.dump(dataset_dict, f)
 
-
-path = "D:\CurrentDataset\ValentineDatasets\TPC-DI\Semantically-Joinable\Train"
+"""
+current_path = os.getcwd()
+parent_path = os.path.dirname(current_path)
+path = os.path.join(parent_path,"ValentineDatasets/TPC-DI/Semantically-Joinable/Train")
 dfs = dataframe_train(path)
-print(dfs)
-dataset_dict, dict_all_mapping = create_column_pairs_mapping(dfs)
-save_dict(dataset_dict,"D:\CurrentDataset\ValentineDatasets\TPC-DI\Semantically-Joinable\Train\dataset_dict.pkl")
 
+dataset_dict = create_column_pairs_mapping(dfs)
+print(dataset_dict,len(dataset_dict['train']['label']))
+save_dict(dataset_dict,os.path.join(path,"dataset_dict.pkl"))
+
+
+"""

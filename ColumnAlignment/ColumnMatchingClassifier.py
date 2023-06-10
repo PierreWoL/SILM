@@ -37,7 +37,27 @@ def save_dict(dataset_dict, path):
     with open(path, "wb") as f:
         pickle.dump(dataset_dict, f)
 
+def slice_dataset(data,  slice_size_max=300):
+    total_length = len(data)
+    num_slices = total_length // slice_size_max  # calculate the number of slices
 
+    sliced_datasets = []  # store the sliced datasets
+
+    start_index = 0
+    for i in range(num_slices):
+        end_index = start_index + slice_size_max
+        sliced_data = data.select(range(start_index, end_index))  # obtain slices
+        sliced_datasets.append(sliced_data)
+        start_index = end_index
+
+    # deal the last slice
+    if start_index < total_length:
+        sliced_data = data.select(range(start_index, total_length))
+        sliced_datasets.append(sliced_data)
+
+    return sliced_datasets
+    
+    
 class ColumnMatchingClassifier:
     def __init__(self,
                  train_path,
@@ -57,8 +77,8 @@ class ColumnMatchingClassifier:
         self.trainer = None
         self.mapping = []
         self.train_path = train_path
-        if any(file.endswith('.pkl') for file in os.listdir(train_path)):
-            with open(self.train_path + "/dataset_dict.pkl", 'rb') as f:
+        if any(file.endswith('1.pkl') for file in os.listdir(train_path)):
+            with open(self.train_path + "/dataset_dict1.pkl", 'rb') as f:
                 self.dataset = pickle.load(f)
         else:
             dfs = dataframe_train(self.train_path)
@@ -69,7 +89,10 @@ class ColumnMatchingClassifier:
 
         self.train_data = self.load_dataset(self.dataset["train"], max_length=2 * max_len)
         self.eval_data = self.load_dataset(self.dataset["eval"], max_length=2 * max_len)
-
+        
+        #dataset = self.load_dataset(self.dataset, max_length=2 * max_len)
+        #self.train_data = dataset["train"]
+        #self.eval_data = dataset["eval"]
         print("train and eval datasets are ", self.train_data, self.eval_data)
         self.max_length = max_len
         self.tables = [fn for fn in os.listdir(train_path) if '.csv' in fn]
@@ -136,9 +159,43 @@ class ColumnMatchingClassifier:
             dataset (Dataset): the training Dataset generated previously from the pairs of columns
             max_length (int): Maximum length of the input sequence.
         """
-
+        sliced_datasets = slice_dataset(data)
+        processed_datasets = []  
         def preprocess_function(examples):
-            return self.tokenizer(examples["Col1"], examples["Col2"], max_length=max_length, truncation=True)
+            return self.tokenizer(examples["Col1"], examples["Col2"],  truncation=True)
 
-        data = data.map(preprocess_function, batched=True)
-        return data
+        #data = data.map(preprocess_function, batched=True)
+        #return data
+        for sliced_data in sliced_datasets:
+        # take preprocess operation to processed_data
+          processed_data = sliced_data.map(preprocess_function, batched=True)
+          processed_datasets.append(processed_data)
+
+        # 合并处理后的数据集
+        merged_dataset = Dataset.concat(processed_datasets)
+
+        return merged_dataset
+
+def load_dataset(data: Dataset, max_length: int = 512):
+        print("start mapping")
+        r""" Preprocess the input data
+        Args:
+            dataset (Dataset): the training Dataset generated previously from the pairs of columns
+            max_length (int): Maximum length of the input sequence.
+        """
+        sliced_datasets = slice_dataset(data)
+        processed_datasets = []  
+        def preprocess_function(examples):
+            return self.tokenizer(examples["Col1"], examples["Col2"],  truncation=True)
+
+        #data = data.map(preprocess_function, batched=True)
+        #return data
+        for sliced_data in sliced_datasets:
+        # take preprocess operation to processed_data
+          processed_data = sliced_data.map(preprocess_function, batched=True)
+          processed_datasets.append(processed_data)
+
+        # 合并处理后的数据集
+        merged_dataset = Dataset.concat(processed_datasets)
+
+        return merged_dataset
