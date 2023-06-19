@@ -3,11 +3,14 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-colM = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
-col1M = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]
-col2M = ["Dataset","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
+colM = [ "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]#"RoBERTa_FineTune",
+box_colorsM = ['lightblue', 'lightgreen', 'lightyellow', 'lightpink', 'lightgray', 'lightcyan','blue','green','purple']
+col1M = [ "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]#"RoBERTa_FineTune",
+box_colors1M = ['lightblue', 'lightgreen', 'lightyellow', 'lightpink', 'lightgray']
+col2M = ["RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
+box_colors2M = ['lightcyan','blue','green','purple']
 #data = pd.read_excel('D:\CurrentDataset\ValentineDatasets\TPC-DI\View-Unionable\View-Unionable.xlsx', sheet_name=1)
-def draw(columns,store_path,data_path, dataset, type,sheet_name):
+def draw(box_colors,columns,store_path,data_path, dataset, type,sheet_name):
 
     if not os.path.exists(data_path):
         print(f"file '{data_path}' not exist")
@@ -18,7 +21,7 @@ def draw(columns,store_path,data_path, dataset, type,sheet_name):
         data_to_plot = data[columns]
         print(data_to_plot)
 
-        box_colors = ['lightblue', 'lightgreen', 'lightyellow', 'lightpink', 'lightgray', 'lightcyan']
+        
         plt.figure(figsize=(10, 8))
 
         bp = plt.boxplot(data_to_plot.values, labels=data_to_plot.columns, patch_artist=True)
@@ -55,7 +58,7 @@ def draw(columns,store_path,data_path, dataset, type,sheet_name):
 
 
         plt.savefig(store_path)
-        plt.show()
+        #plt.show()
 
 
 
@@ -68,11 +71,11 @@ for dataset in datasets:
     if dataset != 'wikidata' and dataset!='Magellan':
         for type in types:
             xlsx_sum_p = os.path.join(parent_path,type,type+".xlsx")
-            store_p= os.path.join(parent_path,type,type+".png")
+            store_p= os.path.join(parent_path,type)
             try:
-                draw(colM,store_p, xlsx_sum_p,dataset,type,1)
-                draw(col1M,store_p, xlsx_sum_p, dataset, type,2)
-                draw(col2M,store_p, xlsx_sum_p, dataset, type,3)
+                draw(box_colorsM,colM,os.path.join(store_p,type+"1.pdf"), xlsx_sum_p,dataset,type,1)
+                draw(box_colors1M,col1M,os.path.join(store_p,type+"2.pdf"), xlsx_sum_p, dataset, type,2)
+                draw(box_colors2M,col2M,os.path.join(store_p,type+"3.pdf"), xlsx_sum_p, dataset, type,3)
             except FileNotFoundError as e:
                 print(e)
 
@@ -81,9 +84,9 @@ for dataset in datasets:
         xlsx_sum_p = os.path.join(parent_path, dataset + ".xlsx")
         store_p = os.path.join(parent_path, dataset + ".png")
         try:
-            draw(colM,store_p, xlsx_sum_p,dataset,"Unionable",1)
-            draw(col1M,store_p, xlsx_sum_p, dataset, "Unionable",2)
-            draw(col2M,store_p, xlsx_sum_p, dataset, "Unionable",3)
+            draw(box_colorsM,colM,store_p, xlsx_sum_p,dataset,"Unionable",1)
+            draw(box_colors1M,col1M,store_p, xlsx_sum_p, dataset, "Unionable",2)
+            draw(box_colors2M,col2M,store_p, xlsx_sum_p, dataset, "Unionable",3)
         except FileNotFoundError as e:
             print(e)
 

@@ -30,7 +30,7 @@ if __name__ == '__main__':
     parser.add_argument("--subject_column", dest="subject_column", action="store_true")
     parser.add_argument("--check_subject_Column",type=str, default='subjectheader')#subjectheader
     # row / column-ordered for preprocessing
-    parser.add_argument("--table_order", type=str, default='sentence_row')  # column
+    parser.add_argument("--table_order", type=str, default='column')  # column
     # for sampling
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
     # mlflow tag
@@ -64,14 +64,14 @@ if __name__ == '__main__':
     #                      sample_meth=hp.sample_meth)
     
     
-    trainset = PretrainTableDataset.from_hp(path, hp)
+    #trainset = PretrainTableDataset.from_hp(path, hp)
 
     """
     for i in range(0,len(trainset)):
       trainset[i]
     """
     
-    train(trainset, hp)
+    #train(trainset, hp)
     
     """
     print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(

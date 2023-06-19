@@ -14,10 +14,10 @@ import pandas as pd
         "precision_at_90_percent", 
 '''
 
-col = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based","M1H", "M2H",   "cupid", "similarity_flooding"]
-colM = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
-col1 = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based"]
-col1M = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]
+col = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based","M1H", "M2H",   "cupid", "similarity_flooding"]#"M3",
+colM = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]#,"RoBERTa_FineTune"
+col1 = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based"]#"M3",
+col1M = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]#"RoBERTa_FineTune",
 col2 = ["Dataset","M1H", "M2H",   "cupid", "similarity_flooding"]
 col2M = ["Dataset","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]
 col_meta = ["Dataset_Pair_Name", "Dataset_Pair_relationship",
@@ -45,7 +45,7 @@ def metadata_true(dataset, data_path,type=''):
     else:
         path = os.path.join(data_path, dataset,type)
 
-    sub_datasets = [fn for fn in os.listdir(path) if not fn == 'Train' and not fn.endswith(".csv") and not fn.endswith(".xlsx")]
+    sub_datasets = [fn for fn in os.listdir(path) if not fn == 'Train' and "." not in fn]
     line_m = []
     for subD in sub_datasets:
         valueaa = [('Dataset_Pair_Name', subD)]

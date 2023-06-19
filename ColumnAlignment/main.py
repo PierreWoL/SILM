@@ -28,7 +28,7 @@ if __name__ == '__main__':
     hp = parser.parse_args()
 
     # Change the data paths to where the benchmarks are stored
-    if hp.dataset !='Magellan' or hp.dataset !='Wikidata':
+    if hp.dataset not in ['Magellan','Wikidata']:
       path = 'ValentineDatasets/%s/%s/Train/' % (hp.dataset, hp.Type)
     else:
       path = 'ValentineDatasets/%s/Train/' % hp.dataset
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         current_dir = os.getcwd()
         parent_dir = os.path.dirname(current_dir)
         absolute_path = os.path.join(parent_dir,path)
-        print(absolute_path)
+        print("train_path",absolute_path)
         #M3_classifier = ColumnMatchingClassifier.from_hp(absolute_path,hp)
         M3 = ColumnMatch(absolute_path, hp)
         #score = M3.score(hp, 0)

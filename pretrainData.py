@@ -41,8 +41,8 @@ class PretrainTableDataset(data.Dataset):
             self.header_token = ('<header>', '</header>')
             self.SC_token = ('<sc>', '</sc>')
         else:
-            special_tokens_dict = {'additional_special_tokens': ["[SC]", "[HEADER],[SCE],[HEADERE]"]}
-            self.header_token = ('[HEADER]', '[HEADERE]')
+            special_tokens_dict = {'additional_special_tokens': ["[SC]", "[H],[SCE],[HE]"]}
+            self.header_token = ('[H]', '[HE]')
             self.SC_token = ('"[SC]"', '[SCE]')
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
         special_tokens = self.tokenizer.special_tokens_map.items()

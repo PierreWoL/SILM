@@ -4,6 +4,7 @@
 # You may obtain a copy of the License at
 import pickle
 #     http://www.apache.org/licenses/LICENSE-2.0
+import psutil
 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +15,7 @@ import pickle
 # @paper(
 #     "Contextual Semantic Embeddings for Ontology Subsumption Prediction (World Wide Web Journal)",
 # )
-from datasets import Dataset
+from datasets import Dataset, concatenate_datasets
 from argparse import Namespace
 from Dataset_dict import dataframe_train, create_column_pairs_mapping
 import os
@@ -37,7 +38,7 @@ def save_dict(dataset_dict, path):
     with open(path, "wb") as f:
         pickle.dump(dataset_dict, f)
 
-def slice_dataset(data,  slice_size_max=300):
+def slice_dataset(data,  slice_size_max=1000):
     total_length = len(data)
     num_slices = total_length // slice_size_max  # calculate the number of slices
 
@@ -50,7 +51,7 @@ def slice_dataset(data,  slice_size_max=300):
         sliced_datasets.append(sliced_data)
         start_index = end_index
 
-    # deal the last slice
+    #      the last slice
     if start_index < total_length:
         sliced_data = data.select(range(start_index, total_length))
         sliced_datasets.append(sliced_data)
@@ -63,22 +64,23 @@ class ColumnMatchingClassifier:
                  train_path,
                  positive_op,
                  max_len=256,
-                 lm='distilbert',
+                 lm='roberta',
                  early_stop: bool = False,
                  early_stop_patience: int = 10):
         "remember to change this"
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm], selectable_pos=1)
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp['roberta'], selectable_pos=1)
         if lm in lm_mp.keys():
             self.model = AutoModelForSequenceClassification.from_pretrained(lm_mp[lm])
         else:
             self.model = AutoModelForSequenceClassification.from_pretrained(lm)
+            print("local pretrained loaded.")
 
         self.positive_op = positive_op
         self.trainer = None
         self.mapping = []
         self.train_path = train_path
-        if any(file.endswith('1.pkl') for file in os.listdir(train_path)):
-            with open(self.train_path + "/dataset_dict1.pkl", 'rb') as f:
+        if any(file.endswith('.pkl') for file in os.listdir(train_path)):
+            with open(self.train_path + "/dataset_dict.pkl", 'rb') as f:
                 self.dataset = pickle.load(f)
         else:
             dfs = dataframe_train(self.train_path)
@@ -86,9 +88,12 @@ class ColumnMatchingClassifier:
             # print(self.dataset,type(self.dataset),type(self.dataset["train"]))
             """TODO this may need specified path"""
             save_dict(self.dataset, self.train_path + "/dataset_dict.pkl")
-
-        self.train_data = self.load_dataset(self.dataset["train"], max_length=2 * max_len)
-        self.eval_data = self.load_dataset(self.dataset["eval"], max_length=2 * max_len)
+        if lm in lm_mp.keys():
+          self.train_data = self.load_dataset(self.dataset["train"], max_length=2 * max_len)
+          self.eval_data = self.load_dataset(self.dataset["eval"], max_length=2 * max_len)
+        else:
+            self.train_data = self.dataset["train"]
+            self.eval_data = self.dataset["eval"]
         
         #dataset = self.load_dataset(self.dataset, max_length=2 * max_len)
         #self.train_data = dataset["train"]
@@ -159,43 +164,22 @@ class ColumnMatchingClassifier:
             dataset (Dataset): the training Dataset generated previously from the pairs of columns
             max_length (int): Maximum length of the input sequence.
         """
-        sliced_datasets = slice_dataset(data)
-        processed_datasets = []  
+        #sliced_datasets = slice_dataset(data)
+        #processed_datasets = []          
         def preprocess_function(examples):
             return self.tokenizer(examples["Col1"], examples["Col2"],  truncation=True)
 
-        #data = data.map(preprocess_function, batched=True)
-        #return data
-        for sliced_data in sliced_datasets:
-        # take preprocess operation to processed_data
-          processed_data = sliced_data.map(preprocess_function, batched=True)
-          processed_datasets.append(processed_data)
+        data = data.map(preprocess_function, batched=False, num_proc=1)
+        return data
+        #for sliced_data in sliced_datasets:
+        # 
+        #  processed_data = sliced_data.map(preprocess_function, batched=True, num_proc=4)
+        #  processed_datasets.append(processed_data)
+          
 
         # 合并处理后的数据集
-        merged_dataset = Dataset.concat(processed_datasets)
+        #merged_dataset = Dataset.concat(processed_datasets)
+        #merged_dataset = concatenate_datasets(processed_datasets)
+        
 
-        return merged_dataset
-
-def load_dataset(data: Dataset, max_length: int = 512):
-        print("start mapping")
-        r""" Preprocess the input data
-        Args:
-            dataset (Dataset): the training Dataset generated previously from the pairs of columns
-            max_length (int): Maximum length of the input sequence.
-        """
-        sliced_datasets = slice_dataset(data)
-        processed_datasets = []  
-        def preprocess_function(examples):
-            return self.tokenizer(examples["Col1"], examples["Col2"],  truncation=True)
-
-        #data = data.map(preprocess_function, batched=True)
-        #return data
-        for sliced_data in sliced_datasets:
-        # take preprocess operation to processed_data
-          processed_data = sliced_data.map(preprocess_function, batched=True)
-          processed_datasets.append(processed_data)
-
-        # 合并处理后的数据集
-        merged_dataset = Dataset.concat(processed_datasets)
-
-        return merged_dataset
+        #return merged_dataset        

@@ -27,8 +27,8 @@ class ColumnMatch:
             per_device_train_batch_size=hp.batch,
             per_device_eval_batch_size=hp.batch,
             weight_decay=0.01,
-            #logging_steps=logging_steps,
-            #logging_dir=f"{hp.output_dir}/tb",
+            logging_steps=logging_steps,
+            logging_dir=f"{hp.output_dir}/tb",
             eval_steps=eval_steps,
             evaluation_strategy="steps",
             do_train=True,
@@ -39,11 +39,15 @@ class ColumnMatch:
             metric_for_best_model="accuracy",
             greater_is_better=True,
         )
-        self.bert_trainer.train(train_args=training_args, do_fine_tune=hp.fine_tune)
+        
         if hp.fine_tune:
+            self.bert_trainer.train(train_args=training_args, do_fine_tune=hp.fine_tune)
+            if not os.path.exists(os.path.join(hp.output_dir, hp.dataset+"_FT_columnMatch")):
+                os.makedirs(os.path.join(hp.output_dir, hp.dataset+"_FT_columnMatch"))
             self.bert_trainer.trainer.save_model(
                 output_dir=os.path.join(hp.output_dir, hp.dataset+"_FT_columnMatch")
             )
+            print(os.path.join(hp.output_dir, hp.dataset+"_FT_columnMatch"))
             print("fine-tuning done, fine-tuned model saved.")
         else:
             print("pretrained or fine-tuned model loaded.")
@@ -91,7 +95,7 @@ class ColumnMatch:
             for result in all_results:
                 results_dict.update(result)
             sort_results = dict(sorted(results_dict.items(), key=itemgetter(1), reverse=True))
-            print(sort_results)
+            #print(sort_results)
             return sort_results
         else:
             print("Wrong Path!")
