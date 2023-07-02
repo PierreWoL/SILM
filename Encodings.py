@@ -113,6 +113,7 @@ def table_features(hp: Namespace):
 
 
 def starmie_clustering(hp: Namespace):
+    dicts= {}
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
 
@@ -122,6 +123,7 @@ def starmie_clustering(hp: Namespace):
         files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     for file in files:
+        dict_file= {}
         F = open(datafile_path + file, 'rb')
         content = pickle.load(F)
         Z = []
@@ -166,10 +168,12 @@ def starmie_clustering(hp: Namespace):
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
-                    metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method)
+                for i in range(0, 6):
+                    cluster_dict, metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method)
+                    print("cluster_dict", cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
+                    dict_file[method+"_"+str(i)]=cluster_dict
                 mean_metric = metric_value_df.mean()
                 methods_metrics[method] = mean_metric
                 # print("methods_metrics is", methods_metrics)
@@ -185,8 +189,11 @@ def starmie_clustering(hp: Namespace):
                 store_path += "All/"
             mkdir(store_path)
             e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
+            dicts[file] = dict_file
         except ValueError as e:
            continue
+    with open(datafile_path+'cluster_dict.pickle', 'wb') as handle:
+        pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 """

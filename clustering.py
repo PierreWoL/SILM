@@ -435,8 +435,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
     #print(input_data)
     #print(gt_clusters, ground_t, gt_cluster_dict)
-    # 实现LSH indexes 为数据
-    parameters = []
+    # 实现LSH indexes 为数�?    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -456,7 +455,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     #print(tables)
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
     #print(metrics_value)
-    return metrics_value
+    return cluster_dict, metrics_value
 
 
 # print(clusters)
