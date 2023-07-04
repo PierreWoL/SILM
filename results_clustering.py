@@ -1,16 +1,11 @@
 import argparse
-import os
-from Encodings import starmie_clustering
-import numpy as np
-import random
-import torch
-import mlflow
-from experiments import run_exp
+from Encodings import starmie_clustering,files_columns_running
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="open_data")
+    parser.add_argument("--dataset", type=str, default="WDC")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -36,7 +31,8 @@ if __name__ == '__main__':
 
     hp = parser.parse_args()
     method = 0
-    starmie_clustering(hp)
+    #starmie_clustering(hp)
+    files_columns_running(hp)
     # trainset = PretrainTableDataset(path,
     #                      augment_op=hp.augment_op,
     #                      lm=hp.lm,

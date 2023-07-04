@@ -16,7 +16,7 @@ def experiment(Z, T, data_path, ground_truth, folderName, filename):
             mkdir(os.getcwd() + "/result/" + method + "/" + folderName + "/")
             metric_dict = clustering.clustering_results(Z, T, data_path, ground_truth, method,
                                                         os.getcwd() + "/result/" + method + "/" + folderName + "/",
-                                                        filename + str(i))
+                                                        filename + str(i))[1]
             metric_df = pd.DataFrame([metric_dict])
             metric_value_df = pd.concat([metric_value_df, metric_df])
         mean_metric = metric_value_df.mean()
