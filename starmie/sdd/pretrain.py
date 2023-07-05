@@ -213,7 +213,7 @@ def load_checkpoint(ckpt):
     if hp.lm=='roberta':
       Resize=50269
     else:
-       Resize=30529
+       Resize=30531
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=Resize)#50269 30529
     model = model.to(device)
     model.load_state_dict(ckpt['model'])

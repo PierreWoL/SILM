@@ -36,14 +36,16 @@ class PretrainTableDataset(data.Dataset):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
                                                        selectable_pos=1)  # , additional_special_tokens=['[header]', '[SC]']
 
-        if lm == 'roberta':
-            special_tokens_dict = {'additional_special_tokens': ["<sc>", "<header>", "</sc>", "</header>"]}
-            self.header_token = ('<header>', '</header>')
-            self.SC_token = ('<sc>', '</sc>')
+        #if lm == 'roberta':
+        special_tokens_dict = {'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
+        self.header_token = ('<header>', '</header>')
+        self.SC_token = ('<subjectcol>', '</subjectcol>')
+        """
         else:
             special_tokens_dict = {'additional_special_tokens': ["[SC]", "[H],[SCE],[HE]"]}
             self.header_token = ('[H]', '[HE]')
             self.SC_token = ('"[SC]"', '[SCE]')
+        """
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
         special_tokens = self.tokenizer.special_tokens_map.items()
 

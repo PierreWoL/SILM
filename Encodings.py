@@ -55,7 +55,7 @@ def get_df(dataFolder):
         dataDfs (dict): key is the filename, value is the dataframe of that table
     '''
     dataFiles = glob.glob(dataFolder + "/*.csv")
-    print(dataFiles)
+    #print(dataFiles)
     dataDFs = {}
     for file in dataFiles:
         df = pd.read_csv(file, lineterminator='\n')
@@ -108,8 +108,10 @@ def table_features(hp: Namespace):
                                                        hp.table_order, hp.run_id, hp.check_subject_Column)
 
     output_path += output_file
+    print(hp.save_model)
     if hp.save_model:
         pickle.dump(dataEmbeds, open(output_path, "wb"))
+    print("Save successfully")
 
 
 def starmie_clustering(hp: Namespace):
