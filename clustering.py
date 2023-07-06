@@ -7,10 +7,10 @@ import statistics
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
-from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
+from d3l.indexing.similarity_indexes import DistributionIndex
 from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.querying.query_engine import QueryEngine
-from d3l.utils.functions import pickle_python_object, unpickle_python_object
+from d3l.utils.functions import pickle_python_object
 from sklearn.metrics import pairwise_distances
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import silhouette_score
@@ -180,10 +180,15 @@ def OPTICS_param_search(input_data):
 
 def BIRCH_param_search(input_data, cluster_num):
     score = -1
+    print("cluster_num",cluster_num)
     best_birch = Birch()
-    for i in range(cluster_num - 2, cluster_num + 2):
-        for threshold in np.arange(start=0.1, stop=1, step=0.1):
-            for branchingfactor in np.arange(start=10, stop=50, step=5):
+    if cluster_num<5:
+        at_least = 0
+    else:
+        at_least = cluster_num - 5
+    for i in range(at_least, cluster_num+5):
+        for threshold in np.arange(start=0.001, stop=1, step=0.001):
+            for branchingfactor in np.arange(start=2, stop=20, step=1):
                 birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
                 birch.fit(input_data)
                 labels = birch.predict(input_data)
@@ -214,7 +219,11 @@ def KMeans_param_search(input_data, cluster_num):
 def AgglomerativeClustering_param_search(input_data, cluster_num):
     score = -1
     best_model = AgglomerativeClustering()
-    for n_clusters in range(cluster_num - 2, cluster_num + 2):
+    if cluster_num < 5:
+        at_least = 0
+    else:
+        at_least = cluster_num - 5
+    for n_clusters in range(at_least, cluster_num+5):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -227,7 +236,11 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
 def gaussian_m_param_search(input_data, cluster_num):
     lowest_bic = np.infty
     bic = []
-    n_components_range = range(cluster_num - 3, cluster_num + 3)
+    if cluster_num < 3:
+        at_least = 0
+    else:
+        at_least = cluster_num -3
+    n_components_range = range(at_least, cluster_num + 3)
     cv_types = ['spherical', 'tied', 'diag', 'full']
     best_gmm = GaussianMixture()
     for cv_type in cv_types:
@@ -313,7 +326,7 @@ gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cl
 """
 
 
-def data_classes(data_path, groundTruth_file):
+def data_classes(data_path, groundTruth_file,superclass=True):
     """
     return three dict
     Parameters
@@ -333,13 +346,19 @@ def data_classes(data_path, groundTruth_file):
     # print(ground_truth_df.iloc[0,0])
     test_table = []
     dict_gt = {}
-    if ground_truth_df.iloc[0, 0].endswith(".tar.gz"):
-        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:, 1]))
-    if ground_truth_df.iloc[0, 0].endswith(".json"):
-        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".json"), ground_truth_df.iloc[:, 1]))
-    if ground_truth_df.iloc[0, 0].endswith(".csv"):
-        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
-        test_table = list(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"))
+    if len(ground_truth_df.columns)>2:
+        if superclass:
+            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 2]))
+        else:
+            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
+    else:
+        if ground_truth_df.iloc[0, 0].endswith(".tar.gz"):
+            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:, 1]))
+        if ground_truth_df.iloc[0, 0].endswith(".json"):
+            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".json"), ground_truth_df.iloc[:, 1]))
+        if ground_truth_df.iloc[0, 0].endswith(".csv"):
+            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
+            test_table = list(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"))
     test_table2 = {}.fromkeys(test_table).keys()
     # print(dict_gt.keys())
     gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
@@ -347,8 +366,9 @@ def data_classes(data_path, groundTruth_file):
     gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
     # print(gt_clusters, ground_t, gt_cluster_dict,len(gt_clusters))
     # gt_cluster_dict{cluster:}
-    print(ground_t, gt_cluster_dict, len(gt_clusters))
+    #print(ground_t, gt_cluster_dict, len(gt_clusters))
     return gt_clusters, ground_t, gt_cluster_dict
+
 
 
 def cluster_Dict(clusters_list):
@@ -386,34 +406,55 @@ def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None)
 
 
 def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None, filename=None,
-                     tables_gt: Optional[dict] = None):
+                     tables_gt: Optional[dict] = None, columns:bool = False):
     clusters_label = {}
     table_label_index = []
     false_ones = []
     gt_table_label = []
     tables = []
+    columns_ref = []
     for index, tables_list in clusterDict.items():
         labels = []
         for table in tables_list:
-            tables.append(table)
-            label = gtclusters[table]
-            gt_table_label.append(gtclusters_dict[label])
-            labels.append(label)
-        cluster_label = most_frequent(labels)
+            if table!='T2DV2_75' and table in gtclusters.keys():
+                tables.append(table)
+                label = gtclusters[table]
+                gt_table_label.append(gtclusters_dict[label])
+                labels.append(label)
+        #print(labels)
+        if len(labels)==0:
+            continue
+        else:
+            cluster_label = most_frequent(labels)
+
+
         clusters_label[index] = cluster_label
+        if columns:
+            false_cols = []
+            for table in tables_list:
+                if table not in gtclusters.keys():
+                    false_cols.append(table)
+                if table in gtclusters.keys() and gtclusters[table] != cluster_label:
+                    false_cols.append(table)
+            columns_ref.append([tables_list, cluster_label,false_cols])
         for table in tables_list:
-            table_label_index.append(gtclusters_dict[cluster_label])
-            if gtclusters[table] != cluster_label:
-                false_ones.append([table + ".csv", cluster_label, gtclusters[table]])
+            if table != 'T2DV2_75' and table in gtclusters.keys():
+                table_label_index.append(gtclusters_dict[cluster_label])
+                if gtclusters[table] != cluster_label:
+                    false_ones.append([table, cluster_label, gtclusters[table]])
     metric_dict = metric_Spee(gt_table_label, table_label_index)
     cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
+
     if folder is not None and filename is not None:
-        df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
+        #df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
+        if columns:
+            df_cols = pd.DataFrame(columns_ref, columns=['resultCols', 'result label', 'false_cols'])
+            df_cols.to_csv(os.path.join(folder, filename + 'cols_results.csv'), encoding='utf-8', index=False)
         results = []
-        for key in clusters_label.keys():
-            results.append([key, clusterDict[key], clusters_label[key]])
-        df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
+        #for key in clusters_label.keys():
+            #results.append([key, clusterDict[key], clusters_label[key]])
+        #df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
         # baselinePath = os.getcwd() + "/result/subject_column/"
         #df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
         #df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
@@ -433,9 +474,9 @@ def inputData(data_path, threshold, k, embedding_mode=2):
 def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName = None, filename =None):
     # clustering的ground truth
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
-    #print(input_data)
-    #print(gt_clusters, ground_t, gt_cluster_dict)
-    # 实现LSH indexes 为数�?    parameters = []
+
+    # 实现LSH indexes 为数据
+    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -452,10 +493,59 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     cluster_dict = cluster_Dict(clusters)
     table_dict = None
     table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
-    #print(tables)
+    #print("cluster_dict",cluster_dict)
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
     #print(metrics_value)
+    return cluster_dict,metrics_value
+
+
+def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, clusteringName, folderName=None, filename=None):
+    # 实现LSH indexes 为数据
+    parameters = []
+    if clusteringName == "DBSCAN":
+        parameters = dbscan_param_search(input_data)
+    if clusteringName == "GMM":
+        parameters = gaussian_m_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "Agglomerative":
+        parameters = AgglomerativeClustering_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "OPTICS":
+        parameters = OPTICS_param_search(input_data)
+    if clusteringName == "KMeans":
+        parameters = KMeans_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "BIRCH":
+        parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
+    clusters = cluster_discovery(parameters, tables)
+    cluster_dict = cluster_Dict(clusters)
+    table_dict = None
+    table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
+    # print("cluster_dict",cluster_dict)
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
+    # print(metrics_value)
     return cluster_dict, metrics_value
+def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_cluster_dict, clusteringName,folderName = None, filename =None):
+
+    #print(gt_clusters, ground_t, gt_cluster_dict)
+    # 实现LSH indexes 为数据
+    parameters = []
+    if clusteringName == "DBSCAN":
+        parameters = dbscan_param_search(input_data)
+    if clusteringName == "GMM":
+        parameters = gaussian_m_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "Agglomerative":
+        parameters = AgglomerativeClustering_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "OPTICS":
+        parameters = OPTICS_param_search(input_data)
+    if clusteringName == "KMeans":
+        parameters = KMeans_param_search(input_data, len(gt_cluster_dict))
+    if clusteringName == "BIRCH":
+        parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
+    clusters = cluster_discovery(parameters, columns)
+    cluster_dict = cluster_Dict(clusters)
+    table_dict = None
+    table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict,columns=True)
+    print(metrics_value)
+    return cluster_dict,metrics_value
 
 
 # print(clusters)

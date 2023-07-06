@@ -178,12 +178,13 @@ def matrixs():
                 key1 = keys[i]
                 key2 = keys[j]
                 # print(key1,key2,len(tables_dict[key1].columns),len(tables_dict[key2].columns) )
-                value_i = len(tables_dict[key1].columns) * len(tables_dict[key2].columns)
+                value_i = len(tables_dict[key1].columns) +len(tables_dict[key2].columns)
                 matrixs_cols[superclass][i][j] = value_i
                 matrixs_pairs[superclass][i][j] = (key1, key2)
     return  Gt_clusters_dict,gt_cluster_dicts,keys_cluster,matrixs_cols,matrixs_pairs
 
 def calculate_matrix(file):
+    global j
     Gt_clusterss, Gt_cluster_dicts ,keys_cluster,matrixs_cols,matrixs_pairs = matrixs()
     clusters = [fn for fn in os.listdir(file)]
     for cluster_file in clusters:
@@ -212,25 +213,39 @@ def calculate_matrix(file):
                 result = cluster[clustering_algo]
                 matched_cols = {}
                 for column_cluster, columns in result.items():
-                    tables = set([col.split(".")[0] for col in columns])
+                    tables = list(set([col.split(".")[0] for col in columns]))
+                    cols = set([col for col in columns])
                     #print(column_cluster, tables)
                     combinations = [(key1, key2) for key1 in tables for key2 in tables if key1 != key2]
+                    #combinations = [(tables[i], tables[j]) for i in range(0,len(tables)) for j in range(j,len(tables))]
                     #print("combinations",combinations)
                     for pair in combinations:
+                        N_matchedColumns = len([col for col in cols if col.split(".")[0] in pair])
+                        if pair in matched_cols.keys():
+                            matched_cols[pair] += N_matchedColumns
+                        else:
+                            matched_cols[pair] = N_matchedColumns
+
+                    """for pair in combinations:
                         if pair in matched_cols.keys():
                             matched_cols[pair] += 1
                         else:
-                            matched_cols[pair] = 1
+                            matched_cols[pair] = 1"""
                 empty_matrix = [[0 for _ in row] for row in matrix]
                 for row_idx, row in enumerate(matrixs_pair):
                     for col_idx, value in enumerate(row):
                         if value in matched_cols.keys():
                             empty_matrix[row_idx][col_idx] = matched_cols[value]
-
+                #print("matches", empty_matrix)
+                #print("distinc", matrix)
                 for row_idx, row in enumerate(matrixs_pair):
                     for col_idx, value in enumerate(row):
                         if row_idx!=col_idx:
-                            empty_matrix[row_idx][col_idx] =  1- (empty_matrix[row_idx][col_idx]/matrix[row_idx][col_idx])
+                            if matrix[row_idx][col_idx]==empty_matrix[row_idx][col_idx]:
+                                empty_matrix[row_idx][col_idx] = 0
+                            else:
+                                empty_matrix[row_idx][col_idx] =  1- (empty_matrix[row_idx][col_idx]/
+                                                                  (matrix[row_idx][col_idx]-empty_matrix[row_idx][col_idx]))
                         else:
                             empty_matrix[row_idx][col_idx] = 0
                 print("empty_matrix", empty_matrix)
@@ -241,7 +256,7 @@ def calculate_matrix(file):
                 for algo in ["GMM","KMeans",'Agglomerative']:#"BIRCH",
                     print(algo)
                     try:
-                        for i in range(0, 4):
+                        for i in range(0, 3):
                             empty_matrix = np.array(empty_matrix)
                             cluster_dict, metric_dict = clustering_hier_results(empty_matrix, keys, Gt_clusters,
                                                                             Gt_cluster_dict, algo)

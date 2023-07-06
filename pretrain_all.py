@@ -28,10 +28,9 @@ if __name__ == '__main__':
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
     parser.add_argument("--subject_column", dest="subject_column", action="store_true")
-    parser.add_argument("--header", dest="header", action="store_true")
     parser.add_argument("--check_subject_Column",type=str, default='subjectheader')#subjectheader
     # row / column-ordered for preprocessing
-    parser.add_argument("--table_order", type=str, default='column')  # column
+    parser.add_argument("--table_order", type=str, default='sentence_row')  # column
     # for sampling
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
     # mlflow tag
@@ -66,8 +65,38 @@ if __name__ == '__main__':
     
     
     trainset = PretrainTableDataset.from_hp(path, hp)
+
+    """
+    for i in range(0,len(trainset)):
+      trainset[i]
+    """
     
     train(trainset, hp)
     
+    """
+    print(os.getcwd() + "/" + hp.logdir   + hp.method + "model_" + str(hp.augment_op) + "_" + str(
+        hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt")
+    """
+
+    #print(hp.save_model,hp.check_subject_Column)
+    #train(trainset, hp)
     table_features(hp)
-  
+    """
+    total =None
+    tables=[]
+    for table in trainset.tables:
+        table_csv = pd.read_csv(os.path.join(trainset.path, table),encoding="latin-1")
+        tables.append(table_csv)
+    tables = random.sample(tables, int(len(trainset.tables)*0.2))
+    total = total if total is not None else len(tables)
+    batch = []
+    results = []
+    for tid, table in tqdm(enumerate(tables), total=total):
+        x, _ = trainset._tokenize(table)
+        print(x,_)
+        batch.append((x, x, []))
+        
+        
+    print(batch)
+  padder = trainset.pad(batch)
+     """
