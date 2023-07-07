@@ -114,6 +114,12 @@ def train(trainset, hp):
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
                                              hp.run_id) + "_" + str(hp.check_subject_Column)+ "subCol.pt")
+            if hp.header:
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
+                                         str(hp.augment_op) +"lm_"+ str(
+                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
+                                             hp.table_order) + '_' + str(
+                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "header.pt")
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+

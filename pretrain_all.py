@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument("--augment_op", type=str, default='shuffle_col,sample_row')
     parser.add_argument("--save_model", dest="save_model", action="store_true",default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
+    parser.add_argument("--header", dest="header", action="store_true")
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
     parser.add_argument("--subject_column", dest="subject_column", action="store_true")
