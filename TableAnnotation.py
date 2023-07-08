@@ -8,7 +8,7 @@ from typing import Iterable
 
 
 class TableColumnAnnotation:
-    def __init__(self, table: pd.DataFrame):
+    def __init__(self, table: pd.DataFrame,isCombine = False):
 
         if isinstance(table, pd.DataFrame) is False:
             print("input should be dataframe!")
@@ -20,14 +20,15 @@ class TableColumnAnnotation:
             self.NE_table.rename(columns={col: str(i)}, inplace=True)
         # print(self.table)
         self.NE_cols = []
-        self.annotate_type()
+        self.annotate_type(isCombine =isCombine)
         # in the NE_columns() self.NE_table is also updated to store the tokens of cells in named_entity columns
         self.NE_columns()
         self.vocabulary = self.vocabularySet()
         self.matrix_list = []
         self.subject_col = []
 
-    def annotate_type(self):
+
+    def annotate_type(self,isCombine = False):
         """
         Preprocessing part in the TableMiner+ system
         classifying the cells from each column into one of the types mentioned in
@@ -38,7 +39,10 @@ class TableColumnAnnotation:
         """
         # self.table.shape[1] is the length of columns
         for i in range(self.table.shape[1]):
-            column_detection = SCD.ColumnDetection(self.table.iloc[:, i])
+            column = self.table.iloc[:, i]
+            if isCombine:
+                column = self.table.iloc[0, i].split(",")
+            column_detection = SCD.ColumnDetection(column)
             candidate_type = column_detection.column_type_judge(100)
             self.annotation[i] = candidate_type
         """

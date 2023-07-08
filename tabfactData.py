@@ -29,10 +29,8 @@ unique_file_names = all_datasets['fileName'].unique()
             new_df[col_name] = vals_list
         except ValueError as e:
             print(filename ,e)
-"""
-
-
-
+            
+            
 url_path = os.path.join(os.getcwd(), "datasets", "TabFact", "table_to_page.json")
 # Read JSON data from a file
 with open(url_path) as json_file:
@@ -47,5 +45,17 @@ for filename, value in data.items():
         df.to_csv(os.path.join(target_path,filename))
     except:
         print(filename,url,ValueError,error.HTTPError)
+"""
 
+path = 'datasets/TabFact/02TableAttributes.csv'
+tables_sum = pd.read_csv(os.path.join(os.getcwd(), path))
+table_names = tables_sum["fileName"].unique().tolist()
+for table_name in table_names:
+    tableT = tables_sum[tables_sum["fileName"] == table_name]#
+    table = tableT[["colName","vals"]].set_index("colName").T.reset_index(drop=True)
+    print(table)
+    for column in table.columns:
+        column_value = pd.Series(table[column][0].split(",")).rename(column)
+        print(column_value)
 
+    break
