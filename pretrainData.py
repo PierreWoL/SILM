@@ -167,7 +167,7 @@ class PretrainTableDataset(data.Dataset):
 
         # column-ordered preprocessing
         if self.table_order == 'column':
-            print("table id :", idx)
+            # print("table id :", idx)
             if 'row' in self.sample_meth:
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
 
@@ -192,7 +192,7 @@ class PretrainTableDataset(data.Dataset):
                         col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                     else:
                         col_text += string_token + " "
-                print(column, index, col_text)
+                # print(column, index, col_text)
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
@@ -303,7 +303,7 @@ class PretrainTableDataset(data.Dataset):
             header = table_ori.columns.tolist()
             table_ori = pd.DataFrame([header] + table_ori.values.tolist(), columns=header)
             table_aug = pd.DataFrame([header] + table_aug.values.tolist(), columns=header)
-            print("raw and augment:\n", table_ori, "\n", table_aug)
+            # print("raw and augment:\n", table_ori, "\n", table_aug)
         x_ori, mp_ori = self._tokenize(table_ori, idx=idx)
         x_aug, mp_aug = self._tokenize(table_aug, idx=idx)
 
