@@ -1,24 +1,26 @@
 import os
 import random
 import zipfile
+from collections import Counter
 from typing import Iterable, Set, Optional, Dict
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from d3l.utils.constants import STOPWORDS, GLOVEURL
-from d3l.utils.functions import shingles
+from d3l.utils.functions import shingles, is_empty, is_number, remove_blank
 from urllib.request import urlopen
 
 
 class GloveTransformer:
     def __init__(
-        self,
-        token_pattern: str = r"(?u)\b\w\w+\b",
-        max_df: float = 0.5,
-        stop_words: Iterable[str] = STOPWORDS,
-        model_name: str = "glove.42B.300d",
-        cache_dir: Optional[str] = None,
+            self,
+            token_pattern: str = r"(?u)\b\w\w+\b",
+            max_df: float = 1,
+            min_df: float = 0,
+            stop_words: Iterable[str] = STOPWORDS,
+            model_name: str = "glove.42B.300d",  # download pretrained model
+            cache_dir: Optional[str] = None,
     ):
         """
         Instantiate a new embedding-based transformer
@@ -42,11 +44,13 @@ class GloveTransformer:
 
         self._token_pattern = token_pattern
         self._max_df = max_df
+        self._min_df = min_df
         self._stop_words = stop_words
         self._model_name = model_name
         self._cache_dir = (
             cache_dir if cache_dir is not None and os.path.isdir(cache_dir) else None
         )
+        print("loading GloVe embedding...")
 
         self._embedding_model = self.get_embedding_model(
             model_name=model_name,
@@ -171,9 +175,9 @@ class GloveTransformer:
         return file_name
 
     def get_embedding_model(
-        self,
-        model_name: str = "glove.42B.300d",
-        overwrite: bool = False
+            self,
+            model_name: str = "glove.42B.300d",
+            overwrite: bool = False
     ) -> Dict:
         """
         Download, if not exists, and load the pretrained GloVe embedding model in the working directory.
@@ -194,14 +198,12 @@ class GloveTransformer:
         model_file = self._download_model(model_name=model_name, if_exists=if_exists)
         embedding_model = {}
         print("Loading embeddings. This may take a few minutes ...")
-        with open(model_file, errors='ignore',mode ='r') as f:
+        with open(model_file, errors='ignore', mode='r') as f:
             for line in f:
                 values = line.split()
                 word = values[0]
-                vector = np.asarray(values[1:], "float32")#
-
+                vector = np.asarray(values[1:], "float32")  #
                 embedding_model[word] = vector
-
         return embedding_model
 
     def get_embedding_dimension(self) -> int:
@@ -260,27 +262,40 @@ class GloveTransformer:
                 stop_words=self._stop_words,
                 token_pattern=self._token_pattern,
                 max_df=self._max_df,
+                min_df=self._min_df,
                 use_idf=True,
             )
-            vectorizer.fit_transform(input_values)
-        except ValueError:
+            term_counts = Counter(input_values)
+            # preprocessed_data = ['{} ({})'.format(term, count) for term, count in term_counts.items()]
+            preprocessed_data = ['{}'.format(term) for term, count in term_counts.items()]
+            #print(preprocessed_data)
+            vectorizer.fit_transform(preprocessed_data)
+            # print("tfidf ",vectorizer.get_feature_names_out())
+        except ValueError as e:
+            term_counts = Counter(input_values)
+            preprocessed_data = ['{}'.format(term) for term, count in term_counts.items()]
+            # print(preprocessed_data, e)
             return set()
-
-        weight_map = dict(zip(vectorizer.get_feature_names(), vectorizer.idf_))
+        weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
         tokenset = set()
         tokenizer = vectorizer.build_tokenizer()
         for value in input_values:
+            if is_empty(value) is True:
+                continue
+            if is_number(value) is True:
+                continue
+            if type(value) is bool:
+                value = str(value)
             value = value.lower().replace("\n", " ").strip()
             for shingle in shingles(value):
                 tokens = [t for t in tokenizer(shingle)]
-
                 if len(tokens) < 1:
                     continue
 
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
                 min_tok_id = np.argmin(token_weights)
                 tokenset.add(tokens[min_tok_id])
-
+            # print(tokenset)
         return tokenset
 
     def transform(self, input_values: Iterable[str]) -> np.ndarray:
@@ -294,14 +309,13 @@ class GloveTransformer:
          ----------
         input_values : Iterable[str]
              The collection of values to extract tokens from.
-
          Returns
          -------
          np.ndarray
              A Numpy vector representing the mean of all token embeddings.
         """
-
-        embeddings = [self.get_vector(token) for token in self.get_tokens(input_values)]
+        # print(input_values)
+        embeddings = [self.get_vector(token) for token in self.get_tokens(remove_blank(input_values))]
         if len(embeddings) == 0:
             return np.empty(0)
         return np.mean(np.array(embeddings), axis=0)

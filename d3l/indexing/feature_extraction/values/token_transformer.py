@@ -4,14 +4,14 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from d3l.utils.constants import STOPWORDS
-from d3l.utils.functions import shingles
+from d3l.utils.functions import shingles,remove_blank,remove_blanked_token
 
 
 class TokenTransformer:
     def __init__(
         self,
         token_pattern: str = r"(?u)\b\w\w+\b",
-        max_df: float = 0.5,
+        max_df: float = 1,
         stop_words: Iterable[str] = STOPWORDS,
     ):
         """
@@ -50,7 +50,7 @@ class TokenTransformer:
 
         if len(input_values) < 1:
             return set()
-
+        input_values = remove_blanked_token(input_values)
         try:
             vectorizer = TfidfVectorizer(
                 decode_error="ignore",
@@ -63,7 +63,8 @@ class TokenTransformer:
                 use_idf=True,
             )
             vectorizer.fit_transform(input_values)
-        except ValueError:
+        except (ValueError,AttributeError) as e:
+         #   print(input_values[:5], e)
             return set()
 
         weight_map = dict(zip(vectorizer.get_feature_names_out(), vectorizer.idf_))
@@ -73,10 +74,8 @@ class TokenTransformer:
             value = value.lower().replace("\n", " ").strip()
             for shingle in shingles(value):
                 tokens = [t for t in tokenizer(shingle)]
-
                 if len(tokens) < 1:
                     continue
-
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
                 max_tok_id = np.argmax(token_weights)
                 tokenset.add(tokens[max_tok_id])

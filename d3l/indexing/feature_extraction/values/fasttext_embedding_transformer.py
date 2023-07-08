@@ -5,6 +5,8 @@ from urllib.request import urlopen
 
 import numpy as np
 import gzip
+
+import pandas as pd
 from fasttext import load_model
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -203,7 +205,7 @@ class FasttextTransformer:
             A vector of float numbers.
         """
         vector = self._embedding_model.get_word_vector(
-            str(word).strip().lower(), np.random.randn(self.get_embedding_dimension())
+            str(word).strip().lower()
         )
         return vector
 
@@ -222,6 +224,7 @@ class FasttextTransformer:
         Set[str]
             A set of representative tokens
         """
+        # print(len(input_values),"\n",input_values)
 
         if len(input_values) < 1:
             return set()
@@ -242,6 +245,7 @@ class FasttextTransformer:
             return set()
 
         weight_map = dict(zip(vectorizer.get_feature_names(), vectorizer.idf_))
+        print("weight_map",weight_map)
         tokenset = set()
         tokenizer = vectorizer.build_tokenizer()
         for value in input_values:
@@ -253,9 +257,10 @@ class FasttextTransformer:
                     continue
 
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
+                print("weight_map", weight_map)
                 min_tok_id = np.argmin(token_weights)
                 tokenset.add(tokens[min_tok_id])
-
+        print(tokenset)
         return tokenset
 
     def transform(self, input_values: Iterable[str]) -> np.ndarray:
@@ -280,3 +285,24 @@ class FasttextTransformer:
         if len(embeddings) == 0:
             return np.empty(0)
         return np.mean(np.array(embeddings), axis=0)
+
+    def transform_fast(self, tokens:pd.DataFrame) -> np.ndarray:
+        vector_list =[]
+        for i in list(range(tokens.shape[1])):
+            column = tokens.iloc[:,i]
+            column_vectors = []
+            for element in column:
+                embedding_element = [self.get_vector(token) for token in element]
+                vector = np.empty(0)
+                if len(embedding_element) != 0:
+                    vector = np.mean(np.array(embedding_element), axis=0)
+                else:
+                    vector = np.array([0]*300)
+                column_vectors.append(list(vector))
+            column_vector = np.mean(np.array(column_vectors), axis=0)
+            print(len(column_vector),column_vector)
+            vector_list.append(column_vector)
+            """
+            
+            """
+        return np.array(vector_list)

@@ -6,6 +6,8 @@ from setuptools import find_packages, setup
 logging.basicConfig()
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
+
+
 def load_requirements() -> list:
     """Load requirements from file, parse them as a Python list!"""
     with open(os.path.join(ROOT, "requirements.txt"), encoding="utf-8") as f:
@@ -13,6 +15,7 @@ def load_requirements() -> list:
     install_requires = [x.strip() for x in all_reqs if "git+" not in x]
 
     return install_requires
+
 
 setup(
     name='D3l',

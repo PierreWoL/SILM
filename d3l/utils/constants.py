@@ -2,7 +2,8 @@ import re
 import unicodedata
 
 from nltk.corpus import stopwords
-STOPWORDS = set(stopwords.words('english'))
+#change to list and retry in glove_embedding
+STOPWORDS = list(set(stopwords.words('english')))
 
 SYMBPATT = r"\@" + re.escape(
     u"".join(chr(i) for i in range(0xFFFF) if unicodedata.category(chr(i)) == "Sc")
