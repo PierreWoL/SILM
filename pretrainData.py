@@ -60,11 +60,9 @@ class PretrainTableDataset(data.Dataset):
         self.isCombine = False
         if "TabFact" in self.path:
             self.subjectColumn_path = False
-            self.tables = pd.read_csv(os.path.join(os.getcwd(), self.path))["fileName"].unique().tolist()
             self.isCombine = True
 
-        else:
-            self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
         # only keep the first n tables
         if size is not None:
             self.tables = self.tables[:size]
@@ -123,9 +121,11 @@ class PretrainTableDataset(data.Dataset):
         if table_id in self.table_cache:
             table = self.table_cache[table_id]
         else:
-                fn = os.path.join(self.path, self.tables[table_id])
-                table = pd.read_csv(fn, lineterminator='\n')  # encoding="latin-1",
-                self.table_cache[table_id] = table
+            fn = os.path.join(self.path, self.tables[table_id])
+            table = pd.read_csv(fn, lineterminator='\n')  # encoding="latin-1",
+            if self.isCombine:
+                table =table.iloc[:,1:] # encoding="latin-1",
+            self.table_cache[table_id] = table
         return table
 
     def _tokenize(self, table: pd.DataFrame, idx=-1):  # -> List[int]
