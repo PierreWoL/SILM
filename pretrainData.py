@@ -58,7 +58,7 @@ class PretrainTableDataset(data.Dataset):
         # assuming tables are in csv format
         self.subjectColumn_path = os.path.join(self.path[:-4], "SubjectColumn")
         self.isCombine = False
-        if ".csv" in self.path:
+        if "TabFact" in self.path:
             self.subjectColumn_path = False
             self.tables = pd.read_csv(os.path.join(os.getcwd(), self.path))["fileName"].unique().tolist()
             self.isCombine = True
@@ -123,14 +123,9 @@ class PretrainTableDataset(data.Dataset):
         if table_id in self.table_cache:
             table = self.table_cache[table_id]
         else:
-            if "csv" not in self.path:
                 fn = os.path.join(self.path, self.tables[table_id])
                 table = pd.read_csv(fn, lineterminator='\n')  # encoding="latin-1",
                 self.table_cache[table_id] = table
-            else:
-                tables_sum = pd.read_csv(os.path.join(os.getcwd(), self.path))
-                tableT = tables_sum[tables_sum["fileName"] == self.tables[table_id]]  #
-                table = tableT[["colName", "vals"]].set_index("colName").T.reset_index(drop=True)
         return table
 
     def _tokenize(self, table: pd.DataFrame, idx=-1):  # -> List[int]
@@ -172,7 +167,7 @@ class PretrainTableDataset(data.Dataset):
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
 
             for index, column in enumerate(table.columns):
-                column_values = table.iloc[:, index] if ".csv" not in self.path \
+                column_values = table.iloc[:, index] if self.isCombine is False \
                     else pd.Series(table.iloc[:, index][0].split(",")).rename(column)
                 tokens = preprocess(column_values, tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
 

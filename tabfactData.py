@@ -47,15 +47,37 @@ for filename, value in data.items():
         print(filename,url,ValueError,error.HTTPError)
 """
 
-path = 'datasets/TabFact/02TableAttributes.csv'
-tables_sum = pd.read_csv(os.path.join(os.getcwd(), path))
-table_names = tables_sum["fileName"].unique().tolist()
-for table_name in table_names:
-    tableT = tables_sum[tables_sum["fileName"] == table_name]#
-    table = tableT[["colName","vals"]].set_index("colName").T.reset_index(drop=True)
-    print(table)
-    for column in table.columns:
-        column_value = pd.Series(table[column][0].split(",")).rename(column)
-        print(column_value)
+"""for table_name in table_names:
+    tableT = tables_sum[tables_sum["fileName"] == table_name]  #
+    table = tableT[["colName", "vals"]].set_index("colName").T.reset_index(drop=True)
+    table.to_csv(os.path.join(store_path, table_name))
+"""
 
-    break
+import multiprocessing
+
+
+def process_item(table_name):
+    path = 'datasets/TabFact/02TableAttributes.csv'
+    tables_sum = pd.read_csv(os.path.join(os.getcwd(), path))
+
+    store_path = os.path.join(os.getcwd(), "datasets", "TabFact", "Test")
+    tableT = tables_sum[tables_sum["fileName"] == table_name]  #
+    table = tableT[["colName", "vals"]].set_index("colName").T.reset_index(drop=True)
+    table.to_csv(os.path.join(store_path, table_name))
+
+
+if __name__ == "__main__":
+
+    path = 'datasets/TabFact/02TableAttributes.csv'
+    tables_sum = pd.read_csv(os.path.join(os.getcwd(), path))
+    table_names = tables_sum["fileName"].unique().tolist()
+    # Create a multiprocessing Pool with the desired number of processes
+    num_processes = multiprocessing.cpu_count()  # Number of CPU cores
+    pool = multiprocessing.Pool(num_processes)
+
+    # Execute the for loop in parallel
+    pool.map(process_item, table_names)
+
+    # Close the pool to free resources
+    pool.close()
+    pool.join()

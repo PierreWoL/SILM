@@ -58,8 +58,8 @@ if __name__ == '__main__':
     # Change the data paths to where the benchmarks are stored
 
     path = 'datasets/%s/Test' % hp.dataset
-    if hp.dataset == "TabFact":
-        path = 'datasets/%s/02TableAttributes.csv' % hp.dataset
+    #if hp.dataset == "TabFact":
+    #    path = 'datasets/%s/02TableAttributes.csv' % hp.dataset
 
     trainset = PretrainTableDataset.from_hp(path, hp)
 
