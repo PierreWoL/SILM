@@ -13,7 +13,7 @@ import TableAnnotation as TA
 
 
 def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column,
-                   singleCol=False, SubCol=False):
+                   singleCol=False, SubCol=False,header = False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -32,6 +32,9 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
     if SubCol:
         model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%ssubCol.pt" % (
+            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
+    if header:
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s_header.pt" % (
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
     else:
         model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s.pt" % (
@@ -62,18 +65,7 @@ def get_df(dataFolder):
 
 
 def table_features(hp: Namespace):
-    DATAFOLDER = hp.dataset
-    dataFolder = hp.dataset
-    if dataFolder == 'open_data':
-        DATAFOLDER = "datasets/open_data/Test/"
-    elif dataFolder == 'SOTAB':
-        DATAFOLDER = 'datasets/SOTAB/Test/'
-    elif dataFolder == 'T2DV2':
-        DATAFOLDER = 'datasets/T2DV2/Test/'
-    elif dataFolder == 'Test_corpus':
-        DATAFOLDER = 'datasets/Test_corpus/Test/'
-    elif dataFolder == 'WDC':
-        DATAFOLDER = 'datasets/WDC/Test/'
+    DATAFOLDER = "datasets/%s/Test/" %hp.dataset
     tables = get_df(DATAFOLDER)
     print("num dfs:", len(tables))
 
@@ -83,7 +75,7 @@ def table_features(hp: Namespace):
     # Extract model vectors
     cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column,
-                                 SubCol=hp.subject_column)
+                                 SubCol=hp.subject_column,header = hp.header )
     output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
     mkdir(output_path)
     print(output_path)
@@ -100,6 +92,9 @@ def table_features(hp: Namespace):
     if hp.subject_column:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s_subCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                               hp.table_order, hp.run_id, hp.check_subject_Column)
+    if hp.header:
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_header.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+                                                              hp.table_order, hp.run_id, hp.check_subject_Column)                                                           
     else:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                        hp.table_order, hp.run_id, hp.check_subject_Column)

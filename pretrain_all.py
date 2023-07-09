@@ -8,7 +8,7 @@ from pretrainData import PretrainTableDataset
 from starmie.sdd.pretrain import train
 import pandas as pd
 import os
-#from Encodings import table_features
+from Encodings import table_features
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -65,4 +65,4 @@ if __name__ == '__main__':
 
     train(trainset, hp)
 
-    # table_features(hp)
+    table_features(hp)

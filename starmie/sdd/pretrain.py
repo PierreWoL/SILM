@@ -119,7 +119,7 @@ def train(trainset, hp):
                                          str(hp.augment_op) +"lm_"+ str(
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "header.pt")
+                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "_header.pt")
             else:
                 # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
@@ -219,20 +219,11 @@ def load_checkpoint(ckpt):
     if hp.lm=='roberta':
       Resize=50269
     else:
-       Resize=30531
+       Resize=30529
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=Resize)#50269 30529
     model = model.to(device)
     model.load_state_dict(ckpt['model'])
-
-    # dataset paths, depending on benchmark for the current task
-    ds_path = os.getcwd() + '/datasets/Test_corpus/Test'
-    if hp.dataset == "open_data":
-        # Change the data paths to where the benchmarks are stored
-        ds_path = os.getcwd() + '/datasets/open_data/Test'
-    elif hp.dataset == "SOTAB":
-        ds_path = os.getcwd() + '/datasets/SOTAB/Test'
-    elif hp.dataset == "T2DV2":
-        ds_path = os.getcwd() + '/datasets/T2DV2/Test'
+    ds_path = os.path.join(os.getcwd(),'datasets/%s/Test' % hp.dataset)
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
     return model, dataset
 
