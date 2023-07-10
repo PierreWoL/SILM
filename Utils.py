@@ -1,6 +1,10 @@
 import os
 import pandas as pd
 
+lm_mp = {'roberta': 'roberta-base',
+         'bert': 'bert-base-uncased',
+         'distilbert': 'distilbert-base-uncased',
+         'sbert': 'sentence-transformers/all-mpnet-base-v2'}
 
 def mkdir(path):
     folder = os.path.exists(path)
