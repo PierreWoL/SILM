@@ -193,8 +193,8 @@ def BIRCH_param_search(input_data, cluster_num):
     else:
         at_least = cluster_num - 3
     for i in range(at_least, cluster_num+3):
-        for threshold in np.arange(start=0.1, stop=1, step=0.1):
-            for branchingfactor in np.arange(start=10, stop=60, step=5):
+        for threshold in np.arange(start=0.1, stop=0.5, step=0.1):
+            for branchingfactor in np.arange(start=10, stop=50, step=10):
                 birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
                 birch.fit(input_data)
                 labels = birch.predict(input_data)
@@ -482,8 +482,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     # clustering的ground truth
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
 
-    # 实现LSH indexes 为数据
-    parameters = []
+    # 实现LSH indexes 为数�?    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -507,8 +506,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
 
 def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, clusteringName, folderName=None, filename=None):
-    # 实现LSH indexes 为数据
-    parameters = []
+    # 实现LSH indexes 为数�?    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -532,8 +530,7 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
 def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_cluster_dict, clusteringName,folderName = None, filename =None):
 
     #print(gt_clusters, ground_t, gt_cluster_dict)
-    # 实现LSH indexes 为数据
-    parameters = []
+    # 实现LSH indexes 为数�?    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":

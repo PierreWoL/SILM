@@ -68,8 +68,9 @@ if __name__ == '__main__':
 
     #table_features(hp)
 
-    dataset = PretrainTableDataset.from_hp(path, hp)
+    dataset = Encoding.from_hp(path, hp)
     target_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
     filename = hp.lm+"_.pickle"
     store_path = os.path.join(os.getcwd(), target_path,filename)
+    dataset.allEmbeddings(store_path)
 

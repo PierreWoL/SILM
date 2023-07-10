@@ -116,9 +116,10 @@ def hierarchical_clustering(hp: Namespace):
     tables_with_class = gt[gt['superclass'].notnull()]
     clusters = tables_with_class['superclass'].unique()
     files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
-    store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel")
-    mkdir(store_path)
+    
     for file in files:
+        store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel",file[:-4])
+        mkdir(store_path)
         print(file)
         dict_file = {}
         F = open(os.path.join(datafile_path, file), 'rb')

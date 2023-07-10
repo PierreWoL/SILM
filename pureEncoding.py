@@ -54,7 +54,7 @@ class Encoding(data.Dataset):
                                              add_special_tokens=False,
                                              truncation=True)
             column_mp.append(encoding)
-        return (table_name, np.array(column_mp) )
+        return (table_name, column_mp)
     def __len__(self):
         """Return the size of the dataset."""
         return len(self.tables)
