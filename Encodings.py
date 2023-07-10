@@ -6,14 +6,15 @@ import glob
 import pickle
 from argparse import Namespace
 import os
-from clustering import clustering_results, data_classes, clusteringColumnResults
+from clustering import clustering_results, data_classes, clusteringColumnResults, AgglomerativeClustering_param_search, \
+    BIRCH_param_search
 from Utils import mkdir
 from SubjectColumnDetection import ColumnType
 import TableAnnotation as TA
 
 
 def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column,
-                   singleCol=False, SubCol=False,header = False):
+                   singleCol=False, SubCol=False, header=False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -65,7 +66,7 @@ def get_df(dataFolder):
 
 
 def table_features(hp: Namespace):
-    DATAFOLDER = "datasets/%s/Test/" %hp.dataset
+    DATAFOLDER = "datasets/%s/Test/" % hp.dataset
     tables = get_df(DATAFOLDER)
     print("num dfs:", len(tables))
 
@@ -75,7 +76,7 @@ def table_features(hp: Namespace):
     # Extract model vectors
     cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column,
-                                 SubCol=hp.subject_column,header = hp.header )
+                                 SubCol=hp.subject_column, header=hp.header)
     output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
     mkdir(output_path)
     print(output_path)
@@ -94,7 +95,7 @@ def table_features(hp: Namespace):
                                                               hp.table_order, hp.run_id, hp.check_subject_Column)
     if hp.header:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s_header.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
-                                                              hp.table_order, hp.run_id, hp.check_subject_Column)                                                           
+                                                              hp.table_order, hp.run_id, hp.check_subject_Column)
     else:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                        hp.table_order, hp.run_id, hp.check_subject_Column)
@@ -104,7 +105,49 @@ def table_features(hp: Namespace):
         pickle.dump(dataEmbeds, open(output_path, "wb"))
 
 
-def starmie_clustering(hp: Namespace):
+def hierarchical_clustering(hp: Namespace):
+    datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", hp.dataset)
+    gt_filename = "01SourceTables.csv" if hp.dataset == "TabFact" else "groundTruth.csv"
+    ground_truth = os.path.join(os.getcwd(), "datasets", gt_filename)
+    gt = pd.read_csv(ground_truth)
+
+    # needs to delete in the future when all labeling is done
+    tables_with_class = gt[gt['superclass'].notnull()]
+    clusters = tables_with_class['superclass'].unique()
+    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
+    store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel")
+    mkdir(store_path)
+    for file in files:
+        dict_file = {}
+        F = open(datafile_path + file, 'rb')
+        content = pickle.load(F)
+        Z = []
+        T = []
+        for vectors in content:
+            T.append(vectors[0][:-4])
+
+            vec_table = np.mean(vectors[1], axis=0)
+            Z.append(vec_table)
+        Z = np.array(Z)
+        try:
+            clustering_method = ["BIRCH", "Agglomerative"]
+            for method in clustering_method:
+                print(method)
+                parameters=[]
+                if method == "Agglomerative":
+                    parameters = AgglomerativeClustering_param_search(Z, len(clusters))
+                if method == "BIRCH":
+                    parameters = BIRCH_param_search(Z, len(clusters))
+                pickle_file_path = "%s_clustering_results.pickle" % method
+                store_name = os.path.join(store_path, pickle_file_path)
+                with open(store_name, 'wb') as fp:
+                    pickle.dump(parameters, fp)
+        except ValueError as e:
+            print(e)
+            continue
+
+
+def starmie_clustering_old(hp: Namespace):
     dicts = {}
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
@@ -172,7 +215,6 @@ def starmie_clustering(hp: Namespace):
 
             e_df = pd.DataFrame()
             for i, v in methods_metrics.items():
-
                 e_df = pd.concat([e_df, v.rename(i)], axis=1)
 
             store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
@@ -250,7 +292,8 @@ def column_gts(dataset):
                 Cluster_col.append(f"{row['Source_Dataset']}.{row['column1']}")
                 Cluster_col.append(f"{row['Target_Dataset']}.{row['column2']}")
             column_cluster[table][cluster] = list(set(Cluster_col))
-    return column_cluster,taleBasicClass
+    return column_cluster, taleBasicClass
+
 
 """
 print(column_gts("WDC")[1])
@@ -259,11 +302,7 @@ for i in column_gts("WDC")[0].items():
 """
 
 
-
-
-
 def columncluster_gt(tablegt, column_cluster: dict):
-
     if tablegt in column_cluster.keys():
         clusters = column_cluster[tablegt]
         ground_t = clusters
@@ -278,7 +317,6 @@ def columncluster_gt(tablegt, column_cluster: dict):
     else:
         print(tablegt)
         return 0, 0, 0
-
 
 
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
@@ -319,7 +357,8 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
                 Ts[classT].append(f"{table_name[0:-4]}.{table.columns[i]}")
                 Zs[classT].append(table_embeddings[i])
     clusters_results = {}
-    for clu in ['People', "Animal"]:  # ["AcademicJournal", "Wrestler", "Plant",  "Newspaper", "Continent", "Animal"]Gt_cluster_dict.keys()
+    for clu in ['People',
+                "Animal"]:  # ["AcademicJournal", "Wrestler", "Plant",  "Newspaper", "Continent", "Animal"]Gt_cluster_dict.keys()
         clusters_result = {}
         Z = Zs[clu]
         T = Ts[clu]
@@ -363,6 +402,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
               'wb') as handle:
         pickle.dump(clusters_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+
 def starmie_clusterHierarchy(hp: Namespace):
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
@@ -370,11 +410,9 @@ def starmie_clusterHierarchy(hp: Namespace):
                                    data_classes(data_path, ground_truth_table)[2]
     print("Gt_clusters,Gt_cluster_dict", Gt_clusters, Gt_cluster_dict)
     tables = []
-    for key,value in Gt_cluster_dict.items():
+    for key, value in Gt_cluster_dict.items():
         if value in ['People', "Animal"]:
             tables.append(value)
-
-
 
 
 def files_columns_running(hp: Namespace):
