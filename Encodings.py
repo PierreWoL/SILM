@@ -106,10 +106,11 @@ def table_features(hp: Namespace):
 
 
 def hierarchical_clustering(hp: Namespace):
+    print("hierarchical_clustering ...")
     datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", hp.dataset)
     gt_filename = "01SourceTables.csv" if hp.dataset == "TabFact" else "groundTruth.csv"
-    ground_truth = os.path.join(os.getcwd(), "datasets", gt_filename)
-    gt = pd.read_csv(ground_truth)
+    ground_truth = os.path.join(os.getcwd(), "datasets",hp.dataset, gt_filename)
+    gt = pd.read_csv(ground_truth, encoding='latin1')
 
     # needs to delete in the future when all labeling is done
     tables_with_class = gt[gt['superclass'].notnull()]
@@ -118,8 +119,9 @@ def hierarchical_clustering(hp: Namespace):
     store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel")
     mkdir(store_path)
     for file in files:
+        print(file)
         dict_file = {}
-        F = open(datafile_path + file, 'rb')
+        F = open(os.path.join(datafile_path, file), 'rb')
         content = pickle.load(F)
         Z = []
         T = []
