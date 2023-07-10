@@ -113,8 +113,9 @@ def hierarchical_clustering(hp: Namespace):
     gt = pd.read_csv(ground_truth, encoding='latin1')
 
     # needs to delete in the future when all labeling is done
-    tables_with_class = gt[gt['superclass'].notnull()]
-    clusters = tables_with_class['superclass'].unique()
+    colname = 'superclass' if hp.dataset == "TabFact" else "Label"
+    tables_with_class = gt[gt[colname].notnull()]
+    clusters = tables_with_class[colname].unique()
     files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
     
     for file in files:
