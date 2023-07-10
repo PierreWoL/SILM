@@ -5,6 +5,7 @@ import torch
 import mlflow
 from tqdm import tqdm
 from pretrainData import PretrainTableDataset
+from pureEncoding import Encoding
 from starmie.sdd.pretrain import train
 import pandas as pd
 import os
@@ -61,8 +62,14 @@ if __name__ == '__main__':
     #if hp.dataset == "TabFact":
     #    path = 'datasets/%s/02TableAttributes.csv' % hp.dataset
 
-    trainset = PretrainTableDataset.from_hp(path, hp)
+    #trainset = PretrainTableDataset.from_hp(path, hp)
 
-    train(trainset, hp)
+    #train(trainset, hp)
 
-    table_features(hp)
+    #table_features(hp)
+
+    dataset = PretrainTableDataset.from_hp(path, hp)
+    target_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
+    filename = hp.lm+"_.pickle"
+    store_path = os.path.join(os.getcwd(), target_path,filename)
+

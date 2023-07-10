@@ -1,18 +1,10 @@
+import pickle
 from argparse import Namespace
-
 import numpy as np
-import torch
-import random
 import pandas as pd
 import os
-import TableAnnotation as TA
 from torch.utils import data
 from transformers import AutoTokenizer
-from starmie.sdd.augment import augment
-from typing import List
-from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
-from SubjectColumnDetection import ColumnType
-from d3l.utils.functions import token_stop_word
 from Utils import lm_mp
 
 class Encoding(data.Dataset):
@@ -67,13 +59,15 @@ class Encoding(data.Dataset):
         """Return the size of the dataset."""
         return len(self.tables)
 
-    def allEmbeddings(self):
+    def allEmbeddings(self,store_path):
         all_encodings = []
         for idx in range(0,len(self.tables)):
             table = self._read_table(idx)
             table_name = self.tables[idx]
             table_encoding = self._tokenize(table_name, table)
             all_encodings.append(table_encoding)
+        with open(store_path, 'wb') as fp:
+            pickle.dump(all_encodings, fp)
         return all_encodings
 
 
