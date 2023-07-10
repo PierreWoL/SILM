@@ -193,8 +193,8 @@ def BIRCH_param_search(input_data, cluster_num):
     else:
         at_least = cluster_num - 3
     for i in range(at_least, cluster_num+3):
-        for threshold in np.arange(start=0.001, stop=1, step=0.001):
-            for branchingfactor in np.arange(start=2, stop=20, step=1):
+        for threshold in np.arange(start=0.1, stop=1, step=0.1):
+            for branchingfactor in np.arange(start=10, stop=60, step=5):
                 birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
                 birch.fit(input_data)
                 labels = birch.predict(input_data)
