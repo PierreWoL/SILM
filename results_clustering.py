@@ -18,6 +18,7 @@ if __name__ == '__main__':
     parser.add_argument("--augment_op", type=str, default='drop_num_col')
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
+    parser.add_argument("--clustering",type=str, default='Agglomerative')
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
     parser.add_argument("--is_sub", type=bool, default=False)

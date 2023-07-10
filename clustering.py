@@ -7,9 +7,9 @@ import statistics
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
-from d3l.indexing.similarity_indexes import DistributionIndex
-from d3l.input_output.dataloaders import CSVDataLoader
-from d3l.querying.query_engine import QueryEngine
+#from d3l.indexing.similarity_indexes import DistributionIndex
+#from d3l.input_output.dataloaders import CSVDataLoader
+#from d3l.querying.query_engine import QueryEngine
 from d3l.utils.functions import pickle_python_object
 from sklearn.metrics import pairwise_distances
 from sklearn.mixture import GaussianMixture
@@ -23,12 +23,13 @@ import numpy as np
 
 def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     #  collection of tables
+    """
     dataloader = CSVDataLoader(
         root_path=data_path,
         # sep=",",
         encoding='latin-1'
     )
-    """
+
     # NameIndex
     # if os.path.isfile(os.path.join(data_path, './name.lsh')):
     #   name_index = unpickle_python_object(os.path.join(data_path, './name.lsh'))
@@ -46,7 +47,7 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     """
     """
     # ValueIndex
-    # if os.path.isfile(os.path.join(data_path, './value.lsh')):
+    if os.path.isfile(os.path.join(data_path, './value.lsh')):
     #   value_index = unpickle_python_object(os.path.join(data_path, './value.lsh'))
     # else:
     value_index = ValueIndex(dataloader=dataloader, index_similarity_threshold=threshold)
@@ -56,8 +57,8 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     # if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
     #   distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
     # else:
-    distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
-    pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
+    #distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
+    #pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
     """
     # EmbeddingIndex
      
@@ -69,10 +70,10 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode, index_similarity_threshold=threshold)
     pickle_python_object(embeddingIndex, os.path.join(data_path, embed_lsh))
     """
-    return [distribution_index]  # distribution_index , format_index, value_index, name_index, embeddingIndex
+    return []  # distribution_index , format_index, value_index, name_index, embeddingIndex
 
 
-def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
+"""def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
     #print(L)
     D = np.ones((dim, dim))
     T = ed.get_files(data_path)
@@ -95,8 +96,9 @@ def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
                 D[L[name], L[t]] = 1 - statistics.mean(similarities)
 
     return D
-
-
+    
+    
+    
 def distance_matrix(data_path, index, k):
     # print(index)
     dataloader = CSVDataLoader(root_path=(data_path), encoding='latin-1')
@@ -111,7 +113,11 @@ def distance_matrix(data_path, index, k):
     # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
     Z_df = pd.DataFrame(D)
     # print(Z)
-    return Z_df, T
+    return Z_df, T    
+    """
+
+
+
 
 
 def dbscan_param_search(input_data):
@@ -185,8 +191,8 @@ def BIRCH_param_search(input_data, cluster_num):
     if cluster_num<5:
         at_least = 0
     else:
-        at_least = cluster_num - 5
-    for i in range(at_least, cluster_num+5):
+        at_least = cluster_num - 3
+    for i in range(at_least, cluster_num+3):
         for threshold in np.arange(start=0.001, stop=1, step=0.001):
             for branchingfactor in np.arange(start=2, stop=20, step=1):
                 birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
@@ -219,14 +225,15 @@ def KMeans_param_search(input_data, cluster_num):
 def AgglomerativeClustering_param_search(input_data, cluster_num):
     score = -1
     best_model = AgglomerativeClustering()
-    if cluster_num < 5:
+    if cluster_num < 3:
         at_least = 0
     else:
-        at_least = cluster_num - 5
-    for n_clusters in range(at_least, cluster_num+5):
+        at_least = cluster_num - 3
+    for n_clusters in range(at_least, cluster_num+3):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
+        print(labels)
         if score <= silhouette_score(input_data, labels):
             score = silhouette_score(input_data, labels)
             best_model = agg_clustering
@@ -463,12 +470,12 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     return metric_dict
 
 
-def inputData(data_path, threshold, k, embedding_mode=2):
+"""def inputData(data_path, threshold, k, embedding_mode=2):
     #print("embed mode is ", embedding_mode)
     indexes = create_or_find_indexes(data_path, threshold, embedding_mode=embedding_mode)
     Z, T = distance_matrix(data_path, indexes, k)
     #print("Z,T is ",Z,T )
-    return Z, T
+    return Z, T"""
 
 
 def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName = None, filename =None):

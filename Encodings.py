@@ -123,6 +123,7 @@ def hierarchical_clustering(hp: Namespace):
         dict_file = {}
         F = open(os.path.join(datafile_path, file), 'rb')
         content = pickle.load(F)
+
         Z = []
         T = []
         for vectors in content:
@@ -131,16 +132,15 @@ def hierarchical_clustering(hp: Namespace):
             vec_table = np.mean(vectors[1], axis=0)
             Z.append(vec_table)
         Z = np.array(Z)
+        print(Z,T)
         try:
-            clustering_method = ["BIRCH", "Agglomerative"]
-            for method in clustering_method:
-                print(method)
+                print(hp.clustering)
                 parameters=[]
-                if method == "Agglomerative":
+                if hp.clustering == "Agglomerative":
                     parameters = AgglomerativeClustering_param_search(Z, len(clusters))
-                if method == "BIRCH":
+                if hp.clustering == "birch":
                     parameters = BIRCH_param_search(Z, len(clusters))
-                pickle_file_path = "%s_clustering_results.pickle" % method
+                pickle_file_path = "%s_clustering_results.pickle" % hp.clustering
                 store_name = os.path.join(store_path, pickle_file_path)
                 with open(store_name, 'wb') as fp:
                     pickle.dump(parameters, fp)
