@@ -202,12 +202,12 @@ def starmie_clustering_old(hp: Namespace):
 
         Z = np.array(Z)
         try:
-            clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
+            clustering_method = ["Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 6):
+                for i in range(0, 2):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
                     print("cluster_dict", cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])

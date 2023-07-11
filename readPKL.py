@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage,cut_tree
 from clustering import AgglomerativeClustering_param_search
+import pygraphviz
+"""
 # Generate random data
-import pydot
 np.random.seed(0)
 X = np.random.randn(10, 2)  # Replace with your own data
 print(X)
@@ -50,6 +51,9 @@ def extract_hierarchy(Z):
 hierarchy = extract_hierarchy(Z)
 for cluster in hierarchy.values():
     print(cluster)
+
+
+"""
 
 
 import networkx as nx

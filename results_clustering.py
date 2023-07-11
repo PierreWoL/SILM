@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
     hp = parser.parse_args()
     method = 0
-    #starmie_clustering_old(hp)
-    hierarchical_clustering(hp)
+    starmie_clustering_old(hp)
+    #hierarchical_clustering(hp)
     #files_columns_running(hp)
 
 
