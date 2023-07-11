@@ -1,4 +1,6 @@
 import math
+import pickle
+
 import pandas as pd
 import os
 import experimentalData as ed
@@ -44,33 +46,40 @@ def SBERT(data_path, feature_csv):
 
 
 def SBERT_T(data_path, feature_csv):
-    T = ed.get_files(data_path)
+    T = [fn for fn in os.listdir(data_path)]
+    print(T)
     exception = []
     table_names = []
     encodings = []
     print(T)
-    index = T.index("Event_calvados-tourisme.com_September2020")
+    #index = T.index("T2DV2_27.csv")
+    index = 0
     T = T[index:]
     for table_name in T:
-        print(data_path + table_name + ".csv")
-        f = open(data_path + table_name + ".csv", errors='ignore')
+        print(os.path.join(data_path, table_name + ".csv"))
+        f = open(os.path.join(data_path, table_name + ".csv"), errors='ignore')
         table = pd.read_csv(f)
-        rows = []
-        if table.shape[0] > 10000:
-           table = table[:200]
-        for index, row in table.iterrows():
+        columns = table.columns.tolist()
+        """if table.shape[0] > 10000:
+           table = table[:200]"""
+        """for index, row in table.iterrows():
             value = []
             for column in table.columns:
                 value.append(str(column)+" "+str(row[column]))
-            rows.append(" ".join(value))
+            rows.append(" ".join(value))"""
+
             #print(" ".join(value))
-        encoding_col = encoding(rows)
-        if encoding_col is not None and type(encoding_col) != np.float64:
+        encoding_col = encoding(columns)
+        """if encoding_col is not None and type(encoding_col) != np.float64:
             JSON.write_line(feature_csv, [table_name, list(encoding_col)])
             table_names.append(table_name)
             encodings.append(list(encoding_col))
         else:
-            exception.append(table_name)
+            exception.append(table_name)"""
+        if encoding_col is not None and type(encoding_col) != np.float64:
+            encodings.append((table_name,encoding_col))
+    with open(feature_csv, 'wb') as handle:
+        pickle.dump(encodings, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return pd.DataFrame(encodings), table_names, exception
 
 
@@ -81,7 +90,7 @@ def encoding(column):
     column_token = fun.token_list(column)
     column_embeddings = model.encode(column_token)
     average = np.mean(column_embeddings, axis=0)
-    # print(average)
+
     return average
     # except ValueError:
     #   return None
