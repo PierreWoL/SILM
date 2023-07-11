@@ -84,7 +84,7 @@ def SBERT_T(data_path, feature_csv):
 
 
 def encoding(column):
-    model = SentenceTransformer('bert-base-nli-mean-tokens')
+    model = SentenceTransformer('all-mpnet-base-v2')
     # try:
     column = fun.remove_blank(column)
     column_token = fun.token_list(column)
