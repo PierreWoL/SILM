@@ -56,8 +56,8 @@ def SBERT_T(data_path, feature_csv):
     index = 0
     T = T[index:]
     for table_name in T:
-        print(os.path.join(data_path, table_name + ".csv"))
-        f = open(os.path.join(data_path, table_name + ".csv"), errors='ignore')
+        print(os.path.join(data_path, table_name))
+        f = open(os.path.join(data_path, table_name), errors='ignore')
         table = pd.read_csv(f)
         columns = table.columns.tolist()
         """if table.shape[0] > 10000:
