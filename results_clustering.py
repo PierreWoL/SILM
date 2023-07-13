@@ -5,7 +5,7 @@ from Encodings import starmie_clustering_old,files_columns_running,hierarchical_
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="WDC")# WDC
+    parser.add_argument("--dataset", type=str, default="TabFact")# WDC
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
     hp = parser.parse_args()
     method = 0
-    starmie_clustering_old(hp)
-    #hierarchical_clustering(hp)
+    #starmie_clustering_old(hp)
+    hierarchical_clustering(hp)
     #files_columns_running(hp)
 
 

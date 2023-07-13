@@ -7,7 +7,7 @@ import pickle
 from argparse import Namespace
 import os
 from clustering import clustering_results, data_classes, clusteringColumnResults, AgglomerativeClustering_param_search, \
-    BIRCH_param_search
+    BIRCH_param_search, cluster_discovery, cluster_Dict, evaluate_cluster
 from Utils import mkdir
 from SubjectColumnDetection import ColumnType
 import TableAnnotation as TA
@@ -108,20 +108,20 @@ def table_features(hp: Namespace):
 def hierarchical_clustering(hp: Namespace):
     print("hierarchical_clustering ...")
     datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", hp.dataset)
+    data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     gt_filename = "01SourceTables.csv" if hp.dataset == "TabFact" else "groundTruth.csv"
     ground_truth = os.path.join(os.getcwd(), "datasets",hp.dataset, gt_filename)
     gt = pd.read_csv(ground_truth, encoding='latin1')
-
+    gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, ground_truth)
     # needs to delete in the future when all labeling is done
     colname = 'superclass' if hp.dataset == "TabFact" else "Label"
     tables_with_class = gt[gt[colname].notnull()]
     clusters = tables_with_class[colname].unique()
     files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
-    
-    for file in files:
+
+    for file in files[1:]:
         store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel",file[:-4])
         mkdir(store_path)
-        print(file)
         dict_file = {}
         F = open(os.path.join(datafile_path, file), 'rb')
         content = pickle.load(F)
@@ -134,8 +134,38 @@ def hierarchical_clustering(hp: Namespace):
             vec_table = np.mean(vectors[1], axis=0)
             Z.append(vec_table)
         Z = np.array(Z)
-        print(Z,T)
-        try:
+        ta ="result/starmie/%s/clusteringModel" % hp.dataset
+        dp = os.path.join(os.getcwd(),ta )
+        for folder in os.listdir(dp):
+            cluster = "Agglomerative_clustering_results.pickle"
+            F_cluster = open(os.path.join(dp, folder,cluster), 'rb')
+            content_cluster = pickle.load(F_cluster)
+            methods_metrics = {}
+            metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
+            clusters = cluster_discovery(content_cluster, T)
+            cluster_dict = cluster_Dict(clusters)
+            table_dict = None
+            table_dict = {T[i]: Z[i] for i in range(0, len(T))}
+            # print("cluster_dict",cluster_dict)
+            metric_dict = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, tables_gt=table_dict)
+            print("cluster_dict", cluster_dict)
+            metric_df = pd.DataFrame([metric_dict])
+            metric_value_df = pd.concat([metric_value_df, metric_df])
+            dict_file["Agglomerative"] = cluster_dict
+
+            mean_metric = metric_value_df.mean()
+            methods_metrics["Agglomerative"] = mean_metric
+
+            e_df = pd.DataFrame()
+            for i, v in methods_metrics.items():
+                e_df = pd.concat([e_df, v.rename(i)], axis=1)
+
+            store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+            store_path += "All/"
+            mkdir(store_path)
+            e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
+
+        """try:
                 print(hp.clustering)
                 parameters=[]
                 if hp.clustering == "Agglomerative":
@@ -148,7 +178,7 @@ def hierarchical_clustering(hp: Namespace):
                     pickle.dump(parameters, fp)
         except ValueError as e:
             print(e)
-            continue
+            continue"""
 
 
 def starmie_clustering_old(hp: Namespace):
@@ -159,12 +189,14 @@ def starmie_clustering_old(hp: Namespace):
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
     if hp.method == "starmie":
-        files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
+        files = [fn for fn in os.listdir(datafile_path) if '.pickle' in fn] #pkl
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
+
     for file in files:
         dict_file = {}
         F = open(datafile_path + file, 'rb')
         content = pickle.load(F)
+        print(content)
         Z = []
         T = []
         for vectors in content:
@@ -194,8 +226,10 @@ def starmie_clustering_old(hp: Namespace):
                 Z.append(vec_table)
 
             else:
+                print(vectors[1])
                 vec_table = np.mean(vectors[1], axis=0)
                 Z.append(vec_table)
+
             has_nan = np.isnan(Z).any()
             # if has_nan:
             # print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)
