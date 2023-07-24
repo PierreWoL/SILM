@@ -16,22 +16,18 @@ from collections import Counter
 def most_frequent(list1):
     count = Counter(list1)
     most_common = count.most_common(2)
-
-    # 获取前两个元素的出现次数
     if len(most_common) > 1:
         _, frequency = most_common[0]
         _, next_frequency = most_common[1]
         first_element_count = count[list1[0]]
-        # 检查前两个元素的出现次数是否相同
         is_Same = True
         if frequency == next_frequency:
-            # 提取出现频率最高的前两个元素
-            for element in count.values():
+          for element in count.values():
                 if element != first_element_count:
                     most_common_elements = [item[0] for item in most_common]
                     is_Same = False
                     return most_common_elements
-            if is_Same:
+          if is_Same:
                 return list(count.keys())
 
     return [count.most_common(1)[0][0]]
@@ -488,7 +484,6 @@ def test_tree_consistency_metric(embedding_file, dataset):
         simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
                                                                                       ground_truth, node_labels,
                                                                                       data=node_labels)
-        # 遍历并打印每个节点的 'data' 和 'label' 属性
         print_tree_labels(simple_tree, ground_truth, data=node_labels)
         print(layer_info_dict[0])
         for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
@@ -517,8 +512,8 @@ def test_tree_consistency_metric(embedding_file, dataset):
         with open(os.path.join(EMBEDDING_FOLDER, embedding_file), 'rb') as file:
             data = pickle.load(file)
         data = [i for i in data if i[0] in table_with_available_labels]
-        table_names = [i[0] for i in data if i[0] in ground_truth.keys()][0:5000]
-        encodings = np.array([np.mean(i[1], axis=0) for i in data if i[0] in ground_truth.keys()][0:5000])
+        table_names = [i[0] for i in data if i[0] in ground_truth.keys()]
+        encodings = np.array([np.mean(i[1], axis=0) for i in data if i[0] in ground_truth.keys()])
 
         linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
         folder = "fig/"+dataset
@@ -580,10 +575,9 @@ def test(dataset):
     else:
         EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
         for embedding in [i for i in os.listdir(EMBEDDING_FOLDER) if i.endswith("pkl") and
-                                                                     "roberta" in i]:
+                                                                     "sbert" in i]:
             test_tree_consistency_metric(embedding, dataset)
             break
-
 
 test("TabFact")  # TabFact Example
 # The below code is just for testing
@@ -652,8 +646,7 @@ for index, (thre, clusters) in enumerate(threCluster_dict0):
             simple_tree.nodes[closest_parent]['type'] = 'data cluster node'
         if index == len(threCluster_dict0) - 1:
             Parent_nodes1[cluster] = closest_parent
-    # 遍历并打印每个节点的 'data' 和 'label' 属性
-for index, (node, attributes) in enumerate(simple_tree.nodes(data=True)):
+    for index, (node, attributes) in enumerate(simple_tree.nodes(data=True)):
   if 'type' in attributes and attributes['type'] !='data' : #'data cluster node parent layer'
     print(f"Node {node}:")
     if 'data' in attributes:
