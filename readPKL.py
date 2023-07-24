@@ -22,12 +22,12 @@ def most_frequent(list1):
         first_element_count = count[list1[0]]
         is_Same = True
         if frequency == next_frequency:
-          for element in count.values():
+            for element in count.values():
                 if element != first_element_count:
                     most_common_elements = [item[0] for item in most_common]
                     is_Same = False
                     return most_common_elements
-          if is_Same:
+            if is_Same:
                 return list(count.keys())
 
     return [count.most_common(1)[0][0]]
@@ -377,12 +377,13 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, ground_truth,
             for i in cluster:
                 label_per = ground_truth[i][index_ground_truth] if isinstance(ground_truth, dict) else ground_truth[
                     data.index(i)]
+
                 if label_per not in simple_tree.nodes[closest_parent]['label']:
                     wrong_labels[i] = label_per
             simple_tree.nodes[closest_parent]['Wrong_labels'] = wrong_labels
             label_cluster = simple_tree.nodes[closest_parent]['label']
             simple_tree.nodes[closest_parent]['Purity'] = "{:.3f}".format(
-                (1 - len(wrong_labels.keys()) / len(cluster))/len(label_cluster))
+                (1 - len(wrong_labels.keys()) / len(cluster)) / len(label_cluster))
         end_time_label = time.time()
         elapsed_time = end_time_label - start_time_label
         print(f"Elapsed time: {elapsed_time:.4f} seconds for slice the tree")
@@ -398,12 +399,9 @@ def print_tree_labels(tree, ground_truth, data=None):
             print(f"  data: {attributes['data']}")
             print(f"  label: {attributes['label']}")
             print(f"  type: {attributes['type']}")
-            print(f"  Data labels: {[ground_truth[la] for la in attributes['data']]}") if isinstance(ground_truth,
-                                                                                                     dict) else \
-                print(f"  Data labels: {[ground_truth[data.index(la)] for la in attributes['data']]}")
-            """ if len(attributes['Wrong_labels']):
+            if len(attributes['Wrong_labels']):
                 print(f"wrong  label: {attributes['Wrong_labels']}")
-            print(f"Purity is : {attributes['Purity']}")"""
+            print(f"Purity is : {attributes['Purity']}")
             wrong_labels = {}
             for la in attributes['data']:
                 per_label = ''
@@ -425,44 +423,91 @@ def print_tree_labels(tree, ground_truth, data=None):
                       1 - len(wrong_labels) / len(attributes['data']))
 
 
-def print_path_label(tree, layer_info, Parent_nodes, class_dict):
+def print_node(tree: nx.DiGraph(), node):
+    print(f" Node: {node}", f" Type: {tree.nodes[node].get('type', 0)} \n",
+          f" cluster label: {tree.nodes[node].get('label', 0)} \n",
+          f" Purity: {tree.nodes[node].get('Purity', 0)} \n"
+          f" Data: {tree.nodes[node].get('data', 0)}")
+    if len(tree.nodes[node].get('Wrong_labels', 0)):
+        print(f" Wrong Labels: {tree.nodes[node].get('Wrong_labels', 0)}")
+
+
+def print_clusters_top_down(tree, layer_info):
+    total_layer = len(layer_info.keys()) - 1
+    print(f"Total layer is : {total_layer + 1}")
+    index_layer = total_layer
+    while index_layer >= 0:
+        print(f"layer : {index_layer + 1}", f"nodes number: {len(layer_info[index_layer].items())}")
+        index_layer -= 1
+    print("Layer information ...")
+    for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
+        print_node(tree, closest_parent)
+
+        index = total_layer - 1
+        print("its sub-types are: ")
+        while index >= 0:
+            print(f"Layer is : {index}")
+            for cluster0, (closest_parent0, mutual_parent_nodes0) in layer_info[index].items():
+                if closest_parent in mutual_parent_nodes0:
+                    print_node(tree, closest_parent0)
+            index -= 1
+
+
+def purity_per_layer(tree, layer_info):
+    purity_layers = {}
+    total_layer = len(layer_info.keys()) - 1
+    while total_layer >= 0:
+        purity_layers[total_layer] = []
+        for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
+            purity_layers[total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
+        total_layer -= 1
+    return purity_layers
+
+
+def print_path_label(tree, layer_info, Parent_nodes, class_dict=None):
     all_pathCompatibility = []
+    # print(Parent_nodes)
+    ind, ind_o = 0, 0
     for cluster, (closest_parent, mutual_parent_nodes) in layer_info[0].items():
-        for clusterP, closest_parentP in Parent_nodes.items():
-            if closest_parentP in mutual_parent_nodes:
-                path = sorted(list(mutual_parent_nodes))
+        path = sorted(list(mutual_parent_nodes))
+        ind_o += 1
+        for indexp, (clusterP, closest_parentP) in enumerate(Parent_nodes.items()):
+            if closest_parentP in path:
                 path = path[0:path.index(closest_parentP)]
-                #print(path, closest_parentP)
                 MatchedElementPath = len(path)
                 MatchedElementGT = 0
-                for i in path:
-                    label = tree.nodes[i].get('label', 0)
-                    if label != 0:
-                        """print(f" Node: {i}", f" cluster label: {label}",
-                              f" Purity: {tree.nodes[i].get('Purity', 0)}"
-                              f" Data: {tree.nodes[i].get('data', 0)}"
-                              )"""
-                        superLabels = tree.nodes[closest_parentP].get('label', 0)
-                        if superLabels != 0:
-                            for label_per in label:
-                                for superLabel in superLabels:
-                                    if label_per in class_dict[superLabel]:
-                                        MatchedElementGT += 1
-                                        break  # Break out of the inner loop when the condition is met
-                                else:
-                                    continue
-                                break
+                if len(path) > 0:
+                    ind += 1
+                    for i in path:
+                        label = tree.nodes[i].get('label', 0)
+                        if label != 0:
+                            """print(f" Node: {i}",f" Type: {tree.nodes[i].get('type', 0)} \n",
+                                  f" cluster label: {label} \n",
+                                  f" Purity: {tree.nodes[i].get('Purity', 0)} \n"
+                                  f" Data: {tree.nodes[i].get('data', 0)} \n",
+                                  f" Wrong Labels: {tree.nodes[i].get('data', 0)} \n",
+                                  )"""
+                            superLabels = tree.nodes[closest_parentP].get('label', 0)
+                            if superLabels != 0:
+                                for label_per in label:
+                                    for superLabel in superLabels:
+                                        if label_per in class_dict[superLabel]:
+                                            MatchedElementGT += 1
+                                            break  # Break out of the inner loop when the condition is met
+                                    else:
+                                        continue
+                                    break
+                        else:
+                            MatchedElementPath -= 1
+                    # print(ind_o, ind, indexp,path)
+                    if MatchedElementPath != 0:
+                        pathCompatibility = MatchedElementGT / MatchedElementPath
+                        all_pathCompatibility.append(pathCompatibility)
 
-                    else:
-                        MatchedElementPath -= 1
-                if MatchedElementPath != 0:
-                    pathCompatibility = MatchedElementGT / MatchedElementPath
-
-                    all_pathCompatibility.append(pathCompatibility)
-
-    print(all_pathCompatibility)
+    # print("mutual_parent_nodes", len(layer_info[0].keys()), len(all_pathCompatibility), all_pathCompatibility)
     tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
     print("the metric is ", tree_consistency_score, "all_path_number is ", len(all_pathCompatibility))
+
     return tree_consistency_score
 
 
@@ -484,7 +529,7 @@ def test_tree_consistency_metric(embedding_file, dataset):
         simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
                                                                                       ground_truth, node_labels,
                                                                                       data=node_labels)
-        print_tree_labels(simple_tree, ground_truth, data=node_labels)
+        # print_tree_labels(simple_tree, ground_truth, data=node_labels)
         print(layer_info_dict[0])
         for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
             for clusterP, closest_parentP in Parent_nodes_h.items():
@@ -516,9 +561,9 @@ def test_tree_consistency_metric(embedding_file, dataset):
         encodings = np.array([np.mean(i[1], axis=0) for i in data if i[0] in ground_truth.keys()])
 
         linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
-        folder = "fig/"+dataset
+        folder = "fig/" + dataset
         mkdir(folder)
-        result_folder = os.path.join("result/Valerie",dataset)
+        result_folder = os.path.join("result/Valerie", dataset)
         mkdir(result_folder)
         dendrogra = plot_tree(linkage_matrix, folder, node_labels=table_names)
         tree_test = dendrogram_To_DirectedGraph(encodings, linkage_matrix, table_names)
@@ -532,14 +577,22 @@ def test_tree_consistency_metric(embedding_file, dataset):
         simple_tree, layer_info_dict, Parent_nodes_h = \
             simple_tree_with_cluster_label(threCluster_dict, tree_test, ground_truth, table_names)
 
-        print_tree_labels(simple_tree, ground_truth)
-        print_path_label(simple_tree, layer_info_dict, Parent_nodes_h, class_dict)
+        # print_tree_labels(simple_tree, ground_truth)
+        TCS = print_path_label(simple_tree, layer_info_dict, Parent_nodes_h, class_dict)
 
+        print(f"Embedding file {embedding_file}",f", Tree Consistency metric: {TCS}")
+        print_clusters_top_down(simple_tree, layer_info_dict)
+        Purity_layers= purity_per_layer(simple_tree, layer_info_dict)
+        for layer, purity_list in Purity_layers.items():
+            purity_list = [float(i) for i in purity_list]
+            Purity_layer = "{:.3f}".format(sum(purity_list) / len(purity_list))
+            print(f"layer {layer} purity is: {Purity_layer}")
         file_path = os.path.join(result_folder, embedding_file[0:-4] + "_results.pkl")
+
         with open(file_path, 'wb') as file:
             # Dump the data into the pickle file
-            pickle.dump((dendrogra, linkage_matrix, threCluster_dict, simple_tree), file)
-
+            pickle.dump((dendrogra, linkage_matrix, threCluster_dict,
+                         simple_tree, tree_test, layer_info_dict, Parent_nodes_h), file)
 
 
 def test(dataset):
@@ -578,6 +631,7 @@ def test(dataset):
                                                                      "sbert" in i]:
             test_tree_consistency_metric(embedding, dataset)
             break
+
 
 test("TabFact")  # TabFact Example
 # The below code is just for testing
