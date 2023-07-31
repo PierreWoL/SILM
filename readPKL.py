@@ -481,12 +481,12 @@ def print_path_label(tree, layer_info, Parent_nodes, class_dict=None):
                     for i in path:
                         label = tree.nodes[i].get('label', 0)
                         if label != 0:
-                            """print(f" Node: {i}",f" Type: {tree.nodes[i].get('type', 0)} \n",
+                            print(f" Node: {i}",f" Type: {tree.nodes[i].get('type', 0)} \n",
                                   f" cluster label: {label} \n",
                                   f" Purity: {tree.nodes[i].get('Purity', 0)} \n"
                                   f" Data: {tree.nodes[i].get('data', 0)} \n",
                                   f" Wrong Labels: {tree.nodes[i].get('data', 0)} \n",
-                                  )"""
+                                  )
                             superLabels = tree.nodes[closest_parentP].get('label', 0)
                             if superLabels != 0:
                                 for label_per in label:
@@ -550,7 +550,6 @@ def test_tree_consistency_metric(embedding_file, dataset):
                         for i in range(0, len(ground_truth_csv))}
 
         class_dict = {key: group['class'].tolist() for key, group in ground_truth_csv.groupby('superclass')}
-        # print(class_dict)
         up_layer_clusters_num = ground_truth_csv.iloc[:, 5].unique()
         table_with_available_labels = ground_truth_csv.iloc[:, 0].unique()
         EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
@@ -633,7 +632,7 @@ def test(dataset):
             break
 
 
-test("TabFact")  # TabFact Example
+#test("TabFact")  # TabFact Example
 # The below code is just for testing
 
 """ 
