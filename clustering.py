@@ -510,8 +510,6 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
     # print(metrics_value)
     return cluster_dict, metrics_value
 def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_cluster_dict, clusteringName,folderName = None, filename =None):
-
-
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
@@ -530,7 +528,6 @@ def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_clust
     table_dict = None
     table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict,columns=True)
-    print(metrics_value)
     return cluster_dict,metrics_value
 
 

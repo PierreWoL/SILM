@@ -1,5 +1,5 @@
 import argparse
-from Encodings import silm_clustering
+from Encodings import silm_clustering, files_columns_running
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -27,5 +27,5 @@ if __name__ == '__main__':
     # mlflow tag
 
     hp = parser.parse_args()
-    silm_clustering(hp)
-    # files_columns_running(hp)
+    #silm_clustering(hp)
+    files_columns_running(hp)
