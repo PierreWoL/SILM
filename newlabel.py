@@ -89,57 +89,54 @@ no_labels = [i for i in names if i not in labels]
 # ground_truth_csv = ground_truth_csv[ground_truth_csv["fileName"].isin(no_labels)]
 ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
 
-""" 
-print(0)
-for i in range(0, 11): #160
+def parallel_crawling():
+    for i in range(0, 11):  # 160
 
-    end = (i + 1) * 400 - 1
-    if end >= len(ground_truth_csv):
-        end = len(ground_truth_csv)
-    start = i * 400
-    slice = ground_truth_csv[start:end]
+        end = (i + 1) * 400 - 1
+        if end >= len(ground_truth_csv):
+            end = len(ground_truth_csv)
+        start = i * 400
+        slice = ground_truth_csv[start:end]
 
-    result_diction = dict(zip(slice.iloc[:, 0], slice.iloc[:, 2]))
+        result_diction = dict(zip(slice.iloc[:, 0], slice.iloc[:, 2]))
 
-    dataframes_list = query_wikidata_parallel(result_diction)
-
-
+        dataframes_list = query_wikidata_parallel(result_diction)
 
 G = nx.DiGraph()
 print(len(ground_truth_csv))
 for index, row in ground_truth_csv.iterrows():
     if row["fileName"] in labels:
-        print(index,"Yes")
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
         df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
         all_nodes = set(df.values.ravel())
         if len(set(G.nodes())):
             all_nodes = all_nodes - set(G.nodes())
+
         else:
             nodes_set = all_nodes
+
         G.add_nodes_from(all_nodes)
         nodes_set = set(G.nodes())
         for _, row2 in df.iterrows():
             labels_table = row2.dropna().tolist()
             for i in range(len(labels_table) - 1):
-                G.add_edge(labels_table[i + 1], labels_table[i])
-
+                G.add_edge(labels_table[i], labels_table[i + 1])
     else:
         if row["class"]!=" ":
-            superclass = row["superclass"]
-            classX = row["class"]
+            superclass = row["class"]
+            classX = row["superclass"]
+
             all_nodes = {superclass, classX}
             all_nodes = all_nodes - set(G.nodes())
             if len(all_nodes) > 0:
-                # print(all_nodes)
                 G.add_nodes_from(all_nodes)
-                G.add_edge(superclass, classX)
+                G.add_edge(classX,superclass)
 
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
     pickle.dump(G, file)
-"""
+
 # Setting graph attributes for top-to-bottom layout
 """
 # Load the graph from the pickle file
@@ -159,7 +156,9 @@ plt.show()"""
 
 """  # Process the DataFrames as needed
 
-target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+
+# Below needs reconstruct and important
+"""target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
     G = pickle.load(file)
 
@@ -250,3 +249,4 @@ for i in range(0, len(Label_Low)):
     if bi not in b:
         b.append(bi)
 print(len(a), len(b))
+"""

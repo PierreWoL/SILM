@@ -15,7 +15,8 @@ all_datasets = pd.read_csv(file_path)
 dataframes = {}
 unique_file_names = all_datasets['fileName'].unique()
 
-"""for filename in unique_file_names:
+"""  
+for filename in unique_file_names:
     selected_rows = all_datasets[all_datasets['fileName'] == filename]
     new_df = pd.DataFrame(columns=selected_rows['colName'])
     # Iterate over each row in df
@@ -29,8 +30,7 @@ unique_file_names = all_datasets['fileName'].unique()
             new_df[col_name] = vals_list
         except ValueError as e:
             print(filename ,e)
-            
-            
+          
 url_path = os.path.join(os.getcwd(), "datasets", "TabFact", "table_to_page.json")
 # Read JSON data from a file
 with open(url_path) as json_file:
@@ -63,7 +63,7 @@ def process_item(table_name):
     store_path = os.path.join(os.getcwd(), "datasets", "TabFact", "Test")
     tableT = tables_sum[tables_sum["fileName"] == table_name]  #
     table = tableT[["colName", "vals"]].set_index("colName").T.reset_index(drop=True)
-    table.to_csv(os.path.join(store_path, table_name))
+    table.to_csv(os.path.join(store_path, table_name),index=False)
 
 
 if __name__ == "__main__":

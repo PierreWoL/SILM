@@ -16,7 +16,7 @@ import pandas as pd
 def ExampleAggregate(datafile_path, target):
     os.getcwd()
     files = [fn for fn in os.listdir(datafile_path)]
-    source_folder = os.path.join("D:/CurrentDataset/result/starmie/WDC/", target)  # "TableClassExample"
+    source_folder = os.path.join("/result/starmie/WDC/", target)  # "TableClassExample"
     mkdir(source_folder)
     csv_files = [fn for fn in os.listdir(os.path.join(datafile_path, files[0]))]
     print(csv_files)

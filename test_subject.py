@@ -60,7 +60,7 @@ def table_annotate(top_k, table_name, Table, cseid, feature_csv):
     print(table_name,Table)
     table_subject_columns = {}
     anno = TA.TableColumnAnnotation(Table)
-    anno.ws_cal(top_k, cseid)
+    # anno.ws_cal(top_k, cseid)
     subject_col = anno.subCol(0.05)
     name_l = [table_name] * len(subject_col)
     output = np.column_stack((np.array(anno.matrix_list), subject_col.T))

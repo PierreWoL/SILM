@@ -233,7 +233,6 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
-        print(labels)
         if score <= silhouette_score(input_data, labels):
             score = silhouette_score(input_data, labels)
             best_model = agg_clustering
@@ -349,31 +348,18 @@ def data_classes(data_path, groundTruth_file,superclass=True):
     """
     gt_file = open(groundTruth_file, errors='ignore')
     ground_truth_df = pd.read_csv(gt_file)
-    # print(ground_truth_df)
-    # print(ground_truth_df.iloc[0,0])
     test_table = []
     dict_gt = {}
-    if len(ground_truth_df.columns)>2:
-        if superclass:
-            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 2]))
-        else:
-            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
+    if superclass:
+        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 2]))
     else:
-        if ground_truth_df.iloc[0, 0].endswith(".tar.gz"):
-            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".tar.gz"), ground_truth_df.iloc[:, 1]))
-        if ground_truth_df.iloc[0, 0].endswith(".json"):
-            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".json"), ground_truth_df.iloc[:, 1]))
-        if ground_truth_df.iloc[0, 0].endswith(".csv"):
-            dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
-            test_table = list(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"))
+        dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
+
     test_table2 = {}.fromkeys(test_table).keys()
-    # print(dict_gt.keys())
+
     gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
     gt_cluster = pd.Series(gt_clusters.values()).unique()
     gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
-    # print(gt_clusters, ground_t, gt_cluster_dict,len(gt_clusters))
-    # gt_cluster_dict{cluster:}
-    #print(ground_t, gt_cluster_dict, len(gt_clusters))
     return gt_clusters, ground_t, gt_cluster_dict
 
 
@@ -392,7 +378,6 @@ def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None)
     b = []
     for i in range(len(labels_pred)):
         for j in range(i + 1, len(labels_pred)):
-            # b是在预测相同clusters中但ground truth 不同
             if labels_pred[i] == labels_pred[j] and labels_true[i] != labels_true[j]:
                 if tables is not None:
                     cosine_sim = 1 - cosine(tables[Tables[i]], tables[Tables[j]])
@@ -400,7 +385,7 @@ def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None)
                     b.append({i: (Tables[i], Tables[j], cosine_sim, euclidean_distance)})
                 else:
                     b.append({i: (Tables[i], Tables[j])})
-            # c是在ground truth相同clusters中但预测不同clusters
+
             if labels_pred[i] != labels_pred[j] and labels_true[i] == labels_true[j]:
                 if tables is not None:
                     cosine_sim = 1 - cosine(tables[Tables[i]], tables[Tables[j]])
@@ -479,7 +464,6 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
 
 def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName = None, filename =None):
-    # clustering的ground truth
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
 
     parameters = []
@@ -499,14 +483,12 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     cluster_dict = cluster_Dict(clusters)
     table_dict = None
     table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
-    #print("cluster_dict",cluster_dict)
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
-    #print(metrics_value)
     return cluster_dict,metrics_value
 
 
 def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, clusteringName, folderName=None, filename=None):
-    # 实现LSH indexes 为数�?    parameters = []
+    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -529,8 +511,8 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
     return cluster_dict, metrics_value
 def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_cluster_dict, clusteringName,folderName = None, filename =None):
 
-    #print(gt_clusters, ground_t, gt_cluster_dict)
-    # 实现LSH indexes 为数�?    parameters = []
+
+    parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":

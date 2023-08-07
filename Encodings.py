@@ -109,7 +109,7 @@ def hierarchical_clustering(hp: Namespace):
     print("hierarchical_clustering ...")
     datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", hp.dataset)
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    gt_filename = "01SourceTables.csv" if hp.dataset == "TabFact" else "groundTruth.csv"
+    gt_filename =  "groundTruth.csv"
     ground_truth = os.path.join(os.getcwd(), "datasets",hp.dataset, gt_filename)
     gt = pd.read_csv(ground_truth, encoding='latin1')
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, ground_truth)
@@ -181,69 +181,56 @@ def hierarchical_clustering(hp: Namespace):
             continue"""
 
 
-def starmie_clustering_old(hp: Namespace):
+def silm_clustering(hp: Namespace):
     dicts = {}
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
+
+    # subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
     if hp.method == "starmie":
-        files = [fn for fn in os.listdir(datafile_path) if '.pickle' in fn] #pkl
+        files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn] #pkl
+    if hp.subjectCol:
+        F_cluster = open(os.path.join(os.getcwd(), "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
+        SE = pickle.load(F_cluster)
+    else:
+        SE = {}
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
 
+    available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
     for file in files:
+        print(file,hp.subjectCol)
         dict_file = {}
         F = open(datafile_path + file, 'rb')
         content = pickle.load(F)
-        print(content)
         Z = []
         T = []
-        for vectors in content:
+        content = [vectors for vectors in content if vectors[0] in available_data]
+        print(len(content))
+        for vectors in content[0:500]:
             T.append(vectors[0][:-4])
-            if hp.is_sub is True:
-                table = pd.read_csv(data_path + vectors[0])
-                Sub_cols_header = []
-                if vectors[0] in [fn for fn in os.listdir(subject_path) if
-                                  '.csv' in fn and 'Metadata' not in fn]:
-                    Sub_cols = pd.read_csv(subject_path + vectors[0])
-                    for column in Sub_cols.columns.tolist():
-                        if column in table.columns.tolist():
-                            Sub_cols_header.append(table.columns.tolist().index(column))
-
+            if hp.subjectCol:
+                NE_list, headers, types = SE[vectors[0]]
+                if NE_list:
+                    vec_table = vectors[1][NE_list[0]]
                 else:
-                    anno = TA.TableColumnAnnotation(table)
-                    types = anno.annotation
-                    for key, type in types.items():
-                        if type == ColumnType.named_entity:
-                            Sub_cols_header = [key]
-                            break
-                if len(Sub_cols_header) != 0:
-                    sub_vec = vectors[1][Sub_cols_header, :]
-                else:
-                    sub_vec = vectors[1]
-                vec_table = np.mean(sub_vec, axis=0)
-                Z.append(vec_table)
-
+                    vec_table = np.mean(vectors[1], axis=0)
             else:
-                print(vectors[1])
                 vec_table = np.mean(vectors[1], axis=0)
-                Z.append(vec_table)
-
-            has_nan = np.isnan(Z).any()
-            # if has_nan:
-            # print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)
-
+            Z.append(vec_table)
+        """has_nan = np.isnan(Z).any()
+        if has_nan:
+            print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
-            clustering_method = ["Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
+            clustering_method = ["Agglomerative","BIRCH"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
                 for i in range(0, 2):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
-                    print("cluster_dict", cluster_dict)
+
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict
@@ -256,14 +243,16 @@ def starmie_clustering_old(hp: Namespace):
                 e_df = pd.concat([e_df, v.rename(i)], axis=1)
 
             store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-            if hp.is_sub is True:
+            if hp.subjectCol is True:
                 store_path += "Subject_Col/"
             else:
                 store_path += "All/"
             mkdir(store_path)
             e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
+            print(e_df)
             dicts[file] = dict_file
         except ValueError as e:
+            print(e)
             continue
     with open(datafile_path + 'cluster_dict.pickle', 'wb') as handle:
         pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
