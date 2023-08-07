@@ -230,7 +230,10 @@ def print_path_label(tree, layer_info, Parent_nodes):
                                 topmost_parent = []
                                 for label_per in label:
                                     ancestors = list(nx.ancestors(G, label_per))
-                                    freq_final = find_frequent_labels(ancestors, G)
+                                    if len(ancestors)==0:
+                                      freq_final = [label_per]
+                                    else:
+                                      freq_final = find_frequent_labels(ancestors, G)
                                     for la in freq_final:
                                         topmost_parent.append(la)
 
@@ -263,10 +266,10 @@ def tree_consistency_metric(embedding_file, dataset):
     data_path = os.path.join(os.getcwd(), "datasets", dataset, "Try.csv")
     ground_truth_csv = pd.read_csv(data_path, encoding='latin1')
     table_with_available_labels = ground_truth_csv.iloc[:, 0].unique()
-    data = [i for i in data if i[0] in table_with_available_labels][0:2500]
-    print(data)
-    table_names = [i[0] for i in data if i[0] in table_with_available_labels]
-    print(table_names)
+    data = [i for i in data if i[0] in table_with_available_labels][0:1500]
+   
+    table_names = [i[0] for i in data if i[0] in table_with_available_labels][0:1500]
+    
     encodings = np.array([np.mean(i[1], axis=0) for i in data])
 
     linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
@@ -281,7 +284,7 @@ def tree_consistency_metric(embedding_file, dataset):
     tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, table_names)
     start_time = time.time()
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
-                                     estimate_num_cluster=110)
+                                     estimate_num_cluster=300)
     end_time = time.time()
     # Calculate the elapsed time
     elapsed_time = end_time - start_time
@@ -327,6 +330,6 @@ print(most_common_labels)
 dataset = "TabFact"
 EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
 for embedding in [i for i in os.listdir(EMBEDDING_FOLDER) if i.endswith("pkl") and
-                                                             "sbert" in i]:
+                                                             "sbert" in i][0:]:
     tree_consistency_metric(embedding, dataset)
     break
