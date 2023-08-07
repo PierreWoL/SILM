@@ -12,7 +12,7 @@ import scipy.cluster.hierarchy as sch
 
 from Utils import mkdir
 
-"""ground_truth_csv = pd.read_csv(os.path.join(os.getcwd(), "datasets/TabFact/Try.csv"))
+ground_truth_csv = pd.read_csv(os.path.join(os.getcwd(), "datasets/TabFact/Try.csv"))
 #contains_sport = ground_truth_csv['LowestClass'].str.contains('sport', case=False, na=False)
 contains_sport = ground_truth_csv["LowestClass"].str.contains("sport", case=False, na=False) & \
             (ground_truth_csv["LowestClass"].str.contains("competition", case=False, na=False) |
@@ -55,10 +55,10 @@ for index, row in result_df.iterrows():
                 G.add_edge(superclass, classX)
     if len_G<len(set(G.nodes())):
         graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
-        plt.figure(figsize=(40, 40))
+        plt.figure(figsize=(10, 8))
         nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
         plt.show()
-"""
+
 
 
 def find_frequent_labels(ancestors: list, G: nx.DiGraph()):
@@ -84,7 +84,7 @@ def labels_most_fre(datas: dict):
 
 
 def ground_truth_labels(filename, top=False):
-    ground_label_name1 = "01SourceTables.csv"
+    ground_label_name1 = "groundTruth.csv"
     data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
     ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
     labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
@@ -146,7 +146,7 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names):
     Parent_nodes_h = {}
     simple_tree = None
     for index, (thre, clusters) in enumerate(threCluster_dict):
-        print(thre,len(clusters))
+        print(thre, len(clusters))
     for index, (thre, clusters) in enumerate(threCluster_dict):
         print(thre, len(clusters))
         if index == 0:
@@ -274,17 +274,18 @@ def tree_consistency_metric(embedding_file, dataset):
 
     linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
 
-
-
     folder = "fig/" + dataset
     result_folder = os.path.join("result/Valerie", dataset)
-
 
     dendrogra = PKL.plot_tree(linkage_matrix, folder, node_labels=table_names)
     tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, table_names)
     start_time = time.time()
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
+<<<<<<< HEAD
                                      estimate_num_cluster=300)
+=======
+                                         estimate_num_cluster=110)
+>>>>>>> 0f5b77f32ad6a64576dcc48a2d41972909361951
     end_time = time.time()
     # Calculate the elapsed time
     elapsed_time = end_time - start_time
@@ -311,7 +312,7 @@ def tree_consistency_metric(embedding_file, dataset):
         pickle.dump((dendrogra, linkage_matrix, threCluster_dict,
                      simple_tree, tree_test, layer_info_dict, Parent_nodes_h), file)
 
-
+"""
 labels_dict = {
     's1': ['a', 'b', 'c', 'd'],
     's2': ['a', 'b', 'd', 'f'],
@@ -322,8 +323,8 @@ labels_dict = {
 most_common_labels = labels_most_fre(labels_dict)
 print(most_common_labels)
 
-table_e= ['2-14080161-3.html.csv', '2-16900662-5.html.csv', '2-18938222-1.html.csv',
-               '2-154957-5.html.csv', '2-18652198-10.html.csv', '2-18938222-5.html.csv', '2-13535631-7.html.csv']
+table_e = ['2-14080161-3.html.csv', '2-16900662-5.html.csv', '2-18938222-1.html.csv',
+           '2-154957-5.html.csv', '2-18652198-10.html.csv', '2-18938222-5.html.csv', '2-13535631-7.html.csv']
 
 most_common_labels = labels_most_fre(label_dict(table_e, is_Parent=False))
 print(most_common_labels)
@@ -332,4 +333,4 @@ EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors",
 for embedding in [i for i in os.listdir(EMBEDDING_FOLDER) if i.endswith("pkl") and
                                                              "sbert" in i][0:]:
     tree_consistency_metric(embedding, dataset)
-    break
+    break"""

@@ -109,8 +109,8 @@ def hierarchical_clustering(hp: Namespace):
     print("hierarchical_clustering ...")
     datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", hp.dataset)
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    gt_filename = "01SourceTables.csv" if hp.dataset == "TabFact" else "groundTruth.csv"
-    ground_truth = os.path.join(os.getcwd(), "datasets",hp.dataset, gt_filename)
+    gt_filename = "groundTruth.csv"
+    ground_truth = os.path.join(os.getcwd(), "datasets", hp.dataset, gt_filename)
     gt = pd.read_csv(ground_truth, encoding='latin1')
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, ground_truth)
     # needs to delete in the future when all labeling is done
@@ -120,7 +120,7 @@ def hierarchical_clustering(hp: Namespace):
     files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
 
     for file in files[1:]:
-        store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel",file[:-4])
+        store_path = os.path.join(os.getcwd(), "result/starmie", hp.dataset, "clusteringModel", file[:-4])
         mkdir(store_path)
         dict_file = {}
         F = open(os.path.join(datafile_path, file), 'rb')
@@ -134,11 +134,11 @@ def hierarchical_clustering(hp: Namespace):
             vec_table = np.mean(vectors[1], axis=0)
             Z.append(vec_table)
         Z = np.array(Z)
-        ta ="result/starmie/%s/clusteringModel" % hp.dataset
-        dp = os.path.join(os.getcwd(),ta )
+        ta = "result/starmie/%s/clusteringModel" % hp.dataset
+        dp = os.path.join(os.getcwd(), ta)
         for folder in os.listdir(dp):
             cluster = "Agglomerative_clustering_results.pickle"
-            F_cluster = open(os.path.join(dp, folder,cluster), 'rb')
+            F_cluster = open(os.path.join(dp, folder, cluster), 'rb')
             content_cluster = pickle.load(F_cluster)
             methods_metrics = {}
             metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
@@ -181,69 +181,57 @@ def hierarchical_clustering(hp: Namespace):
             continue"""
 
 
-def starmie_clustering_old(hp: Namespace):
+def silm_clustering(hp: Namespace):
     dicts = {}
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
+
+    # subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
     if hp.method == "starmie":
-        files = [fn for fn in os.listdir(datafile_path) if '.pickle' in fn] #pkl
+        files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]  # pkl
+    if hp.subjectCol:
+        F_cluster = open(os.path.join(os.getcwd(), "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
+        SE = pickle.load(F_cluster)
+    else:
+        SE = {}
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
 
+    available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
     for file in files:
+        print(file, hp.subjectCol)
         dict_file = {}
         F = open(datafile_path + file, 'rb')
         content = pickle.load(F)
-        print(content)
         Z = []
         T = []
-        for vectors in content:
+        content = [vectors for vectors in content if vectors[0] in available_data]
+        print(len(content))
+        for vectors in content[0:500]:
             T.append(vectors[0][:-4])
-            if hp.is_sub is True:
-                table = pd.read_csv(data_path + vectors[0])
-                Sub_cols_header = []
-                if vectors[0] in [fn for fn in os.listdir(subject_path) if
-                                  '.csv' in fn and 'Metadata' not in fn]:
-                    Sub_cols = pd.read_csv(subject_path + vectors[0])
-                    for column in Sub_cols.columns.tolist():
-                        if column in table.columns.tolist():
-                            Sub_cols_header.append(table.columns.tolist().index(column))
-
+            if hp.subjectCol:
+                NE_list, headers, types = SE[vectors[0]]
+                if NE_list:
+                    vec_table = vectors[1][NE_list[0]]
                 else:
-                    anno = TA.TableColumnAnnotation(table)
-                    types = anno.annotation
-                    for key, type in types.items():
-                        if type == ColumnType.named_entity:
-                            Sub_cols_header = [key]
-                            break
-                if len(Sub_cols_header) != 0:
-                    sub_vec = vectors[1][Sub_cols_header, :]
-                else:
-                    sub_vec = vectors[1]
-                vec_table = np.mean(sub_vec, axis=0)
-                Z.append(vec_table)
-
+                    vec_table = np.mean(vectors[1], axis=0)
             else:
-                print(vectors[1])
                 vec_table = np.mean(vectors[1], axis=0)
-                Z.append(vec_table)
-
-            has_nan = np.isnan(Z).any()
-            # if has_nan:
-            # print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)
-
+            Z.append(vec_table)
+        """has_nan = np.isnan(Z).any()
+        if has_nan:
+            print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
-            clustering_method = ["Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
+            clustering_method = ["Agglomerative", "BIRCH",
+                                 "GMM"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
                 for i in range(0, 2):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
-                    print("cluster_dict", cluster_dict)
+
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict
@@ -256,14 +244,16 @@ def starmie_clustering_old(hp: Namespace):
                 e_df = pd.concat([e_df, v.rename(i)], axis=1)
 
             store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-            if hp.is_sub is True:
+            if hp.subjectCol is True:
                 store_path += "Subject_Col/"
             else:
                 store_path += "All/"
             mkdir(store_path)
             e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
+            print(e_df)
             dicts[file] = dict_file
         except ValueError as e:
+            print(e)
             continue
     with open(datafile_path + 'cluster_dict.pickle', 'wb') as handle:
         pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -304,7 +294,7 @@ print("--- Total Inference Time: %s seconds ---" % (inference_times))
 """
 
 
-def column_gts(dataset):
+def column_gts_WDC(dataset):
     """gt_clusters: tablename.Columnname:corresponding label dictionary. e.g.{'SOTAB_0.a1': 'Game', 'SOTAB_0.b1': 'date',...}
             ground_t: label and its tables. e.g. {'Game': ['SOTAB_0.a1'], 'Newspaper': ['SOTAB_0.b1', 'SOTAB_0.c1'],...}
             gt_cluster_dict: dictionary of index: label
@@ -312,7 +302,7 @@ def column_gts(dataset):
     """
     groundTruth_file = os.getcwd() + "/datasets/" + dataset + "/column_gtf.xlsx"
     ground_truth_df = pd.read_excel(groundTruth_file, sheet_name=0)
-    Superclass = ground_truth_df['Superclass'].unique()
+    Superclass = ground_truth_df['superclass'].unique()
     column_cluster = {}
     taleBasicClass = {}
     for table in Superclass:
@@ -331,6 +321,40 @@ def column_gts(dataset):
                 Cluster_col.append(f"{row['Target_Dataset']}.{row['column2']}")
             column_cluster[table][cluster] = list(set(Cluster_col))
     return column_cluster, taleBasicClass
+
+
+def column_gts(dataset):
+    """
+     gt_clusters: tablename.colIndex:corresponding label dictionary.
+      e.g.{Topclass1: {'T1.a1': 'ColLabel1', 'T1.b1': 'ColLabel2',...}}
+    ground_t: label and its tables. e.g.
+     {Topclass1:{'ColLabel1': ['T1.a1'], 'ColLabel2': ['T1.b1'', 'T1.c1'],...}}
+    gt_cluster_dict: dictionary of index: label
+    like  {Topclass1:{'ColLabel1': 0, 'ColLabel2': 1, ...}}
+    """
+    groundTruth_file = os.getcwd() + "/datasets/" + dataset + "/column_gt.csv"
+    ground_truth_df = pd.read_csv(groundTruth_file, encoding='latin1')
+    print(len(ground_truth_df['ColumnLabel'].unique()))
+    Superclass = ground_truth_df['TopClass'].unique()
+    gt_clusters = {}
+    ground_t = {}
+    gt_cluster_dict = {}
+    for classTable in Superclass:
+        gt_clusters[classTable] = {}
+        ground_t[classTable] = {}
+        grouped_df = ground_truth_df[ground_truth_df['TopClass'] == classTable]
+
+        for index, row in grouped_df.iterrows():
+            gt_clusters[classTable][row["fileName"][0:-4] + "." + str(row["colName"])] = str(row["ColumnLabel"])
+            if row["ColumnLabel"] not in ground_t[classTable].keys():
+                ground_t[classTable][str(row["ColumnLabel"])] = [row["fileName"][0:-4] + "." + str(row["colName"])]
+            else:
+                ground_t[classTable][str(row["ColumnLabel"])].append(row["fileName"][0:-4] + "." + str(row["colName"]))
+        gt_cluster = pd.Series(gt_clusters[classTable].values()).unique()
+        gt_cluster_dict[classTable] = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
+        # print(len(gt_cluster_dict[classTable]))
+    print(len(gt_clusters))
+    return gt_clusters, ground_t, gt_cluster_dict
 
 
 """
@@ -360,83 +384,62 @@ def columncluster_gt(tablegt, column_cluster: dict):
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-
-    ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/column_gt.xlsx"
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
-    Gt_clusters, Gt_cluster_dict = data_classes(data_path, ground_truth_table)[0], \
-                                   data_classes(data_path, ground_truth_table)[2]
-    print("Gt_clusters,Gt_cluster_dict", Gt_clusters, Gt_cluster_dict)
+    Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
     F = open(datafile_path + embedding_file, 'rb')
     content = pickle.load(F)
+
     # content is the embeddings for all datasets
     Zs = {}
     Ts = {}
-    for i in Gt_cluster_dict.keys():
-        # gt_cluster_dict {'Event':0} Zs['Event']=[]
-        Zs[i] = []
-        Ts[i] = []
-    column_cluster = column_gts(hp.dataset)[0]
-
-    for vector in content:
-        table_name = vector[0]
-        table_embeddings = vector[1]
-        open_file = data_path + table_name
-        try:
-            table = pd.read_csv(open_file)
-        except (UnicodeDecodeError, TypeError, FileNotFoundError) as e:
-            continue
-        if len(table_embeddings) != len(table.columns):
-            print("Wrong match table embedding and table! Please check!")
-            continue
-        else:
-            for i in range(0, len(table.columns)):
-                # gt_clusters ={'SOTAB_0':'Event'}
-                classT = Gt_clusters[table_name[0:-4]]
-                Ts[classT].append(f"{table_name[0:-4]}.{table.columns[i]}")
-                Zs[classT].append(table_embeddings[i])
     clusters_results = {}
-    for clu in ['People',
-                "Animal"]:  # ["AcademicJournal", "Wrestler", "Plant",  "Newspaper", "Continent", "Animal"]Gt_cluster_dict.keys()
+    gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
+    for clu in list(gt_cluster_dict.keys())[6:]:
         clusters_result = {}
-        Z = Zs[clu]
-        T = Ts[clu]
-        gt_clusters, ground_t, gt_cluster_dict = columncluster_gt(clu, column_cluster)
-        print(gt_clusters, ground_t, gt_cluster_dict)
-        if gt_clusters != 0:
-            try:
-                clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
-                methods_metrics = {}
-                store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-                embedding_file_path = embedding_file.split(".")[0]
-                col_example_path = os.path.join(store_path, "example", embedding_file_path)
-                store_path += "All/" + embedding_file_path + "/"
-                mkdir(store_path)
-                mkdir(col_example_path)
-                for method in clustering_method:
-                    print(method)
-                    metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                    for i in range(0, 1):
-                        cluster_dict, metric_dict = clusteringColumnResults(Z, T, gt_clusters, ground_t,
-                                                                            gt_cluster_dict, method,
-                                                                            folderName=col_example_path,
-                                                                            filename=f"{clu}.{method}")
-                        print("cluster_dict", cluster_dict)
-                        if i == 0:
-                            clusters_result[method] = cluster_dict
-                        metric_df = pd.DataFrame([metric_dict])
-                        metric_value_df = pd.concat([metric_value_df, metric_df])
-
-                    mean_metric = metric_value_df.mean()
-                    methods_metrics[method] = mean_metric
-                    # print("methods_metrics is", methods_metrics)
-                clusters_results[clu] = clusters_result
-                e_df = pd.DataFrame()
-                for i, v in methods_metrics.items():
-                    e_df = pd.concat([e_df, v.rename(i)], axis=1)
-                e_df.to_csv(store_path + clu + '_metrics.csv', encoding='utf-8')
-            except ValueError as e:
-                print(e)
-    with open(os.path.join(datafile_path, "cluster", embedding_file.split(".")[0] + '_cluster_dict.pickle'),
+        tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
+        print(f"tables_vectors length {len(tables_vectors)} in the top level ground truth class {clu} ")
+        Ts[clu] = []
+        Zs[clu] = []
+        for vector in content:
+            if vector[0].removesuffix(".csv") in Ground_t[clu]:
+                table = pd.read_csv(data_path + vector[0], encoding="latin1")
+                for i in range(0, len(table.columns)):
+                    Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
+                    Zs[clu].append(vector[1][i])
+        print(len(Zs[clu]))
+        Zs[clu] = np.array(Zs[clu])
+        try:
+            clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
+            methods_metrics = {}
+            store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+            embedding_file_path = embedding_file.split(".")[0]
+            col_example_path = os.path.join(store_path, "example", embedding_file_path)
+            store_path += "All/" + embedding_file_path + "/"
+            mkdir(store_path)
+            mkdir(col_example_path)
+            for method in clustering_method:
+                print(method)
+                metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
+                for i in range(0, 3):
+                    cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu], ground_t[clu],
+                                                                        gt_cluster_dict[clu], method,
+                                                                        folderName=col_example_path,
+                                                                        filename=f"{clu}.{method}")
+                    if i == 0:
+                        clusters_result[method] = cluster_dict
+                    metric_df = pd.DataFrame([metric_dict])
+                    metric_value_df = pd.concat([metric_value_df, metric_df])
+                mean_metric = metric_value_df.mean()
+                methods_metrics[method] = mean_metric
+            print("methods_metrics is", methods_metrics)
+            clusters_results[clu] = clusters_result
+            e_df = pd.DataFrame()
+            for i, v in methods_metrics.items():
+                e_df = pd.concat([e_df, v.rename(i)], axis=1)
+            e_df.to_csv(store_path + clu + '_ColumnMetrics.csv', encoding='utf-8')
+        except ValueError as e:
+            print(e)
+    with open(os.path.join(datafile_path, "cluster", embedding_file.split(".")[0] + '_colcluster_dict.pickle'),
               'wb') as handle:
         pickle.dump(clusters_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

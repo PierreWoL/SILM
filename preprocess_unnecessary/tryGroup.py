@@ -38,7 +38,7 @@ sheet = workbook.active
 new_df_dict = {}
 df_saveA = pd.DataFrame([(key, len(values)) for key, values in column_cluster.items()],
                         columns=['tableCategory', 'columnsCategoryNumber'])
-df_saveA.to_csv(os.path.join(os.getcwd(), "datasets/WDC/aggre.csv"))
+df_saveA.to_csv(os.path.join(os.getcwd(), "../datasets/WDC/aggre.csv"))
 for table, clusters in column_cluster.items():
     df_save = pd.DataFrame([(key, len(values)) for key, values in clusters.items()],
                            columns=['columnCategory', 'columnsNumber'])
