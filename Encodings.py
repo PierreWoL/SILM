@@ -384,6 +384,8 @@ def columncluster_gt(tablegt, column_cluster: dict):
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
+    target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
+    mkdir(target_path)
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
     F = open(datafile_path + embedding_file, 'rb')
@@ -439,7 +441,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
             e_df.to_csv(store_path + clu + '_ColumnMetrics.csv', encoding='utf-8')
         except ValueError as e:
             print(e)
-    with open(os.path.join(datafile_path, "cluster", embedding_file.split(".")[0] + '_colcluster_dict.pickle'),
+    with open(os.path.join(target_path, embedding_file.split(".")[0] + '_colcluster_dict.pickle'),
               'wb') as handle:
         pickle.dump(clusters_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
