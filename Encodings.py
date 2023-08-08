@@ -189,7 +189,7 @@ def silm_clustering(hp: Namespace):
 
     # subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
     if hp.method == "starmie":
-        files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]  # pkl
+        files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and 'roberta' in fn]  # pkl
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(), "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
         SE = pickle.load(F_cluster)
@@ -198,7 +198,7 @@ def silm_clustering(hp: Namespace):
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
 
     available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
-    for file in files:
+    for file in files[2:]:
         print(file, hp.subjectCol)
         dict_file = {}
         F = open(datafile_path + file, 'rb')
@@ -207,7 +207,7 @@ def silm_clustering(hp: Namespace):
         T = []
         content = [vectors for vectors in content if vectors[0] in available_data]
         print(len(content))
-        for vectors in content[0:500]:
+        for vectors in content:
             T.append(vectors[0][:-4])
             if hp.subjectCol:
                 NE_list, headers, types = SE[vectors[0]]
@@ -223,13 +223,12 @@ def silm_clustering(hp: Namespace):
             print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
-            clustering_method = ["Agglomerative", "BIRCH",
-                                 "GMM"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
+            clustering_method = ["Agglomerative", "BIRCH"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 2):
+                for i in range(0, 1):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
 
                     metric_df = pd.DataFrame([metric_dict])
@@ -255,6 +254,7 @@ def silm_clustering(hp: Namespace):
         except ValueError as e:
             print(e)
             continue
+        break
     with open(datafile_path + 'cluster_dict.pickle', 'wb') as handle:
         pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -394,7 +394,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     Ts = {}
     clusters_results = {}
     gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
-    for clu in list(gt_cluster_dict.keys())[6:]:
+    for clu in list(gt_cluster_dict.keys()):
         clusters_result = {}
         tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
         print(f"tables_vectors length {len(tables_vectors)} in the top level ground truth class {clu} ")
@@ -420,7 +420,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
+                for i in range(0, 1):
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu], ground_t[clu],
                                                                         gt_cluster_dict[clu], method,
                                                                         folderName=col_example_path,
@@ -458,6 +458,7 @@ def starmie_clusterHierarchy(hp: Namespace):
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn]
-    for file in files:
+    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and 'roberta' in fn]  
+    for file in files[2:]:
         starmie_columnClustering(file, hp)
+        break
