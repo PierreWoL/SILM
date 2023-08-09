@@ -280,12 +280,10 @@ def tree_consistency_metric(embedding_file, dataset):
     dendrogra = PKL.plot_tree(linkage_matrix, folder, node_labels=table_names)
     tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, table_names)
     start_time = time.time()
-    threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
-<<<<<<< HEAD
-                                     estimate_num_cluster=300)
-=======
-                                         estimate_num_cluster=110)
->>>>>>> 0f5b77f32ad6a64576dcc48a2d41972909361951
+    threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,estimate_num_cluster=300)
+
+
+
     end_time = time.time()
     # Calculate the elapsed time
     elapsed_time = end_time - start_time

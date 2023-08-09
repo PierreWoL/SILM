@@ -7,9 +7,9 @@ import statistics
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn import metrics
-#from d3l.indexing.similarity_indexes import DistributionIndex
-#from d3l.input_output.dataloaders import CSVDataLoader
-#from d3l.querying.query_engine import QueryEngine
+# from d3l.indexing.similarity_indexes import DistributionIndex
+# from d3l.input_output.dataloaders import CSVDataLoader
+# from d3l.querying.query_engine import QueryEngine
 from d3l.utils.functions import pickle_python_object
 from sklearn.metrics import pairwise_distances
 from sklearn.mixture import GaussianMixture
@@ -57,8 +57,8 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1):
     # if os.path.isfile(os.path.join(data_path, './distribution.lsh')):
     #   distribution_index = unpickle_python_object(os.path.join(data_path, './distribution.lsh'))
     # else:
-    #distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
-    #pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
+    # distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
+    # pickle_python_object(distribution_index, os.path.join(data_path, './distribution.lsh'))
     """
     # EmbeddingIndex
      
@@ -115,9 +115,6 @@ def distance_matrix(data_path, index, k):
     # print(Z)
     return Z_df, T    
     """
-
-
-
 
 
 def dbscan_param_search(input_data):
@@ -186,13 +183,12 @@ def OPTICS_param_search(input_data):
 
 def BIRCH_param_search(input_data, cluster_num):
     score = -1
-    print("cluster_num",cluster_num)
     best_birch = Birch()
-    if cluster_num<5:
+    if cluster_num < 5:
         at_least = 0
     else:
         at_least = cluster_num - 3
-    for i in range(at_least, cluster_num+3):
+    for i in range(at_least, cluster_num + 3):
         for threshold in np.arange(start=0.1, stop=0.6, step=0.1):
             for branchingfactor in np.arange(start=5, stop=20, step=5):
                 birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
@@ -229,7 +225,7 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
         at_least = 0
     else:
         at_least = cluster_num - 3
-    for n_clusters in range(at_least, cluster_num+3):
+    for n_clusters in range(at_least, cluster_num + 3):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -245,7 +241,7 @@ def gaussian_m_param_search(input_data, cluster_num):
     if cluster_num < 3:
         at_least = 0
     else:
-        at_least = cluster_num -3
+        at_least = cluster_num - 3
     n_components_range = range(at_least, cluster_num + 3)
     cv_types = ['spherical', 'tied', 'diag', 'full']
     best_gmm = GaussianMixture()
@@ -295,7 +291,7 @@ def SMC(labels_true, labels_pred):
     # Get the number of pairs that are in different clusters in both the predicted and true labels (d)
     d = (len(labels_pred) * (len(labels_pred) - 1) // 2) - (a + b + c)
     # Calculate the SMC
-    #print(a, b, c, d)
+    # print(a, b, c, d)
     smc = a / (a + b + c + d)
     return smc
 
@@ -332,7 +328,7 @@ gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cl
 """
 
 
-def data_classes(data_path, groundTruth_file,superclass=True):
+def data_classes(data_path, groundTruth_file, superclass=True):
     """
     return three dict
     Parameters
@@ -361,7 +357,6 @@ def data_classes(data_path, groundTruth_file,superclass=True):
     gt_cluster = pd.Series(gt_clusters.values()).unique()
     gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
     return gt_clusters, ground_t, gt_cluster_dict
-
 
 
 def cluster_Dict(clusters_list):
@@ -398,7 +393,7 @@ def wrong_pairs(labels_true, labels_pred, Tables, tables: Optional[dict] = None)
 
 
 def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None, filename=None,
-                     tables_gt: Optional[dict] = None, columns:bool = False):
+                     tables_gt: Optional[dict] = None, columns: bool = False):
     clusters_label = {}
     table_label_index = []
     false_ones = []
@@ -408,17 +403,16 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     for index, tables_list in clusterDict.items():
         labels = []
         for table in tables_list:
-            if table!='T2DV2_75' and table in gtclusters.keys():
+            if table != 'T2DV2_75' and table in gtclusters.keys():
                 tables.append(table)
                 label = gtclusters[table]
                 gt_table_label.append(gtclusters_dict[label])
                 labels.append(label)
-        #print(labels)
-        if len(labels)==0:
+        # print(labels)
+        if len(labels) == 0:
             continue
         else:
             cluster_label = most_frequent(labels)
-
 
         clusters_label[index] = cluster_label
         if columns:
@@ -428,7 +422,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
                     false_cols.append(table)
                 if table in gtclusters.keys() and gtclusters[table] != cluster_label:
                     false_cols.append(table)
-            columns_ref.append([tables_list, cluster_label,false_cols])
+            columns_ref.append([tables_list, cluster_label, false_cols])
         for table in tables_list:
             if table != 'T2DV2_75' and table in gtclusters.keys():
                 table_label_index.append(gtclusters_dict[cluster_label])
@@ -439,19 +433,19 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
 
     if folder is not None and filename is not None:
-        #df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
+        # df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
         if columns:
             df_cols = pd.DataFrame(columns_ref, columns=['resultCols', 'result label', 'false_cols'])
             df_cols.to_csv(os.path.join(folder, filename + 'cols_results.csv'), encoding='utf-8', index=False)
         results = []
-        #for key in clusters_label.keys():
-            #results.append([key, clusterDict[key], clusters_label[key]])
-        #df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
+        # for key in clusters_label.keys():
+        # results.append([key, clusterDict[key], clusters_label[key]])
+        # df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
         # baselinePath = os.getcwd() + "/result/subject_column/"
-        #df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
-        #df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
-        #cb_pairs.to_csv(folder + filename + 'HeaderLSH_cb.csv', encoding='utf-8', index=False)
-        #print(cb_pairs)
+        # df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
+        # df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
+        # cb_pairs.to_csv(folder + filename + 'HeaderLSH_cb.csv', encoding='utf-8', index=False)
+        # print(cb_pairs)
     return metric_dict
 
 
@@ -463,7 +457,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     return Z, T"""
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName = None, filename =None):
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, filename=None):
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
 
     parameters = []
@@ -484,10 +478,11 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     table_dict = None
     table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
-    return cluster_dict,metrics_value
+    return cluster_dict, metrics_value
 
 
-def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, clusteringName, folderName=None, filename=None):
+def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
+                            filename=None):
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
@@ -509,7 +504,10 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
     # print(metrics_value)
     return cluster_dict, metrics_value
-def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_cluster_dict, clusteringName,folderName = None, filename =None):
+
+
+def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
+                            filename=None):
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
@@ -527,8 +525,9 @@ def clusteringColumnResults(input_data, columns, gt_clusters, ground_t, gt_clust
     cluster_dict = cluster_Dict(clusters)
     table_dict = None
     table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict,columns=True)
-    return cluster_dict,metrics_value
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict,
+                                     columns=True)
+    return cluster_dict, metrics_value
 
 
 # print(clusters)

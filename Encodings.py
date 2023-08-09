@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from starmie.sdd.pretrain import load_checkpoint, inference_on_tables
 import torch
 import pandas as pd
@@ -223,7 +225,8 @@ def silm_clustering(hp: Namespace):
             print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
-            clustering_method = ["Agglomerative", "BIRCH"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
+            clustering_method = ["Agglomerative",
+                                 "BIRCH"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",Agglomerative  BIRCH , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
@@ -382,6 +385,7 @@ def columncluster_gt(tablegt, column_cluster: dict):
 
 
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
+    print(embedding_file)
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
@@ -394,56 +398,71 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     # content is the embeddings for all datasets
     Zs = {}
     Ts = {}
-    clusters_results = {}
     gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
-    for clu in list(gt_cluster_dict.keys()):
-        clusters_result = {}
-        tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
-        print(f"tables_vectors length {len(tables_vectors)} in the top level ground truth class {clu} ")
-        Ts[clu] = []
-        Zs[clu] = []
-        for vector in content:
-            if vector[0].removesuffix(".csv") in Ground_t[clu]:
-                table = pd.read_csv(data_path + vector[0], encoding="latin1")
-                for i in range(0, len(table.columns)):
-                    Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
-                    Zs[clu].append(vector[1][i])
-        print(len(Zs[clu]))
-        Zs[clu] = np.array(Zs[clu])
-        try:
-            clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
-            methods_metrics = {}
-            store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-            embedding_file_path = embedding_file.split(".")[0]
-            col_example_path = os.path.join(store_path, "example", embedding_file_path)
-            store_path += "All/" + embedding_file_path + "/"
-            mkdir(store_path)
-            mkdir(col_example_path)
-            for method in clustering_method:
-                print(method)
-                metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 1):
-                    cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu], ground_t[clu],
-                                                                        gt_cluster_dict[clu], method,
-                                                                        folderName=col_example_path,
-                                                                        filename=f"{clu}.{method}")
-                    if i == 0:
-                        clusters_result[method] = cluster_dict
-                    metric_df = pd.DataFrame([metric_dict])
-                    metric_value_df = pd.concat([metric_value_df, metric_df])
-                mean_metric = metric_value_df.mean()
-                methods_metrics[method] = mean_metric
-            print("methods_metrics is", methods_metrics)
-            clusters_results[clu] = clusters_result
-            e_df = pd.DataFrame()
-            for i, v in methods_metrics.items():
-                e_df = pd.concat([e_df, v.rename(i)], axis=1)
-            e_df.to_csv(store_path + clu + '_ColumnMetrics.csv', encoding='utf-8')
-        except ValueError as e:
-            print(e)
-    with open(os.path.join(target_path, embedding_file.split(".")[0] + '_colcluster_dict.pickle'),
+    with open(os.path.join(target_path, '_gt_cluster.pickle'),
               'wb') as handle:
-        pickle.dump(clusters_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(colCluster, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
+                                   gt_clusters, gt_cluster_dict, ground_t) for index, clu in
+                   enumerate(list(gt_cluster_dict.keys()))]
+
+        # wait all parallel task to complete
+        for future in futures:
+            future.result()
+
+    print("All parallel tasks completed.")
+
+
+def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters, gt_cluster_dict,
+               ground_t):
+    clusters_result = {}
+    tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
+
+    Ts[clu] = []
+    Zs[clu] = []
+    for vector in content:
+        if vector[0].removesuffix(".csv") in Ground_t[clu]:
+            table = pd.read_csv(data_path + vector[0], encoding="latin1")
+            for i in range(0, len(table.columns)):
+                Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
+                Zs[clu].append(vector[1][i])
+    print( f"columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
+            f" \n ground truth class {clu} ")
+    Zs[clu] = np.array(Zs[clu])
+    try:
+        clustering_method = ["BIRCH", "Agglomerative"]  # "DBSCAN", "GMM", "KMeans", "OPTICS",
+        methods_metrics = {}
+        store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+        embedding_file_path = embedding_file.split(".")[0]
+        col_example_path = os.path.join(store_path, "example", embedding_file_path)
+        store_path += "All/" + embedding_file_path + "/column/"
+        mkdir(store_path)
+        mkdir(col_example_path)
+        for method in clustering_method:
+
+            metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
+            for i in range(0, 1):
+                cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
+                                                                    gt_cluster_dict[clu], method,
+                                                                    folderName=col_example_path,
+                                                                    filename=f"{str(index)}.{method}")
+                if i == 0:
+                    clusters_result[method] = cluster_dict
+                metric_df = pd.DataFrame([metric_dict])
+                metric_value_df = pd.concat([metric_value_df, metric_df])
+            mean_metric = metric_value_df.mean()
+            methods_metrics[method] = mean_metric
+        print("methods_metrics is", methods_metrics)
+
+        e_df = pd.DataFrame()
+        for i, v in methods_metrics.items():
+            e_df = pd.concat([e_df, v.rename(i)], axis=1)
+        e_df.to_csv(store_path + str(index) + '_ColumnMetrics.csv', encoding='utf-8')
+        with open(store_path + str(index) + '_colcluster_dict.pickle', 'wb') as handle:
+            pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    except ValueError as e:
+        print(e)
 
 
 def starmie_clusterHierarchy(hp: Namespace):
@@ -460,7 +479,5 @@ def starmie_clusterHierarchy(hp: Namespace):
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and 'sbert' in fn]  
-    for file in files[2:]:
-        starmie_columnClustering(file, hp)
-        break
+    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embedMethod in fn and hp.embed in fn]
+    starmie_columnClustering(files[0], hp)
