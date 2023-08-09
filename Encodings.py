@@ -402,7 +402,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     with open(os.path.join(target_path, '_gt_cluster.pickle'),
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=6) as executor:
         futures = [executor.submit(colCluster, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
                                    gt_clusters, gt_cluster_dict, ground_t) for index, clu in
                    enumerate(list(gt_cluster_dict.keys()))]
@@ -479,5 +479,5 @@ def starmie_clusterHierarchy(hp: Namespace):
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embedMethod in fn and hp.embed in fn]
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith(hp.embedMethod+'.pkl') and hp.embed in fn]
     starmie_columnClustering(files[0], hp)
