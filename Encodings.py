@@ -460,7 +460,7 @@ def starmie_clusterHierarchy(hp: Namespace):
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and 'roberta' in fn]  
+    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and 'sbert' in fn]  
     for file in files[2:]:
         starmie_columnClustering(file, hp)
         break
