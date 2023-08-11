@@ -214,7 +214,7 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
     return simple_tree, layer_info_dict, Parent_nodes_h
 
 
-def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict = False):
+def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=False):
     target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
@@ -336,8 +336,8 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     layer_purity_df.to_csv(os.path.join(file_path, "layer_purity.csv"), index=False)
     timing_df.to_csv(os.path.join(file_path, "timing.csv"))
 
-    #print(layer_purity_df)
-    #print(timing_df)
+    # print(layer_purity_df)
+    # print(timing_df)
 
     with open(os.path.join(file_path, cluster_name + "_results.pkl"), 'wb') as file:
         # Dump the data into the pickle file
@@ -346,7 +346,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     return TCS
 
 
-def hierarchicalColCluster(clustering,filename,hp: Namespace):
+def hierarchicalColCluster(clustering, filename, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     embedding_file = [fn for fn in os.listdir(datafile_path)
@@ -361,11 +361,14 @@ def hierarchicalColCluster(clustering,filename,hp: Namespace):
                   hp.dataset + "/_gt_cluster.pickle"
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
-    score_path = os.getcwd() + "/result/Valerie/" + hp.dataset + "/"
+
     index_cols = int(filename.split("_")[0])
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
     tables = Ground_t[KEYS[index_cols]]
+    score_path = os.getcwd() + "/result/Valerie/"+ hp.dataset + "/" + embedding_file + "/"
+    print(score_path)
+    mkdir(score_path)
     if len(tables) > 1:
         jaccard_score = JaccardMatrix(col_cluster[clustering], data_path)[2]
         TCS = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file, hp.dataset,
@@ -382,6 +385,3 @@ def hierarchicalColCluster(clustering,filename,hp: Namespace):
             # Concatenate the new DataFrame with the original DataFrame
             df = pd.concat([df, new_row])
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
-
-
-
