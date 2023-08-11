@@ -1,0 +1,74 @@
+,Top Level Entity,Tree Consistency Score
+13,"['collective entity', 'continuant']",0.802
+100,['system of units'],
+101,"['collective entity', 'continuant', 'location', 'politics', 'result', 'spatio-temporal entity']",
+11,"['collective entity', 'continuant', 'location', 'object', 'part', 'result', 'spatio-temporal entity']",
+125,['sport competition '],
+12,"['collective entity', 'common matter', 'continuant', 'economic entity', 'object', 'physical substance', 'result', 'spatio-temporal entity']",0.6
+15,"['object', 'result']",0.821
+16,['source'],
+17,['reality program'],1.0
+19,['collective entity'],1.0
+20,['motorcycle racing'],
+21,"['animal motion', 'collective entity', 'continuant', 'developmental stage theories', 'location', 'motor skill', 'object', 'observable entity', 'pattern', 'property', 'result', 'source', 'spatio-temporal entity', 'use']",1.0
+22,"['collective entity', 'continuant', 'location', 'object', 'result', 'spatio-temporal entity']",1.0
+23,"['continuant', 'location', 'result', 'spatio-temporal entity']",0.5
+24,"['collective entity', 'continuant', 'former entity', 'location', 'object', 'part', 'result', 'spatio-temporal entity']",
+25,"['collective entity', 'common matter', 'continuant', 'mode of transport', 'object', 'physical substance', 'result', 'source', 'spatio-temporal entity']",1.0
+27,"['collective entity', 'continuant', 'economic entity']",0.976
+26,"['collective entity', 'object']",1.0
+28,"['collective entity', 'object', 'result']",0.667
+29,"['collective entity', 'continuant', 'former entity', 'location', 'object', 'result', 'spatio-temporal entity']",
+30,"['collective entity', 'continuant', 'location', 'object', 'result', 'source', 'spatio-temporal entity']",0.857
+31,"['collective entity', 'common matter', 'continuant', 'object', 'physical substance', 'property', 'result', 'source', 'spatio-temporal entity']",1.0
+32,['continuant'],
+33,['election'],1.0
+34,"['collective entity', 'continuant', 'multicellular organismal process', 'object', 'observable entity', 'result', 'source', 'spatio-temporal entity']",1.0
+35,"['collective entity', 'continuant', 'location', 'object', 'observable entity', 'property', 'result', 'source', 'spatio-temporal entity']",
+36,"['continuant', 'former entity', 'location', 'object', 'result', 'spatio-temporal entity']",0.0
+37,"['collective entity', 'continuant', 'location', 'object', 'part', 'result', 'source', 'spatio-temporal entity']",
+38,"['Lissajous curve', 'algebraic curve', 'analytic space', 'cartesian oval', 'collective entity', 'cross section', 'differentiable manifold', 'formalization', 'geometric shape', 'hypotrochoid', 'line', 'multiset', 'n-ellipse', 'n-sphere', 'non-degenerate conic section', 'object', 'one-dimensional space', 'plane curve', 'plane figure', 'property', 'quadratic curve', 'sine wave', 'superellipse']",
+39,"['collective entity', 'continuant', 'location', 'power', 'result', 'spatio-temporal entity']",
+40,"['common matter', 'object', 'part', 'physical substance', 'result', 'spatio-temporal entity']",
+42,"['collective entity', 'continuant', 'electronic document', 'network resource', 'object', 'result', 'source', 'spatio-temporal entity']",1.0
+43,"['collective entity', 'common matter', 'massive quantum particle', 'nitrogen compound', 'object', 'organooxygen compound', 'oxo compound', 'part', 'physical substance', 'result', 'spatio-temporal entity']",
+44,['spatio-temporal entity'],1.0
+45,"['collective entity', 'common matter', 'continuant', 'object', 'physical substance', 'remains', 'result', 'source', 'spatio-temporal entity']",
+46,"['collective entity', 'common matter', 'continuant', 'object', 'observable entity', 'physical substance', 'result', 'source', 'spatio-temporal entity']",1.0
+47,"['common matter', 'continuant', 'object', 'physical substance', 'result', 'spatio-temporal entity']",1.0
+49,"['collective entity', 'continuant', 'object', 'observable entity', 'result', 'scheme', 'source', 'spatio-temporal entity']",
+50,"['common matter', 'object', 'physical substance', 'result', 'spatio-temporal entity']",1.0
+51,"['collective entity', 'continuant', 'nation at Games', 'object', 'result', 'source', 'spatio-temporal entity']",
+52,['bus'],
+54,"['collective entity', 'continuant', 'location', 'part', 'result', 'spatio-temporal entity']",
+55,"['common matter', 'object', 'physical substance', 'result']",
+56,['property'],
+57,['object'],1.0
+58,"['collective entity', 'continuant', 'location', 'observable entity', 'property', 'result', 'spatio-temporal entity']",
+59,"['measured quantity value', 'object']",
+5,"['collective entity', 'continuant', 'location', 'result', 'spatio-temporal entity']",0.75
+60,"['collective entity', 'continuant', 'power']",0.0
+62,"['collective entity', 'common matter', 'continuant', 'converter', 'object', 'physical substance', 'result', 'spatio-temporal entity']",
+63,"['collective entity', 'continuant', 'multi-organism process', 'multicellular organismal process', 'object', 'observable entity', 'pattern', 'result', 'source', 'spatio-temporal entity']",
+64,"['Formula One race', 'collective entity', 'continuant', 'object', 'observable entity', 'result', 'source', 'spatio-temporal entity']",1.0
+65,"['common matter', 'continuant', 'converter', 'object', 'physical substance', 'result', 'source', 'spatio-temporal entity']",
+69,"['continuant', 'location', 'object', 'spatio-temporal entity']",0.667
+6,"['continuant', 'location', 'spatio-temporal entity']",0.714
+71,"['collective entity', 'common matter', 'continuant', 'economic entity', 'object', 'physical substance', 'result', 'source']",
+72,['result'],
+73,"['collective entity', 'common matter', 'continuant', 'converter', 'object', 'part', 'physical substance', 'result', 'spatio-temporal entity']",
+74,['language group'],
+79,"['collective entity', 'continuant', 'economic entity', 'object', 'result', 'source', 'spatio-temporal entity']",
+7,"['collective entity', 'continuant', 'object', 'observable entity', 'pattern', 'result', 'source', 'spatio-temporal entity']",
+84,['player'],
+85,"['collective entity', 'continuant', 'measured quantity value', 'object', 'observable entity', 'pattern', 'result', 'source', 'spatio-temporal entity']",
+87,"['air carrier', 'collective entity', 'continuant', 'economic entity']",1.0
+89,['network show'],
+8,"['collective entity', 'continuant', 'spatio-temporal entity']",
+94,"['collective entity', 'continuant', 'formalization', 'location', 'multiset', 'object', 'spatio-temporal entity']",
+95,"['collective entity', 'continuant', 'culture', 'object', 'observable entity', 'result', 'source', 'spatio-temporal entity']",
+97,"['collective entity', 'common matter', 'continuant', 'immaterial component', 'object', 'physical substance', 'result', 'software resource', 'source', 'spatio-temporal entity', 'technological component']",
+99,['League'],
+9,"['collective entity', 'continuant', 'object', 'result', 'source', 'spatio-temporal entity']",0.548
+0,"['collective entity', 'common matter', 'continuant', 'location', 'object', 'observable entity', 'physical substance', 'result', 'source', 'spatio-temporal entity']",
+10,"['collective entity', 'continuant', 'object', 'result']",1.000

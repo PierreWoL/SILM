@@ -89,6 +89,7 @@ no_labels = [i for i in names if i not in labels]
 # ground_truth_csv = ground_truth_csv[ground_truth_csv["fileName"].isin(no_labels)]
 ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
 
+
 def parallel_crawling():
     for i in range(0, 11):  # 160
 
@@ -102,36 +103,31 @@ def parallel_crawling():
 
         dataframes_list = query_wikidata_parallel(result_diction)
 
+
 G = nx.DiGraph()
-print(len(ground_truth_csv))
 for index, row in ground_truth_csv.iterrows():
     if row["fileName"] in labels:
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
         df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
-        all_nodes = set(df.values.ravel())
-        if len(set(G.nodes())):
-            all_nodes = all_nodes - set(G.nodes())
-
-        else:
-            nodes_set = all_nodes
+        all_nodes = set(df.values.ravel()) - set(G.nodes())
 
         G.add_nodes_from(all_nodes)
-        nodes_set = set(G.nodes())
+
         for _, row2 in df.iterrows():
             labels_table = row2.dropna().tolist()
             for i in range(len(labels_table) - 1):
                 G.add_edge(labels_table[i], labels_table[i + 1])
+
     else:
-        if row["class"]!=" ":
+        if row["class"] != " ":
             superclass = row["class"]
             classX = row["superclass"]
 
             all_nodes = {superclass, classX}
-            all_nodes = all_nodes - set(G.nodes())
-            if len(all_nodes) > 0:
-                G.add_nodes_from(all_nodes)
-                G.add_edge(classX,superclass)
 
+            all_nodes = all_nodes - set(G.nodes())
+            G.add_nodes_from(all_nodes)
+            G.add_edge(classX, superclass)
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
@@ -155,7 +151,6 @@ plt.show()"""
 #
 
 """  # Process the DataFrames as needed
-
 
 # Below needs reconstruct and important
 """target_path = os.path.join(os.getcwd(), "datasets/TabFact/")

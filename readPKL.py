@@ -8,7 +8,7 @@ import pandas as pd
 import scipy.cluster.hierarchy as sch
 import networkx as nx
 import numpy as np
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, silhouette_samples
 from Utils import mkdir
 from collections import Counter
 
@@ -92,7 +92,8 @@ This is for a test case to construct a  directed graph object based
 on ground truth hierarchy
 """
 
-"""def hierarchy_tree(tree: nx.DiGraph(), target_folder = None):
+
+def hierarchy_tree(tree: nx.DiGraph(), target_folder=None):
     # Define the layout for the tree structure with top-down direction
     pos = nx.nx_agraph.graphviz_layout(tree, prog='dot', args="-Grankdir=TB")
     # Draw the tree structure
@@ -104,8 +105,6 @@ on ground truth hierarchy
         plt.title("Tree Structure")
         plt.savefig(target_path)
         plt.show()
-
-"""
 
 
 def present_children(tree, parent):
@@ -135,7 +134,7 @@ def plot_tree(linkage_matrix, folder=None, node_labels=None):
     return dendrogra
 
 
-def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels):
+def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels,target_path = None):
     # Create a new NetworkX tree object
     tree = nx.DiGraph()
     # Iterate over the linkage matrix
@@ -143,12 +142,12 @@ def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels):
         child_1, child_2, distance, _ = link
         parent_node = i + len(encodings)  # Assign unique IDs to parent nodes dist_matrix
         # Add edges to the tree object
-
         tree.add_edge(parent_node, int(child_1), length=distance)  # ,weight=1,capacity=15,
         tree.add_edge(parent_node, int(child_2), length=distance)
     # Assign labels to the tree nodes
     tree = nx.relabel_nodes(tree, {i: label for i, label in enumerate(labels)})
-    # hierarchy_tree(tree, Tfolder)
+    if target_path!=None:
+        hierarchy_tree(tree, target_path)
     return tree
 
 
@@ -188,8 +187,7 @@ print_tree(tree['root'])"""
 
 # Generate a random distance matrix
 
-
-def sliced_clusters(linkage_m: sch.linkage, threshold: float, data):
+def sliced_clusters(customMatrix, linkage_m: sch.linkage, threshold: float, data):
     clusters = sch.cut_tree(linkage_m, height=threshold)
     # print(clusters)
     clusters1 = clusters.flatten()
@@ -203,36 +201,40 @@ def sliced_clusters(linkage_m: sch.linkage, threshold: float, data):
     custom_clusters_list = [nodes for nodes in custom_clusters.values()]
 
     clusters_1d = np.ravel(clusters)
-    silhouette_avg = silhouette_score(data, clusters_1d)
+    # silhouette_avg = silhouette_score(data, clusters_1d)
+    silhouette_avg = np.mean(silhouette_samples(data, clusters_1d, metric=customMatrix))
 
-    # print(f"Silhouette coefficient: {silhouette_avg}")
     return silhouette_avg, custom_clusters
 
 
-def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data, estimate_num_cluster=0):  # , low=-1.0, t2=0
+def best_clusters(customMatrix, dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
+                  estimate_num_cluster=0):  # , low=-1.0, t2=0
     clusters = []
     # Get the y-coordinates from 'dcoord'
     y_coords = dendrogram['dcoord']
     # Find the highest and lowest y-values
     highest_y = np.max(y_coords)
     lowest_y = np.min(y_coords)
-    # print("  highest_y, lowest_y ", highest_y, lowest_y)
+
     silhouette = -1
     best_threshold = 0.0
     best_clusters = None
     gap = sys.maxsize
-    numbers_with_boundaries = np.linspace(lowest_y, highest_y, 12)
-    # print(numbers_with_boundaries[1:-1])
+    numbers_with_boundaries = np.linspace(lowest_y, highest_y, 10)
+
     # if low == -1:
     for threshold in numbers_with_boundaries[1:-1]:
-        silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data)
-        # print(silhouette_avg, len(custom_clusters))
-        if silhouette_avg > silhouette:
-            best_clusters = custom_clusters
-            silhouette = silhouette_avg
-            best_threshold = threshold
+        try:
+            silhouette_avg, custom_clusters = sliced_clusters(customMatrix, linkage_m, threshold, data)
+            # print(silhouette_avg, len(custom_clusters))
+            if silhouette_avg > silhouette:
+                best_clusters = custom_clusters
+                silhouette = silhouette_avg
+                best_threshold = threshold
 
-        else:
+            else:
+                continue
+        except:
             continue
     # print("best silhouette, ", silhouette, len(best_clusters.keys()))
     # return best_threshold, best_clusters
@@ -245,24 +247,18 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data, esti
     # else:
     if estimate_num_cluster != 0:
         for threshold in numbers_with_boundaries[1:-1]:
-            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data)
-            # if len(custom_clusters)-low < gap and len(custom_clusters)-low > 0:
-            if threshold > best_threshold:
-                if abs(len(custom_clusters) - estimate_num_cluster) < gap \
-                        and 0.6 * estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):
-                    clusters.append((threshold, custom_clusters))
-    """
-    if t2 != 0:
-        for threshold in numbers_with_boundaries[1:-1]:
-            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data)
-            if len(custom_clusters) > t2:
+            try:
+                silhouette_avg, custom_clusters = sliced_clusters(customMatrix, linkage_m, threshold, data)
+                # if len(custom_clusters)-low < gap and len(custom_clusters)-low > 0:
+                if threshold > best_threshold:
+                    """if abs(len(custom_clusters) - estimate_num_cluster) < gap \
+                            and 0.6 * estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):"""
+                    # if len(clusters) + 1 <= estimate_num_cluster and len(custom_clusters)< len(best_clusters)
+                    if len(best_clusters) / estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):
+                        clusters.append((threshold, custom_clusters))
+            except:
                 continue
-            else:
-                if threshold <= best_threshold:
-                    thre_cluster[threshold] = custom_clusters
-                    print(threshold, len(custom_clusters))
-    """
-
+    print(len(clusters))
     return clusters
 
 
@@ -319,7 +315,7 @@ def simplify_graph(original_graph, cluster_results):
             simplified_graph.nodes[leaf_node]['type'] = 'data'
             # print(simplified_graph.nodes[closest_parent]['type'],simplified_graph.nodes[leaf_node]['type'])
 
-    print(simplified_graph)
+    # print(simplified_graph)
     return simplified_graph
 
 
@@ -481,7 +477,7 @@ def print_path_label(tree, layer_info, Parent_nodes, class_dict=None):
                     for i in path:
                         label = tree.nodes[i].get('label', 0)
                         if label != 0:
-                            print(f" Node: {i}",f" Type: {tree.nodes[i].get('type', 0)} \n",
+                            print(f" Node: {i}", f" Type: {tree.nodes[i].get('type', 0)} \n",
                                   f" cluster label: {label} \n",
                                   f" Purity: {tree.nodes[i].get('Purity', 0)} \n"
                                   f" Data: {tree.nodes[i].get('data', 0)} \n",
@@ -579,9 +575,9 @@ def test_tree_consistency_metric(embedding_file, dataset):
         # print_tree_labels(simple_tree, ground_truth)
         TCS = print_path_label(simple_tree, layer_info_dict, Parent_nodes_h, class_dict)
 
-        print(f"Embedding file {embedding_file}",f", Tree Consistency metric: {TCS}")
+        print(f"Embedding file {embedding_file}", f", Tree Consistency metric: {TCS}")
         print_clusters_top_down(simple_tree, layer_info_dict)
-        Purity_layers= purity_per_layer(simple_tree, layer_info_dict)
+        Purity_layers = purity_per_layer(simple_tree, layer_info_dict)
         for layer, purity_list in Purity_layers.items():
             purity_list = [float(i) for i in purity_list]
             Purity_layer = "{:.3f}".format(sum(purity_list) / len(purity_list))
@@ -632,7 +628,7 @@ def test(dataset):
             break
 
 
-#test("TabFact")  # TabFact Example
+# test("TabFact")  # TabFact Example
 # The below code is just for testing
 
 """ 

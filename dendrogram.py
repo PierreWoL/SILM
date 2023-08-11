@@ -38,7 +38,7 @@ for dataset in datasets:
 
         # Plot dendrogram
         plt.figure(figsize=(10, 5))
-        plt.title('Hierarchical Clustering Dendrogram')
+        plt.title('Hierarchical ClusteringAlgorithm Dendrogram')
         plt.xlabel('Samples')
         plt.ylabel('Distance')
 
