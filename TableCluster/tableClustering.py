@@ -170,7 +170,6 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
     
     Zs[clu] = np.array(Zs[clu])
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-    pickle_name = store_path + str(index) + '_colcluster_dict.pickle'
     clustering_method = ["Agglomerative"]
 
     if len(Zs[clu])<2500:
@@ -182,6 +181,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             embedding_file_path = embedding_file.split(".")[0]
             col_example_path = os.path.join(store_path, "example", embedding_file_path)
             store_path += "All/" + embedding_file_path + "/column/"
+            pickle_name = store_path + str(index) + '_colcluster_dict.pickle'
             mkdir(store_path)
             mkdir(col_example_path)
             for method in clustering_method:
@@ -207,6 +207,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             with open(pickle_name, 'wb') as handle:
                 pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
             for meth in clustering_method:
+                print(pickle_name)
                 hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle', hp)
         except ValueError as e:
             print(e)
