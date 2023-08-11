@@ -165,13 +165,18 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             for i in range(0, len(table.columns)):
                 Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
                 Zs[clu].append(vector[1][i])
-    print(f"columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
-          f" \n ground truth class {clu} ")
+
+
+    
     Zs[clu] = np.array(Zs[clu])
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     pickle_name = store_path + str(index) + '_colcluster_dict.pickle'
     clustering_method = ["Agglomerative"]
-    if not os.path.exists(pickle_name):
+
+    if len(Zs[clu])<2500:
+        print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
+          f" \n ground truth class {clu} ")
+
         try:
             methods_metrics = {}
             embedding_file_path = embedding_file.split(".")[0]
@@ -212,7 +217,7 @@ def starmie_clusterHierarchy(hp: Namespace):
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     Gt_clusters, Gt_cluster_dict = data_classes(data_path, ground_truth_table)[0], \
                                    data_classes(data_path, ground_truth_table)[2]
-    print("Gt_clusters,Gt_cluster_dict", Gt_clusters, Gt_cluster_dict)
+    # print("Gt_clusters,Gt_cluster_dict", Gt_clusters, Gt_cluster_dict)
     tables = []
     for key, value in Gt_cluster_dict.items():
         if value in ['People', "Animal"]:
