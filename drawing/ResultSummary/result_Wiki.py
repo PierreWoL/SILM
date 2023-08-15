@@ -14,7 +14,7 @@ import pandas as pd
         "precision_at_90_percent", 
 '''
 
-col = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based","M1H", "M2H",   "cupid", "similarity_flooding"]#"M3",
+col = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based","M1H", "M2H",   "cupid", "similarity_flooding"]
 colM = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based","RoBERTa_Schema", "SBERT_Schema",   "cupid", "similarity_flooding"]#,"RoBERTa_FineTune"
 col1 = ["Dataset", "M1", "M2","M3","EmbDI", "distribution_based"]#"M3",
 col1M = ["Dataset", "RoBERTa_Instance", "SBERT_Instance","RoBERTa_FineTune","EmbDI", "distribution_based"]#"RoBERTa_FineTune",
@@ -126,7 +126,7 @@ def recall_k_aggregation(Col_algorithms,Col_algo_M, metr, dataset, data_path):
 
 
 types = ['Joinable','Semantically-Joinable','Unionable','View-Unionable']  # 'Joinable','Semantically-Joinable','Unionable','View-Unionable'
-ab_path = os.path.join(os.getcwd(),'ValentineDatasets') #"D:/CurrentDataset/ValentineDatasets/"
+ab_path = os.path.join(os.getcwd(), '../../ValentineDatasets') #"D:/CurrentDataset/ValentineDatasets/"
 for dataset in datasets:
     if dataset == 'Wikidata':
         dataframe_metadata = metadata_true(dataset, ab_path)

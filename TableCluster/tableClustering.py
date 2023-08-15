@@ -100,7 +100,7 @@ def column_gts(dataset):
     """
     groundTruth_file = os.getcwd() + "/datasets/" + dataset + "/column_gt.csv"
     ground_truth_df = pd.read_csv(groundTruth_file, encoding='latin1')
-    # print(len(ground_truth_df['ColumnLabel'].unique()))
+    print(len(ground_truth_df['ColumnLabel'].unique()))
     Superclass = ground_truth_df['TopClass'].unique()
     gt_clusters = {}
     ground_t = {}
@@ -119,7 +119,7 @@ def column_gts(dataset):
         gt_cluster = pd.Series(gt_clusters[classTable].values()).unique()
         gt_cluster_dict[classTable] = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
         # print(len(gt_cluster_dict[classTable]))
-    # print(len(gt_clusters))
+    print(len(gt_clusters))
     return gt_clusters, ground_t, gt_cluster_dict
 
 
@@ -141,7 +141,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     with open(os.path.join(target_path, '_gt_cluster.pickle'),
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [executor.submit(colCluster, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
                                    gt_clusters, gt_cluster_dict) for index, clu in
                    enumerate(list(gt_cluster_dict.keys()))]
@@ -156,7 +156,6 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
 def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters, gt_cluster_dict):
     clusters_result = {}
     tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
-
     Ts[clu] = []
     Zs[clu] = []
     for vector in content:
@@ -168,13 +167,13 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
 
 
     
-    Zs[clu] = np.array(Zs[clu]).astype(np.float32)
+    Zs[clu] = np.array(Zs[clu])
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     clustering_method = ["Agglomerative"]
 
-    if len(Zs[clu])>25000:
+    if len(Zs[clu])<4000:
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
-          f" \n ground truth class {clu} ")
+          f" \n ground truth class {clu} {Zs[clu].dtype}")
 
         try:
             methods_metrics = {}
@@ -185,7 +184,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             mkdir(store_path)
             mkdir(col_example_path)
             for method in clustering_method:
-           
+
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
                 for i in range(0, 1):
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
@@ -198,7 +197,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                 mean_metric = metric_value_df.mean()
                 methods_metrics[method] = mean_metric
-            # print("methods_metrics is", methods_metrics)
+            print("methods_metrics is", methods_metrics)
 
             e_df = pd.DataFrame()
             for i, v in methods_metrics.items():

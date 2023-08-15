@@ -190,7 +190,7 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
 
             simple_tree.nodes[closest_parent]['data'] = list(cluster)
             if index == layer_num:
-                label_dict_cluster = label_dict(list(cluster), is_Parent=True)
+                label_dict_cluster = label_dict(list(cluster), is_Parent=False)#True
                 simple_tree.nodes[closest_parent]['label'] = labels_most_fre(label_dict_cluster)
                 simple_tree.nodes[closest_parent]['type'] = 'data cluster node parent layer'
                 Parent_nodes_h[cluster] = closest_parent
@@ -234,7 +234,7 @@ def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=False):
                     ind += 1
                     for index, i in enumerate(path):
                         label = tree.nodes[i].get('label', 0)
-                        # print(label)
+                        print(label)
                         if label != 0:
                             """print(f" Node: {i}",f" Type: {tree.nodes[i].get('type', 0)} \n",
                                   f" cluster label: {label} \n",
@@ -252,7 +252,7 @@ def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=False):
                                         freq_final = find_frequent_labels(ancestors, G)
                                     for la in freq_final:
                                         topmost_parent.append(la)
-
+                                    print(topmost_parent)
                                     for superLabel in topmost_parent:
                                         if superLabel in superLabels:
                                             MatchedElementGT += 1
@@ -281,7 +281,6 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     """data_path = os.path.join(os.getcwd(), "datasets", dataset, "groundTruth.csv")
     ground_truth_csv = pd.read_csv(data_path, encoding='latin1')"""
     encodings = [[i] for i in range(0, len(tables))]
-    print("length for data: ",len(encodings))
     timing = {}
     layer_purity = []
 
@@ -308,6 +307,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     layers = 4
     threCluster_dict = PKL.best_clusters(custom_metric, dendrogra, linkage_matrix, encodings,
                                          estimate_num_cluster=layers)
+    print(threCluster_dict)
     end_time = time.time()
     # Calculate the elapsed time
     timing['Finding Layers'] = {'timing': end_time - start_time}
@@ -351,7 +351,7 @@ def hierarchicalColCluster(clustering, filename, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     embedding_file = [fn for fn in os.listdir(datafile_path)
-                      if fn.endswith("_"+hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
+                      if fn.endswith(hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
     datafile_path = os.path.join(os.getcwd(), "result/starmie/", hp.dataset,
                                  "All/" + embedding_file + "/column")
     ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"
