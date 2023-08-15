@@ -281,6 +281,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     """data_path = os.path.join(os.getcwd(), "datasets", dataset, "groundTruth.csv")
     ground_truth_csv = pd.read_csv(data_path, encoding='latin1')"""
     encodings = [[i] for i in range(0, len(tables))]
+    print("length for data: ",len(encodings))
     timing = {}
     layer_purity = []
 
@@ -304,7 +305,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     # dendrogra = PKL.plot_tree(linkage_matrix, result_folder, node_labels=tables)
     tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
     start_time = time.time()
-    layers = 3
+    layers = 4
     threCluster_dict = PKL.best_clusters(custom_metric, dendrogra, linkage_matrix, encodings,
                                          estimate_num_cluster=layers)
     end_time = time.time()
@@ -350,7 +351,7 @@ def hierarchicalColCluster(clustering, filename, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     embedding_file = [fn for fn in os.listdir(datafile_path)
-                      if fn.endswith(hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
+                      if fn.endswith("_"+hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
     datafile_path = os.path.join(os.getcwd(), "result/starmie/", hp.dataset,
                                  "All/" + embedding_file + "/column")
     ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"

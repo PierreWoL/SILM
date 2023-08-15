@@ -246,6 +246,7 @@ def best_clusters(customMatrix, dendrogram: sch.dendrogram, linkage_m: sch.linka
     # return best_threshold, best_clusters
     # else:
     if estimate_num_cluster != 0:
+        numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
         for threshold in numbers_with_boundaries[1:-1]:
             try:
                 silhouette_avg, custom_clusters = sliced_clusters(customMatrix, linkage_m, threshold, data)
@@ -255,6 +256,7 @@ def best_clusters(customMatrix, dendrogram: sch.dendrogram, linkage_m: sch.linka
                             and 0.6 * estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):"""
                     # if len(clusters) + 1 <= estimate_num_cluster and len(custom_clusters)< len(best_clusters)
                     if len(best_clusters) / estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):
+                        print(len(custom_clusters), len(clusters[-1][1]), len(best_clusters) / estimate_num_cluster)
                         clusters.append((threshold, custom_clusters))
             except:
                 continue
