@@ -116,7 +116,7 @@ for index, row in ground_truth_csv.iterrows():
         for _, row2 in df.iterrows():
             labels_table = row2.dropna().tolist()
             for i in range(len(labels_table) - 1):
-                G.add_edge(labels_table[i], labels_table[i + 1])
+                G.add_edge(labels_table[i + 1],labels_table[i])
 
     else:
         if row["class"] != " ":
@@ -127,7 +127,7 @@ for index, row in ground_truth_csv.iterrows():
 
             all_nodes = all_nodes - set(G.nodes())
             G.add_nodes_from(all_nodes)
-            G.add_edge(classX, superclass)
+            G.add_edge(superclass,classX)
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:

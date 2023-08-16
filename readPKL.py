@@ -134,7 +134,7 @@ def plot_tree(linkage_matrix, folder=None, node_labels=None):
     return dendrogra
 
 
-def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels,target_path = None):
+def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels, target_path=None):
     # Create a new NetworkX tree object
     tree = nx.DiGraph()
     # Iterate over the linkage matrix
@@ -146,7 +146,7 @@ def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels,target_path = 
         tree.add_edge(parent_node, int(child_2), length=distance)
     # Assign labels to the tree nodes
     tree = nx.relabel_nodes(tree, {i: label for i, label in enumerate(labels)})
-    if target_path!=None:
+    if target_path != None:
         hierarchy_tree(tree, target_path)
     return tree
 
@@ -187,7 +187,7 @@ print_tree(tree['root'])"""
 
 # Generate a random distance matrix
 
-def sliced_clusters(customMatrix, linkage_m: sch.linkage, threshold: float, data):
+def sliced_clusters(linkage_m: sch.linkage, threshold: float, data, customMatrix='euclidean'):
     clusters = sch.cut_tree(linkage_m, height=threshold)
     # print(clusters)
     clusters1 = clusters.flatten()
@@ -196,19 +196,18 @@ def sliced_clusters(customMatrix, linkage_m: sch.linkage, threshold: float, data
         if cluster_label not in custom_clusters:
             custom_clusters[cluster_label] = []
         custom_clusters[cluster_label].append(i)
-
     # Convert custom_clusters to a list of lists
-    custom_clusters_list = [nodes for nodes in custom_clusters.values()]
 
     clusters_1d = np.ravel(clusters)
-    # silhouette_avg = silhouette_score(data, clusters_1d)
-    silhouette_avg = np.mean(silhouette_samples(data, clusters_1d, metric=customMatrix))
-
+    if customMatrix == 'euclidean':
+        silhouette_avg = silhouette_score(data, clusters_1d)
+    else:
+        silhouette_avg = np.mean(silhouette_samples(data, clusters_1d, metric=customMatrix))
     return silhouette_avg, custom_clusters
 
 
-def best_clusters(customMatrix, dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
-                  estimate_num_cluster=0):  # , low=-1.0, t2=0
+def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
+                  estimate_num_cluster=0, customMatrix='euclidean'):  # , low=-1.0, t2=0
     clusters = []
     # Get the y-coordinates from 'dcoord'
     y_coords = dendrogram['dcoord']
@@ -218,27 +217,27 @@ def best_clusters(customMatrix, dendrogram: sch.dendrogram, linkage_m: sch.linka
 
     silhouette = -1
     best_threshold = 0.0
-    best_clusters = None
+    best_clustersR = None
     gap = sys.maxsize
     numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
 
     # if low == -1:
     for threshold in numbers_with_boundaries[1:-1]:
         try:
-            silhouette_avg, custom_clusters = sliced_clusters(customMatrix, linkage_m, threshold, data)
+            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
             # print(silhouette_avg, len(custom_clusters))
             if silhouette_avg > silhouette:
-                best_clusters = custom_clusters
+                best_clustersR = custom_clusters
                 silhouette = silhouette_avg
                 best_threshold = threshold
-
             else:
                 continue
         except:
             continue
-    # print("best silhouette, ", silhouette, len(best_clusters.keys()))
+    print("best silhouette, ", silhouette, len(best_clustersR.keys()))
     # return best_threshold, best_clusters
-    clusters.append((best_threshold, best_clusters))
+    clusters.append((best_threshold, best_clustersR))
+    numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
     # else:
     # if low < highest_y:
     #   silhouette, best_clusters = sliced_clusters(linkage_m, low, data)
@@ -248,17 +247,17 @@ def best_clusters(customMatrix, dendrogram: sch.dendrogram, linkage_m: sch.linka
     if estimate_num_cluster != 0:
         for threshold in numbers_with_boundaries[1:-1]:
             try:
-                silhouette_avg, custom_clusters = sliced_clusters(customMatrix, linkage_m, threshold, data)
+                silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
                 # if len(custom_clusters)-low < gap and len(custom_clusters)-low > 0:
                 if threshold > best_threshold:
                     """if abs(len(custom_clusters) - estimate_num_cluster) < gap \
                             and 0.6 * estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):"""
                     # if len(clusters) + 1 <= estimate_num_cluster and len(custom_clusters)< len(best_clusters)
-                    if len(best_clusters) / estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):
+                    if len(best_clustersR) / estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):
                         clusters.append((threshold, custom_clusters))
             except:
                 continue
-    print(len(clusters))
+    print(f'the total layer number is {len(clusters)}')
     return clusters
 
 
@@ -387,66 +386,45 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, ground_truth,
     return simple_tree, layer_info_dict, Parent_nodes_h
 
 
-def print_tree_labels(tree, ground_truth, data=None):
-    for index, (node, attributes) in enumerate(tree.nodes(data=True)):
-        # if 'type' in attributes and attributes['type'] == 'data cluster node parent layer':#data cluster node
-        if 'type' in attributes and attributes['type'] != 'data':  # data cluster node
-            print(f"Node {node}:")
-            print(f"  data: {attributes['data']}")
-            print(f"  label: {attributes['label']}")
-            print(f"  type: {attributes['type']}")
-            if len(attributes['Wrong_labels']):
-                print(f"wrong  label: {attributes['Wrong_labels']}")
-            print(f"Purity is : {attributes['Purity']}")
-            wrong_labels = {}
-            for la in attributes['data']:
-                per_label = ''
-                if attributes['type'] == 'data cluster node parent layer':
-                    per_label = ground_truth[la][1] if isinstance(ground_truth, dict) else \
-                        ground_truth[data.index(la)]
-                    """if per_label != attributes['label']:
-                        wrong_labels[la] = per_label"""
-                if attributes['type'] == 'data cluster node':
-                    per_label = ground_truth[la][0] if isinstance(ground_truth, dict) else \
-                        ground_truth[data.index(la)]
-                    """if per_label != attributes['label']:
-                        wrong_labels[la] = per_label"""
-
-                if per_label not in attributes['label']:
-                    wrong_labels[la] = per_label
-            if len(wrong_labels) != 0:
-                print(f" Wrong Data labels: {wrong_labels}", "Purity rate is ",
-                      1 - len(wrong_labels) / len(attributes['data']))
+def print_node(tree: nx.DiGraph(), node, printer=False):
+    node_dict = {'Node': node, 'Type': tree.nodes[node].get('type', 0),
+                 'cluster label': tree.nodes[node].get('label', 0),
+                 'Purity': tree.nodes[node].get('Purity', 0),
+                 'Data': tree.nodes[node].get('data', 0),
+                 'Wrong Labels': tree.nodes[node].get('Wrong_labels', 0)}
+    if printer is True:
+        print(f" Node: {node}", f" Type: {tree.nodes[node].get('type', 0)} \n",
+              f" cluster label: {tree.nodes[node].get('label', 0)} \n",
+              f" Purity: {tree.nodes[node].get('Purity', 0)} \n"
+              f" Data: {tree.nodes[node].get('data', 0)}")
+        if len(tree.nodes[node].get('Wrong_labels', 0)):
+            print(f" Wrong Labels: {tree.nodes[node].get('Wrong_labels', 0)}")
+    return node_dict
 
 
-def print_node(tree: nx.DiGraph(), node):
-    print(f" Node: {node}", f" Type: {tree.nodes[node].get('type', 0)} \n",
-          f" cluster label: {tree.nodes[node].get('label', 0)} \n",
-          f" Purity: {tree.nodes[node].get('Purity', 0)} \n"
-          f" Data: {tree.nodes[node].get('data', 0)}")
-    if len(tree.nodes[node].get('Wrong_labels', 0)):
-        print(f" Wrong Labels: {tree.nodes[node].get('Wrong_labels', 0)}")
-
-
-def print_clusters_top_down(tree, layer_info):
+def print_clusters_top_down(tree, layer_info, store_path=None):
+    list_tree_info = []
     total_layer = len(layer_info.keys()) - 1
     print(f"Total layer is : {total_layer + 1}")
     index_layer = total_layer
     while index_layer >= 0:
-        print(f"layer : {index_layer + 1}", f"nodes number: {len(layer_info[index_layer].items())}")
+        print(f"layer : {len(layer_info.keys()) - index_layer}",
+              f"nodes number: {len(layer_info[index_layer].items())}")  # index_layer + 1
         index_layer -= 1
     print("Layer information ...")
     for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
-        print_node(tree, closest_parent)
-
+        list_tree_info.append(print_node(tree, closest_parent))
         index = total_layer - 1
         print("its sub-types are: ")
         while index >= 0:
             print(f"Layer is : {index}")
             for cluster0, (closest_parent0, mutual_parent_nodes0) in layer_info[index].items():
                 if closest_parent in mutual_parent_nodes0:
-                    print_node(tree, closest_parent0)
+                    list_tree_info.append(print_node(tree, closest_parent0))
             index -= 1
+    if store_path is not None:
+            list_tree = pd.DataFrame(list_tree_info)
+            list_tree.to_csv(store_path, index=False)
 
 
 def purity_per_layer(tree, layer_info):
@@ -484,404 +462,73 @@ def print_path_label(tree, layer_info, Parent_nodes, class_dict=None):
                                   f" Wrong Labels: {tree.nodes[i].get('data', 0)} \n",
                                   )
                             superLabels = tree.nodes[closest_parentP].get('label', 0)
-                            if superLabels != 0:
-                                for label_per in label:
-                                    for superLabel in superLabels:
-                                        if label_per in class_dict[superLabel]:
-                                            MatchedElementGT += 1
-                                            break  # Break out of the inner loop when the condition is met
-                                    else:
-                                        continue
-                                    break
-                        else:
-                            MatchedElementPath -= 1
-                    # print(ind_o, ind, indexp,path)
+
+                    print(ind_o, ind, indexp, path)
                     if MatchedElementPath != 0:
                         pathCompatibility = MatchedElementGT / MatchedElementPath
                         all_pathCompatibility.append(pathCompatibility)
 
     # print("mutual_parent_nodes", len(layer_info[0].keys()), len(all_pathCompatibility), all_pathCompatibility)
-    tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
-    print("the metric is ", tree_consistency_score, "all_path_number is ", len(all_pathCompatibility))
-
-    return tree_consistency_score
-
-
-def test_tree_consistency_metric(embedding_file, dataset):
-    if dataset == "Example":
-        ground_truth = ['A', 'C', 'C', 'B', 'E', 'E', 'C', 'E', 'D', 'A', 'D', 'E', 'C', 'A', 'A', 'D', 'C', 'D', 'D',
-                        'B', 'B', 'A', 'B', 'E', 'B']
-
-        # Print the resulting list of labels
-        node_labels = [chr(ord('a') + i) for i in range(25)]
-
-        ground_label_name = "groundTruth.csv"
-        linkage_matrix = sch.linkage(embedding_file, method='complete', metric='euclidean')
-        folder = "fig/Example"
-        mkdir(folder)
-        dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
-        tree_test = dendrogram_To_DirectedGraph(embedding_file, linkage_matrix, node_labels)
-        threCluster_dict = best_clusters(dendrogra, linkage_matrix, embedding_file, estimate_num_cluster=3)
-        simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
-                                                                                      ground_truth, node_labels,
-                                                                                      data=node_labels)
-        # print_tree_labels(simple_tree, ground_truth, data=node_labels)
-        print(layer_info_dict[0])
-        for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
-            for clusterP, closest_parentP in Parent_nodes_h.items():
-                if closest_parentP in mutual_parent_nodes:
-                    path = sorted(list(mutual_parent_nodes))
-                    path = path[0:path.index(closest_parentP) + 1]
-                    print(path)
-                    for i in path:
-                        label = simple_tree.nodes[i].get('label', 0)
-                        print(i, label)
-        print_path_label(simple_tree, layer_info_dict, Parent_nodes_h)
-    else:
-
-        ground_label_name1 = "groundTruth.csv"
-        data_path = os.path.join(os.getcwd(), "datasets", dataset, ground_label_name1)
-        ground_truth_csv = pd.read_csv(data_path, encoding='latin1')
-        ground_truth = {ground_truth_csv.iloc[i, 0]: (ground_truth_csv.iloc[i, 4], ground_truth_csv.iloc[i, 5])
-                        for i in range(0, len(ground_truth_csv))}
-
-        class_dict = {key: group['class'].tolist() for key, group in ground_truth_csv.groupby('superclass')}
-        up_layer_clusters_num = ground_truth_csv.iloc[:, 5].unique()
-        table_with_available_labels = ground_truth_csv.iloc[:, 0].unique()
-        EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
-        with open(os.path.join(EMBEDDING_FOLDER, embedding_file), 'rb') as file:
-            data = pickle.load(file)
-        data = [i for i in data if i[0] in table_with_available_labels]
-        table_names = [i[0] for i in data if i[0] in ground_truth.keys()]
-        encodings = np.array([np.mean(i[1], axis=0) for i in data if i[0] in ground_truth.keys()])
-
-        linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
-        folder = "fig/" + dataset
-        mkdir(folder)
-        result_folder = os.path.join("result/Valerie", dataset)
-        mkdir(result_folder)
-        dendrogra = plot_tree(linkage_matrix, folder, node_labels=table_names)
-        tree_test = dendrogram_To_DirectedGraph(encodings, linkage_matrix, table_names)
-        start_time = time.time()
-        threCluster_dict = best_clusters(dendrogra, linkage_matrix, encodings,
-                                         estimate_num_cluster=len(up_layer_clusters_num))
-        end_time = time.time()
-        # Calculate the elapsed time
-        elapsed_time = end_time - start_time
-        print(f"Elapsed time: {elapsed_time:.4f} seconds for finding the best clusters")
-        simple_tree, layer_info_dict, Parent_nodes_h = \
-            simple_tree_with_cluster_label(threCluster_dict, tree_test, ground_truth, table_names)
-
-        # print_tree_labels(simple_tree, ground_truth)
-        TCS = print_path_label(simple_tree, layer_info_dict, Parent_nodes_h, class_dict)
-
-        print(f"Embedding file {embedding_file}", f", Tree Consistency metric: {TCS}")
-        print_clusters_top_down(simple_tree, layer_info_dict)
-        Purity_layers = purity_per_layer(simple_tree, layer_info_dict)
-        for layer, purity_list in Purity_layers.items():
-            purity_list = [float(i) for i in purity_list]
-            Purity_layer = "{:.3f}".format(sum(purity_list) / len(purity_list))
-            print(f"layer {layer} purity is: {Purity_layer}")
-        file_path = os.path.join(result_folder, embedding_file[0:-4] + "_results.pkl")
-
-        with open(file_path, 'wb') as file:
-            # Dump the data into the pickle file
-            pickle.dump((dendrogra, linkage_matrix, threCluster_dict,
-                         simple_tree, tree_test, layer_info_dict, Parent_nodes_h), file)
+    # tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
+    # print("the metric is ", tree_consistency_score, "all_path_number is ", len(all_pathCompatibility))
+    # return tree_consistency_score
 
 
-def test(dataset):
-    if dataset == "Example":
+def test_tree_consistency_metric():
+    embedding_file = np.array([[0.15264832, 0.67790326, 0.35618801],
+                               [0.07687365, 0.21208948, 0.23942163],
+                               [0.83904511, 0.91205178, 0.39408256],
+                               [0.49731815, 0.79465782, 0.77706572],
+                               [0.41300549, 0.69348555, 0.80835147],
+                               [0.27307791, 0.81304529, 0.51075196],
+                               [0.92478539, 0.33409272, 0.69586836],
+                               [0.19984104, 0.52642224, 0.10401238],
+                               [0.47016623, 0.4690633, 0.6132469],
+                               [0.64690087, 0.98867187, 0.42791464],
+                               [0.57888858, 0.08689729, 0.30285491],
+                               [0.24681078, 0.64459448, 0.48688031],
+                               [0.71598771, 0.96611438, 0.23196555],
+                               [0.05359564, 0.41624766, 0.76461378],
+                               [0.19783982, 0.21246817, 0.28792796],
+                               [0.26966902, 0.27370917, 0.70342812],
+                               [0.91653158, 0.96413556, 0.15612174],
+                               [0.24759889, 0.74969501, 0.44362298],
+                               [0.38557235, 0.76425578, 0.87203644],
+                               [0.56123633, 0.01721618, 0.30774663],
+                               [0.82745475, 0.84023844, 0.79468905],
+                               [0.24703718, 0.66320813, 0.27354134],
+                               [0.78698088, 0.78636944, 0.90183845],
+                               [0.72581221, 0.35837165, 0.70863178],
+                               [0.13436005, 0.85825595, 0.10523331]])
+    ground_truth = ['A', 'C', 'C', 'B', 'E', 'E', 'C', 'E', 'D', 'A', 'D', 'E', 'C', 'A', 'A', 'D', 'C', 'D', 'D',
+                    'B', 'B', 'A', 'B', 'E', 'B']
+    # Print the resulting list of labels
+    node_labels = [chr(ord('a') + i) for i in range(25)]
 
-        encodings = np.array([[0.15264832, 0.67790326, 0.35618801],
-                              [0.07687365, 0.21208948, 0.23942163],
-                              [0.83904511, 0.91205178, 0.39408256],
-                              [0.49731815, 0.79465782, 0.77706572],
-                              [0.41300549, 0.69348555, 0.80835147],
-                              [0.27307791, 0.81304529, 0.51075196],
-                              [0.92478539, 0.33409272, 0.69586836],
-                              [0.19984104, 0.52642224, 0.10401238],
-                              [0.47016623, 0.4690633, 0.6132469],
-                              [0.64690087, 0.98867187, 0.42791464],
-                              [0.57888858, 0.08689729, 0.30285491],
-                              [0.24681078, 0.64459448, 0.48688031],
-                              [0.71598771, 0.96611438, 0.23196555],
-                              [0.05359564, 0.41624766, 0.76461378],
-                              [0.19783982, 0.21246817, 0.28792796],
-                              [0.26966902, 0.27370917, 0.70342812],
-                              [0.91653158, 0.96413556, 0.15612174],
-                              [0.24759889, 0.74969501, 0.44362298],
-                              [0.38557235, 0.76425578, 0.87203644],
-                              [0.56123633, 0.01721618, 0.30774663],
-                              [0.82745475, 0.84023844, 0.79468905],
-                              [0.24703718, 0.66320813, 0.27354134],
-                              [0.78698088, 0.78636944, 0.90183845],
-                              [0.72581221, 0.35837165, 0.70863178],
-                              [0.13436005, 0.85825595, 0.10523331]])
-        test_tree_consistency_metric(encodings, dataset)
-
-    else:
-        EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
-        for embedding in [i for i in os.listdir(EMBEDDING_FOLDER) if i.endswith("pkl") and
-                                                                     "sbert" in i]:
-            test_tree_consistency_metric(embedding, dataset)
-            break
-
-
-# test("TabFact")  # TabFact Example
-# The below code is just for testing
-
-""" 
-# encodings = np.random.rand(25, 3)  # Assume each noun has a 5-dimensional encoding
-encodings = np.array([[0.15264832, 0.67790326, 0.35618801],
-                      [0.07687365, 0.21208948, 0.23942163],
-                      [0.83904511, 0.91205178, 0.39408256],
-                      [0.49731815, 0.79465782, 0.77706572],
-                      [0.41300549, 0.69348555, 0.80835147],
-                      [0.27307791, 0.81304529, 0.51075196],
-                      [0.92478539, 0.33409272, 0.69586836],
-                      [0.19984104, 0.52642224, 0.10401238],
-                      [0.47016623, 0.4690633, 0.6132469],
-                      [0.64690087, 0.98867187, 0.42791464],
-                      [0.57888858, 0.08689729, 0.30285491],
-                      [0.24681078, 0.64459448, 0.48688031],
-                      [0.71598771, 0.96611438, 0.23196555],
-                      [0.05359564, 0.41624766, 0.76461378],
-                      [0.19783982, 0.21246817, 0.28792796],
-                      [0.26966902, 0.27370917, 0.70342812],
-                      [0.91653158, 0.96413556, 0.15612174],
-                      [0.24759889, 0.74969501, 0.44362298],
-                      [0.38557235, 0.76425578, 0.87203644],
-                      [0.56123633, 0.01721618, 0.30774663],
-                      [0.82745475, 0.84023844, 0.79468905],
-                      [0.24703718, 0.66320813, 0.27354134],
-                      [0.78698088, 0.78636944, 0.90183845],
-                      [0.72581221, 0.35837165, 0.70863178],
-                      [0.13436005, 0.85825595, 0.10523331]])
-
-# Create the initial list with labels repeated the required number of times
-ground_truth0 = ['A', 'C', 'C', 'B', 'E', 'E', 'C', 'E', 'D', 'A', 'D', 'E', 'C', 'A', 'A', 'D', 'C', 'D', 'D', 'B',
-                 'B', 'A', 'B', 'E', 'B']
-# Print the resulting list of labels
-node_labels = [chr(ord('a') + i) for i in range(25)]
-ground_label_name = "groundTruth.csv"
-linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
-folder = "fig/Example"
-mkdir(folder)
-result_folder = "result/Example"
-mkdir(result_folder)
-dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
-tree_test = dendrogram_To_DirectedGraph(encodings, linkage_matrix, node_labels)
-
-threCluster_dict0 = best_clusters(dendrogra, linkage_matrix, encodings, estimate_num_cluster=3)
-simple_tree = None
-layer_info1 = {}
-Parent_nodes1 = {}
-for index, (thre, clusters) in enumerate(threCluster_dict0):
-    if index == 0:
-        parent_nodes = slice_tree(tree_test, clusters, node_labels)  #
-        simple_tree = simplify_graph(tree_test, parent_nodes)
-        # print(simple_tree)
-
-    parent_nodes = slice_tree(tree_test, clusters, node_labels)
-    layer_info1[index] = parent_nodes
-    for cluster, (closest_parent, mutual_parent_nodes) in parent_nodes.items():
-        simple_tree.nodes[closest_parent]['data'] = list(cluster)
-        labels_data = [ground_truth0[node_labels.index(i)] for i in cluster]
-        simple_tree.nodes[closest_parent]['label'] = most_frequent(labels_data)
-        if index == len(threCluster_dict0) - 1:
-            simple_tree.nodes[closest_parent]['type'] = 'data cluster node parent layer'
-        else:
-            simple_tree.nodes[closest_parent]['type'] = 'data cluster node'
-        if index == len(threCluster_dict0) - 1:
-            Parent_nodes1[cluster] = closest_parent
-    for index, (node, attributes) in enumerate(simple_tree.nodes(data=True)):
-  if 'type' in attributes and attributes['type'] !='data' : #'data cluster node parent layer'
-    print(f"Node {node}:")
-    if 'data' in attributes:
-        print(f"  data: {attributes['data']}")
-    if 'label' in attributes:
-        print(f"  label: {attributes['label']}")
-        print(f"  type: {attributes['type']}")
-        print(f"  Data labels: {[ground_truth0[node_labels.index(la)] for la in attributes['data']]}")
-        wrong_labels = []
-        for la in attributes['data']:
-            if ground_truth0[node_labels.index(la)] != attributes['label']:
-                wrong_labels.append(ground_truth0[node_labels.index(la)])
-        print(f" Wrong Data labels: {wrong_labels}")
-print_path_label(simple_tree,layer_info1, Parent_nodes1)
-print(layer_info1[0])
-"""
-"""root_nodes = [node for node, in_degree in simple_tree.in_degree() if in_degree == 0]
-print(root_nodes)
-# Print the tree structure#
-print_tree(simple_tree, root_nodes)"""
-
-# print_tree(tree_test, root_node2)
-"""
-file_path = "data.pkl"
-os.path.join(result_folder,file_path )
-try:
-    # Open the file in binary write mode
-    with open(file_path, 'wb') as file:
-        # Dump the data into the pickle file
-        pickle.dump((dendrogra,linkage_matrix,tree_test,parent_nodes), file)
-    print(f"Data successfully stored in '{file_path}'.")
-except Exception as e:
-    print(f"Error occurred while storing the pickle file: {e}")
-
-thre2, clusters_sub = best_clusters(dendrogra, linkage_matrix, encodings, low=thre1 - 0.3)
-sub_parent_nodes = slice_tree(tree_test, clusters_sub, node_labels)
-"""
-"""
-datasets = ["TabFact"]  # "WDC",
-
-
-
-
-
-for dataset in datasets:
-    EMBEDDING_FOLDER = os.path.join(os.getcwd(),"result/embedding/starmie/vectors",dataset)
-    for embedding in [i for i in os.listdir(EMBEDDING_FOLDER) if i.endswith("pkl") and
-                                                                 "sbert" in i]:
-        with open(os.path.join(EMBEDDING_FOLDER, embedding), 'rb') as file:
-            data = pickle.load(file)
-        node_labels=[i[0] for i in data]
-        vectors=np.array([np.mean(i[1], axis=0) for i in data])
-        print(embedding)
-
-        #print(node_labels,vectors)
-        ground_label_name = "groundTruth.csv"
-        data_path = os.path.join(os.getcwd(),"datasets",dataset,ground_label_name )
-        ground_truth_csv = pd.read_csv(data_path, encoding='latin1')
-
-        labels = {ground_truth_csv.iloc[i,0]:ground_truth_csv.iloc[i,1] for i in range(0,len(ground_truth_csv))}
-
-        #print(node_labels)
-        linkage_matrix = sch.linkage(vectors, method='complete', metric='euclidean')
-        folder = os.path.join("fig/Example",dataset,"clustering", embedding[:-4] )
-        mkdir(folder)
-        result_folder  = os.path.join("result/starmie/",dataset,"clustering" )
-        mkdir(result_folder)
-        dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
-        tree_test = dendrogram_To_DirectedGraph(vectors, linkage_matrix, node_labels, folder)
-        thre1, clusters = best_clusters(dendrogra, linkage_matrix, vectors)
-        parent_nodes = slice_tree(tree_test, clusters, node_labels)
-        file_path =os.path.join(result_folder, embedding[:-4]+"_data.pkl")
-        try:
-            # Open the file in binary write mode
-            with open(file_path, 'wb') as file:
-                # Dump the data into the pickle file
-                pickle.dump((dendrogra, linkage_matrix, tree_test, parent_nodes), file)
-            print(f"Data successfully stored in '{file_path}'.")
-        except Exception as e:
-            print(f"Error occurred while storing the pickle file: {e}")
-
-        #break
-for clusters, parent_n in parent_nodes.items():
-    for sub_clusters, parentNodes in sub_parent_nodes.items():
-        if set(sub_clusters).issubset(set(clusters)):
-            print("sub_clusters", clusters, parent_n, sub_clusters, parentNodes)
-
-# todo Test on the array above for slice the dendrogram
-# TODO: need to complete the tree consistency measurement
-for dataset in datasets:
     ground_label_name = "groundTruth.csv"
-    data_path = os.path.join(os.getcwd(), "datasets", dataset, ground_label_name)
-    ground_truth_csv = pd.read_csv(data_path, encoding='latin1')
-    clusters_num = ground_truth_csv['Label'].unique() if dataset == "WDC" else ground_truth_csv['label'].unique()
-    print(len(clusters_num))
-    labels = {ground_truth_csv.iloc[i, 0]: ground_truth_csv.iloc[i, 1] for i in range(0, len(ground_truth_csv))}
-    FOLDER = os.path.join(os.getcwd(), "result/starmie/", dataset, "clustering")
-    EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
-    for results in [i for i in os.listdir(FOLDER) if i.endswith("data.pkl")]:
-        print(results)
-        with open(os.path.join(EMBEDDING_FOLDER, results[:-9] + ".pkl"), 'rb') as file:
-            data = pickle.load(file)
-        node_labels = [i[0] for i in data]
-        vectors = np.array([np.mean(i[1], axis=0) for i in data])
-        with open(os.path.join(FOLDER, results), 'rb') as file:
-            dendrogra, linkage_matrix, tree_test, parent_nodes = pickle.load(file)
-        print("parent_nodes", len(parent_nodes.keys()))
-        clusters = best_clusters(dendrogra, linkage_matrix, vectors, low=len(clusters_num),
-                                        t2=len(parent_nodes.keys()))
-        result_nodex = {}
-        for threhold, clusters_sub in clusters.items():
-            hnodes = slice_tree(tree_test, clusters_sub, node_labels)
-            result_nodex[threhold] = (clusters_sub, hnodes)
-        result_folder = os.path.join("result/starmie/", dataset, "clustering")
-        file_path = os.path.join(result_folder, results[:-9][:-4] + "_data1.pkl")
-        try:
-                # Open the file in binary write mode
-                with open(file_path, 'wb') as file:
-                    # Dump the data into the pickle file
-                    pickle.dump(result_nodex, file)
-                print(f"Data successfully stored in '{file_path}'.")
-        except Exception as e:
-                print(f"Error occurred while storing the pickle file: {e}")
+    linkage_matrix = sch.linkage(embedding_file, method='complete', metric='euclidean')
+    folder = "fig/Example"
+    mkdir(folder)
+    dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
+    tree_test = dendrogram_To_DirectedGraph(embedding_file, linkage_matrix, node_labels, target_path=folder)
+    threCluster_dict = best_clusters(dendrogra, linkage_matrix, embedding_file, estimate_num_cluster=3)
+    simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
+                                                                                  ground_truth, node_labels,
+                                                                                  data=node_labels)
+    print(layer_info_dict[0])
+    for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
+        for clusterP, closest_parentP in Parent_nodes_h.items():
+            if closest_parentP in mutual_parent_nodes:
+                path = sorted(list(mutual_parent_nodes))
+                path = path[0:path.index(closest_parentP) + 1]
+                print(path)
+                for i in path:
+                    label = simple_tree.nodes[i].get('label', 0)
+                    print(i, label)
+    print_path_label(simple_tree, layer_info_dict, Parent_nodes_h)
 
 
-for dataset in datasets:
-    ground_label_name = "groundTruth.csv"
-    data_path = os.path.join(os.getcwd(), "datasets", dataset, ground_label_name)
-    ground_truth_csv = pd.read_csv(data_path, encoding='latin1')
-    clusters_num = ground_truth_csv['Label'].unique() if dataset == "WDC" else ground_truth_csv['label'].unique()
-    print(len(clusters_num))
-    labels = {ground_truth_csv.iloc[i, 0]: ground_truth_csv.iloc[i, 1] for i in range(0, len(ground_truth_csv))}
+def test():
+    test_tree_consistency_metric()
 
-    FOLDER = os.path.join(os.getcwd(), "result/starmie/", dataset, "clustering")
-    EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
-    results_list1 = [i for i in os.listdir(FOLDER) if i.endswith("data.pkl")]
-    results_list2 = [i for i in os.listdir(FOLDER) if i.endswith("data1.pkl")]
-    for i in range(0, len(results_list1)):
-        print(results_list1[i], results_list2[i])
-        with open(os.path.join(EMBEDDING_FOLDER, results_list1[i][:-9] + ".pkl"), 'rb') as file:
-            data = pickle.load(file)
-        node_labels = [i[0] for i in data]
-        vectors = np.array([np.mean(i[1], axis=0) for i in data])
-        with open(os.path.join(FOLDER, results_list1[i]), 'rb') as file:
-            dendrogra, linkage_matrix, tree_test, parent_nodes = pickle.load(file)
-        with open(os.path.join(FOLDER, results_list2[i]), 'rb') as file:
-            result_nodex = pickle.load(file)
-        print("parent_nodes", len(result_nodex))
-       # result_nodex_label = {}
-        nodes_la = []
-        for thre, cluster_thre in result_nodex.items():
-            sub_nodes = cluster_thre
-            if len(cluster_thre[0]) < 4000:
-                #print(cluster_thre[0])
-                if len(cluster_thre[0]) > 1000:
-                    ground_label_name = "gt.csv"
-                    data_path = os.path.join(os.getcwd(), "datasets", dataset, ground_label_name)
-                    ground_truth_csv = pd.read_csv(data_path, encoding='latin1')
-
-                    labels = {ground_truth_csv.iloc[i, 0]: (ground_truth_csv.iloc[i, 1], ground_truth_csv.iloc[i, 2])
-                              for i in
-                              range(0, len(ground_truth_csv))}
-
-
-                cluster_labels = {}
-                for cluster_id, tables in cluster_thre[0].items():
-                    label_tables = [labels[node_labels[i]] for i in tables if node_labels[i] in labels.keys()]
-
-
-                   
-
-
-                    if len(label_tables) != 0:
-                        label = most_frequent(label_tables)
-                        try:
-                            print(label)
-                        except UnicodeEncodeError:
-                            # If there is an encoding error, print to sys.stdout with a specific encoding
-                            if isinstance(label,str):
-                                    print(label.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding))
-                            else:
-                                print(label[0].encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding))
-
-                        cluster_labels[cluster_id] = tables,label
-                if len(cluster_thre[0])>1000:
-                    nodes_la.append((thre,cluster_labels))
-
-
-"""
+# test()

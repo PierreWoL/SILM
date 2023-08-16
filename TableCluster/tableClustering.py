@@ -165,13 +165,11 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                 Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
                 Zs[clu].append(vector[1][i])
 
-
-    
-    Zs[clu] = np.array(Zs[clu])
+    Zs[clu] = np.array(Zs[clu]).astype(np.float32)
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     clustering_method = ["Agglomerative"]
 
-    if len(Zs[clu])<4000:
+    if len(Zs[clu])>25000:
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
 
