@@ -135,7 +135,7 @@ def drawing():
     to_xlsx(df2=df_P_A, file_path=filep)
     box_plot(df_P_A, box_colorsM[:6], y_name, name, fn)
 
-drawing()
+#drawing()
 """
 files_csv = [fn for fn in os.listdir(step1_path) if fn.endswith(".csv")]
 score = {'BIRCH': {}, 'Agglomerative': {}}

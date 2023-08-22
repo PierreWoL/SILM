@@ -30,7 +30,7 @@ print(len(result_df))
 for index, row in result_df.iterrows():
     if row["fileName"] in labels:
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
-        df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:7]
+        df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
         all_nodes = set(df.values.ravel())
         if len(set(G.nodes())):
             all_nodes = all_nodes - set(G.nodes())

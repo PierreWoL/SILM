@@ -28,55 +28,71 @@ def TreeConsistency():
     box_plot(df2, box_colorsM[0:6], y_name, title, fn)
 
 
-def Layer_Purity():
-    Example_index = [1, 2, 4, 6, 9, 10, 14, 30]  #
-    for i in Example_index:
-        datas = []
-        methods = []
-        data_p = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact", str(i),
-                              'Agglomerative')
-        folders = [fn for fn in os.listdir(data_p) if "." not in fn]
-        for fold in folders:
-            methods.append(naming(fold))
+TreeConsistency()
+
+
+def Layer_Purity(i):
+    lost = []
+    print(i)
+    datas = []
+    methods = []
+    data_p = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact", str(i),
+                          'Agglomerative')
+    folders = [fn for fn in os.listdir(data_p) if "." not in fn]
+    for fold in folders:
+        naming_embed = naming(fold)
+        if os.path.exists(os.path.join(data_p, fold, "layer_purity.csv")):
+            methods.append(naming_embed)
             purity = pd.read_csv(os.path.join(data_p, fold, "layer_purity.csv"))
             purity = purity[['layer', 'Purity']]
             datas.append(purity)
+        else:
+            lost.append(naming_embed)
+    if len(datas)>0:
         result = pd.concat([df.set_index('layer') for df in datas], axis=1)
         result = result.sort_values(by='layer')
         result.columns = methods
         # print(result)
         result.to_csv(os.path.join(data_p, "all_purity.csv"))
+        return True
+    else:
+        return False
 
 
+file_n =  os.listdir(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),"result/Valerie/TabFact"))
+id_files = [i for i in file_n if "_" not in i]
 def metric_index():
     barWidth = 0.13
-    Example_index = [1, 2, 4, 6, 9, 10, 14, 30]  #
+    Example_index = id_files
     for i in Example_index:
-        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact", str(i),
-                                 'Agglomerative')
-        csv_file = os.path.join(data_path, "all_purity.csv")
-        data = pd.read_csv(csv_file)
-        print(data)
-        LAYERS = [f'Layer {i}' for i in range(0, len(data))]
-        plt.figure(figsize=(10, 6))
-        for xi in range(1, len(data.columns)):
-            r2 = [x + (xi - 1) * barWidth for x in np.arange(len(data.iloc[:, 0]))]
-            print(data.iloc[:, xi])
-            plt.bar(r2, data.iloc[:, xi], color=box_colorsM[xi- 1], width=barWidth, edgecolor='white',
-                    label=data.columns[xi])
-        plt.xticks([r + barWidth for r in range(len(data.iloc[:, 0]))], LAYERS)
-        plt.legend(bbox_to_anchor=(1.01, 0), loc=3, borderaxespad=0)
-        plt.xticks(rotation=20, fontsize=11)
-        plt.yticks(fontsize=11)
-        plt.xlabel('Embedding Methods', fontsize=10)
-        plt.title(f"Layer Purity for CLUSTER {i} using Different Embedding Methods ", fontsize=14)
-        plt.ylabel("Purity", fontsize=11)
-        plt.subplots_adjust(top=0.9, bottom=0.12, right=0.77, left=0.1)
-        fn = os.path.join(data_path, f"{i}_LayerPurity.png")
-        plt.savefig(fn)
-        fn2 = os.path.join(data_path, f"{i}_LayerPurity_Box.png")
-        box_plot(data.iloc[:,1:], box_colorsM, "Purity",f"Layer Purity for CLUSTER {i} using Different Embedding Methods ",fn2 )
-        plt.show()
+        if Layer_Purity(i) is True:
+            print("aHa")
+            data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact", str(i),
+                                     'Agglomerative')
+            csv_file = os.path.join(data_path, "all_purity.csv")
+            data = pd.read_csv(csv_file)
+            print(data)
+            LAYERS = [f'Layer {i}' for i in range(0, len(data))]
+            plt.figure(figsize=(10, 6))
+            for xi in range(1, len(data.columns)):
+                r2 = [x + (xi - 1) * barWidth for x in np.arange(len(data.iloc[:, 0]))]
+                print(data.iloc[:, xi])
+                plt.bar(r2, data.iloc[:, xi], color=box_colorsM[xi - 1], width=barWidth, edgecolor='white',
+                        label=data.columns[xi])
+            plt.xticks([r + barWidth for r in range(len(data.iloc[:, 0]))], LAYERS)
+            plt.legend(bbox_to_anchor=(1.01, 0), loc=3, borderaxespad=0)
+            plt.xticks(rotation=20, fontsize=11)
+            plt.yticks(fontsize=11)
+            plt.xlabel('Embedding Methods', fontsize=10)
+            plt.title(f"Layer Purity for CLUSTER {i} using Different Embedding Methods ", fontsize=14)
+            plt.ylabel("Purity", fontsize=11)
+            plt.subplots_adjust(top=0.9, bottom=0.12, right=0.77, left=0.1)
+            fn = os.path.join(data_path, f"{i}_LayerPurity.png")
+            plt.savefig(fn)
+            fn2 = os.path.join(data_path, f"{i}_LayerPurity_Box.png")
+            box_plot(data.iloc[:, 1:], box_colorsM, "Purity",
+                     f"Layer Purity for CLUSTER {i} using Different Embedding Methods ", fn2)
+            plt.show()
 
 
 metric_index()

@@ -116,7 +116,8 @@ for index, row in ground_truth_csv.iterrows():
         for _, row2 in df.iterrows():
             labels_table = row2.dropna().tolist()
             for i in range(len(labels_table) - 1):
-                G.add_edge(labels_table[i + 1],labels_table[i])
+                if labels_table[i + 1] != labels_table[i]:
+                    G.add_edge(labels_table[i + 1],labels_table[i])
 
     else:
         if row["class"] != " ":
