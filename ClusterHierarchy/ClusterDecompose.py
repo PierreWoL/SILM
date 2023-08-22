@@ -312,7 +312,7 @@ def hierarchicalColCluster(clustering, filename, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     embedding_file = [fn for fn in os.listdir(datafile_path)
-                      if fn.endswith(hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
+                      if fn.endswith("_"+hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
     datafile_path = os.path.join(os.getcwd(), "result/starmie/", hp.dataset,
                                  "All/" + embedding_file + "/column")
     ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"
