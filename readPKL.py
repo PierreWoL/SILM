@@ -405,19 +405,19 @@ def print_node(tree: nx.DiGraph(), node, printer=False):
 def print_clusters_top_down(tree, layer_info, store_path=None):
     list_tree_info = []
     total_layer = len(layer_info.keys()) - 1
-    print(f"Total layer is : {total_layer + 1}")
+    #print(f"Total layer is : {total_layer + 1}")
     index_layer = total_layer
     while index_layer >= 0:
-        print(f"layer : {len(layer_info.keys()) - index_layer}",
-              f"nodes number: {len(layer_info[index_layer].items())}")  # index_layer + 1
+        #print(f"layer : {len(layer_info.keys()) - index_layer}",
+             # f"nodes number: {len(layer_info[index_layer].items())}")  # index_layer + 1
         index_layer -= 1
-    print("Layer information ...")
+    # print("Layer information ...")
     for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
         list_tree_info.append(print_node(tree, closest_parent))
         index = total_layer - 1
-        print("its sub-types are: ")
+        #print("its sub-types are: ")
         while index >= 0:
-            print(f"Layer is : {index}")
+            #print(f"Layer is : {index}")
             for cluster0, (closest_parent0, mutual_parent_nodes0) in layer_info[index].items():
                 if closest_parent in mutual_parent_nodes0:
                     list_tree_info.append(print_node(tree, closest_parent0))
@@ -433,7 +433,7 @@ def purity_per_layer(tree, layer_info):
     while total_layer >= 0:
         purity_layers[total_layer] = []
         for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
-            purity_layers[total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
+            purity_layers[len(layer_info.keys()) - total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
         total_layer -= 1
     return purity_layers
 
