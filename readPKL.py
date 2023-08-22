@@ -500,6 +500,7 @@ def test_tree_consistency_metric():
                                [0.78698088, 0.78636944, 0.90183845],
                                [0.72581221, 0.35837165, 0.70863178],
                                [0.13436005, 0.85825595, 0.10523331]])
+
     ground_truth = ['A', 'C', 'C', 'B', 'E', 'E', 'C', 'E', 'D', 'A', 'D', 'E', 'C', 'A', 'A', 'D', 'C', 'D', 'D',
                     'B', 'B', 'A', 'B', 'E', 'B']
     # Print the resulting list of labels
