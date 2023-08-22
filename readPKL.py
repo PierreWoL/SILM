@@ -431,9 +431,9 @@ def purity_per_layer(tree, layer_info):
     purity_layers = {}
     total_layer = len(layer_info.keys()) - 1
     while total_layer >= 0:
-        purity_layers[total_layer] = []
+        purity_layers[len(layer_info.keys())-total_layer] = []
         for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
-            purity_layers[len(layer_info.keys()) - total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
+            purity_layers[len(layer_info.keys())-total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
         total_layer -= 1
     return purity_layers
 
