@@ -169,7 +169,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     clustering_method = ["Agglomerative"]
 
-    if len(Zs[clu]) <2500:
+    if len(Zs[clu]) >25000:
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
 
