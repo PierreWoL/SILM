@@ -17,17 +17,20 @@ def silm_clustering(hp: Namespace):
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
 
     if hp.method == "starmie":
-        files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and 'roberta' in fn]  # pkl
+        if hp.embedMethod!='':
+            files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn]  # pkl
+        else:
+            files = [fn for fn in os.listdir(datafile_path) if fn.endswith('sbert_.pickle')]  # pkl
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
         SE = pickle.load(F_cluster)
+
     else:
         SE = {}
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
-
     available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
-    for file in files[2:]:
+    for file in files:
         print(file, hp.subjectCol)
         dict_file = {}
         F = open(datafile_path + file, 'rb')
@@ -35,11 +38,12 @@ def silm_clustering(hp: Namespace):
         Z = []
         T = []
         content = [vectors for vectors in content if vectors[0] in available_data]
-        print(len(content))
+        print(len(content),content[0])
         for vectors in content:
             T.append(vectors[0][:-4])
             if hp.subjectCol:
                 NE_list, headers, types = SE[vectors[0]]
+
                 if NE_list:
                     vec_table = vectors[1][NE_list[0]]
                 else:
@@ -84,7 +88,6 @@ def silm_clustering(hp: Namespace):
         except ValueError as e:
             print(e)
             continue
-        break
     with open(datafile_path + 'cluster_dict.pickle', 'wb') as handle:
         pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

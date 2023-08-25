@@ -147,12 +147,14 @@ class PretrainTableDataset(data.Dataset):
         Sub_cols_header = []
 
         if 'subject' in self.check_subject_Column and self.subject_column is not True:
+                """
             if self.subjectColumn_path is not False:
                 SC_files = [fn for fn in os.listdir(self.subjectColumn_path) if '.csv' in fn]
                 if self.tables[idx] in SC_files:
                     Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx])
                     Sub_cols_header = Sub_cols.columns.tolist()
             else:
+                """
                 anno = TA.TableColumnAnnotation(table, isCombine=self.isCombine)
                 types = anno.annotation
                 for key, type in types.items():
@@ -162,10 +164,9 @@ class PretrainTableDataset(data.Dataset):
 
         # column-ordered preprocessing
         if self.table_order == 'column':
-            # print("table id :", idx)
+            #print("table id :", idx,"table:\n",table.transpose())
             if 'row' in self.sample_meth:
                 table = tfidfRowSample(table, tfidfDict, max_tokens)
-
             for index, column in enumerate(table.columns):
                 column_values = table.iloc[:, index] if self.isCombine is False \
                     else pd.Series(table.iloc[:, index][0].split(",")).rename(column)
@@ -173,11 +174,13 @@ class PretrainTableDataset(data.Dataset):
 
                 string_token = ' '.join(tokens[:max_tokens])
                 col_text = self.tokenizer.cls_token + " "
+                # header-only mode
                 if self.header:
                     if 'subject' in self.check_subject_Column:
                         col_text += self.SC_token[0] + " " + str(column) + " " + self.SC_token[1] + " "  #
                     else:
                         col_text += str(column) + " "
+                # column value concatenating mode
                 else:
                     if 'header' in self.check_subject_Column:
                         col_text += self.header_token[0] + " " + str(column) + " " + self.header_token[1] + " "  #
@@ -187,7 +190,7 @@ class PretrainTableDataset(data.Dataset):
                         col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                     else:
                         col_text += string_token + " "
-                # print(column, index, col_text)
+                #print(column, index, col_text)
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
                                                  max_length=budget,
@@ -255,11 +258,9 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-        # print("table_ori",len(table_ori))
+        #print("table_ori",table_ori)
         # single-column mode: only keep one random column
         if "row" in self.table_order:
-            if len(table_ori) >= 6000:
-                table_ori = table_ori[:2500]
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
 
@@ -267,21 +268,27 @@ class PretrainTableDataset(data.Dataset):
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
         if self.subject_column:
+            print("Yes subject Column")
             cols = []
-            if self.tables[idx] in [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
-                                    '.csv' in fn]:
-                Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx])
-                cols = [col for col in Sub_cols.columns if col in table_ori.columns]
+            """if os.path.exists(self.subjectColumn_path):
+                subcol_files = [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
+                    '.csv' in fn]
+                if self.tables[idx] in subcol_files:
+                    Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx])
+                    cols = [col for col in Sub_cols.columns if col in table_ori.columns]
             else:
-                anno = TA.TableColumnAnnotation(table_ori)
-                types = anno.annotation
-                for key, type in types.items():
-                    if type == ColumnType.named_entity:
-                        cols = [table_ori.columns[key]]
-                        break
+            """
+            anno = TA.TableColumnAnnotation(table_ori, isCombine=self.isCombine)
+            types = anno.annotation
+
+            for key, type in types.items():
+                if type == ColumnType.named_entity:
+
+                    cols = [table_ori.columns[key]]
+                    break
             if len(cols) > 0:
                 table_ori = table_ori[cols]
-                # print(table_ori.columns,cols,table_ori)
+
         # apply the augmentation operator
         if ',' in self.augment_op:
             op1, op2 = self.augment_op.split(',')
@@ -289,7 +296,6 @@ class PretrainTableDataset(data.Dataset):
             table_ori = augment(table_tmp, op1)
             table_aug = augment(table_tmp, op2)
         else:
-
             table_aug = augment(table_ori, self.augment_op)
             if self.isCombine:
                 table_aug = aug(table_ori)

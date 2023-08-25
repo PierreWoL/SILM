@@ -13,8 +13,8 @@ from Encodings import table_features
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="TabFact") #TabFact open_data
+    parser.add_argument("--method", type=str, default="SILM")  # Valerie starmie
+    parser.add_argument("--dataset", type=str, default="WDC")  # TabFact open_data WDC
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -27,9 +27,11 @@ if __name__ == '__main__':
     parser.add_argument("--augment_op", type=str, default='drop_num_col')
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
+    # column header-only mode without table context
     parser.add_argument("--header", dest="header", action="store_true")
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
+    # subject-column mode without table context
     parser.add_argument("--subject_column", dest="subject_column", action="store_true")
     parser.add_argument("--check_subject_Column", type=str, default='subjectheader')  # subjectheader
     # row / column-ordered for preprocessing
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     # Change the data paths to where the benchmarks are stored
 
     path = 'datasets/%s/Test' % hp.dataset
-    #if hp.dataset == "TabFact":
+    # if hp.dataset == "TabFact":
     #    path = 'datasets/%s/02TableAttributes.csv' % hp.dataset
 
     trainset = PretrainTableDataset.from_hp(path, hp)
@@ -67,6 +69,3 @@ if __name__ == '__main__':
     train(trainset, hp)
 
     table_features(hp)
-
-
-

@@ -41,7 +41,8 @@ class TableColumnAnnotation:
         for i in range(self.table.shape[1]):
             column = self.table.iloc[:, i]
             if isCombine:
-                if not isinstance(self.table.iloc[0, i],int):
+                if isinstance(self.table.iloc[0, i],str):
+
                     if "|" in self.table.iloc[0, i]:
                         column = self.table.iloc[0, i].split("|")
                     else:
