@@ -231,7 +231,15 @@ def token_list(column: list):
         tokens = token_stop_word(item)
         if len(tokens) > 0:
             list_column_tokens.append(' '.join(tokens))
-    return list_column_tokens
+    is_blank = True
+    for element in list_column_tokens:
+        if element!='':
+            is_blank = False
+            break
+    if is_blank is True:
+        return None
+    else:
+        return list_column_tokens
 
 
 def remove_blanked_token(column):

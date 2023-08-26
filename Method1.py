@@ -36,7 +36,7 @@ def SBERT(data_path, feature_csv):
             column = pd.Series(table.iloc[:, 0])
         encoding_col = encoding(column)
         if encoding_col is not None and type(encoding_col) != np.float64:
-            JSON.write_line(feature_csv, [table_name, list(encoding_col)])
+            #JSON.write_line(feature_csv, [table_name, list(encoding_col)])
             table_names.append(table_name)
             encodings.append(list(encoding_col))
         else:
@@ -46,7 +46,6 @@ def SBERT(data_path, feature_csv):
 
 def SBERT_T(data_path, feature_csv):
     T = [fn for fn in os.listdir(data_path)]
-    print(T)
     exception = []
     table_names = []
     encodings = []
@@ -69,12 +68,14 @@ def SBERT_T(data_path, feature_csv):
 
             #print(" ".join(value))
         encoding_col = encoding(columns)
-        """if encoding_col is not None and type(encoding_col) != np.float64:
+        """
+        if encoding_col is not None and type(encoding_col) != np.float64:
             JSON.write_line(feature_csv, [table_name, list(encoding_col)])
             table_names.append(table_name)
             encodings.append(list(encoding_col))
         else:
-            exception.append(table_name)"""
+            exception.append(table_name)
+        """
         if encoding_col is not None and type(encoding_col) != np.float64:
             encodings.append((table_name,encoding_col))
     with open(feature_csv, 'wb') as handle:
@@ -87,19 +88,20 @@ def encoding(column):
     # try:
     column = fun.remove_blank(column)
     column_token = fun.token_list(column)
+    print(column_token,len(column_token))
     column_embeddings = model.encode(column_token)
+    print(column_embeddings,len(column_embeddings),len(column_embeddings[0]))
     average = np.mean(column_embeddings, axis=0)
-
     return average
     # except ValueError:
     #   return None
 
 
-# table = pd.read_csv(
+table = pd.read_csv("datasets/WDC/Test/Test_corpus_136.csv")
+print(table)
 #   "/Users/user/My Drive/CurrentDataset/datasets/open_data/SubjectColumn/Higher_Education_UKtable-13.csv")
 
-#samplePath = os.getcwd() + "/datasets/Test_corpus/SubjectColumn/"  # Table/Test/
-#SBERT(samplePath, os.getcwd() + "/datasets/Test_corpus/" + "feature.csv")
+SBERT("datasets/WDC/Test/","Test_corpus_136.csv")
 
 """
 samplePath = os.getcwd() + "/datasets/SOTAB/SubjectColumn/"  # Table/Test/

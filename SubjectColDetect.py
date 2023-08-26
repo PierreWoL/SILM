@@ -10,10 +10,11 @@ from SubjectColumnDetection import ColumnType
 This should be considered running through the embedding steps
 
 """
-data_path = os.path.join(os.getcwd(), "datasets/TabFact/Test")
+data_path = os.path.join(os.getcwd(), "datasets/WDC/Test")
 datas = [data for data in os.listdir(data_path) if data.endswith("csv")]
 SE = {}
 for data in datas:
+    print(os.path.join(data_path, data))
     table = pd.read_csv(os.path.join(data_path, data))
     # print(table.transpose())
     anno = TA.TableColumnAnnotation(table, isCombine=True)

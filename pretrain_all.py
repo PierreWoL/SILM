@@ -23,6 +23,8 @@ if __name__ == '__main__':
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--n_epochs", type=int, default=20)
     parser.add_argument("--lm", type=str, default='roberta')
+    parser.add_argument("--pretrain", dest="pretrain", action="store_true")
+    parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='drop_num_col')
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
@@ -61,11 +63,12 @@ if __name__ == '__main__':
     # Change the data paths to where the benchmarks are stored
 
     path = 'datasets/%s/Test' % hp.dataset
-    # if hp.dataset == "TabFact":
-    #    path = 'datasets/%s/02TableAttributes.csv' % hp.dataset
 
     trainset = PretrainTableDataset.from_hp(path, hp)
+    output_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
+    if hp.pretrain:
+        trainset.encodings(output_path,setting=hp.NoContext)
+    else:
 
-    train(trainset, hp)
-
-    table_features(hp)
+        train(trainset, hp)
+        table_features(hp)

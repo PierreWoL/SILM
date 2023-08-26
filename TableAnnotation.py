@@ -4,11 +4,13 @@ import SubjectColumnDetection as SCD
 import d3l.utils.functions as util
 import numpy as np
 import math
+
+
 # from typing import Iterable
 
 
 class TableColumnAnnotation:
-    def __init__(self, table: pd.DataFrame,isCombine = False):
+    def __init__(self, table: pd.DataFrame, isCombine=False):
 
         if isinstance(table, pd.DataFrame) is False:
             print("input should be dataframe!")
@@ -20,15 +22,14 @@ class TableColumnAnnotation:
             self.NE_table.rename(columns={col: str(i)}, inplace=True)
         # print(self.table)
         self.NE_cols = []
-        self.annotate_type(isCombine =isCombine)
+        self.annotate_type(isCombine=isCombine)
         # in the NE_columns() self.NE_table is also updated to store the tokens of cells in named_entity columns
         self.NE_columns()
         self.vocabulary = self.vocabularySet()
         self.matrix_list = []
         self.subject_col = []
 
-
-    def annotate_type(self,isCombine = False):
+    def annotate_type(self, isCombine=False):
         """
         Preprocessing part in the TableMiner+ system
         classifying the cells from each column into one of the types mentioned in
@@ -41,7 +42,7 @@ class TableColumnAnnotation:
         for i in range(self.table.shape[1]):
             column = self.table.iloc[:, i]
             if isCombine:
-                if isinstance(self.table.iloc[0, i],str):
+                if isinstance(self.table.iloc[0, i], str):
 
                     if "|" in self.table.iloc[0, i]:
                         column = self.table.iloc[0, i].split("|")
@@ -246,7 +247,7 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
     for webpage in webpages:
         # todo need to check if there is no return, freq still the same after the function runs
         freq_count_web_page(cell_token, webpage, freq_title, freq_snippet)
-    #print(freq_title, freq_snippet)
+    # print(freq_title, freq_snippet)
     countP = freq_title[0] * 2 + freq_snippet[0]
     countW = countw(freq_title, freq_snippet, bow_cell)
     return countP + countW
