@@ -268,7 +268,6 @@ class PretrainTableDataset(data.Dataset):
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
         if self.subject_column:
-            print("Yes subject Column")
             cols = []
             """if os.path.exists(self.subjectColumn_path):
                 subcol_files = [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if

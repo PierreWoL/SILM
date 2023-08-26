@@ -116,10 +116,11 @@ def is_date_expression(text, fuzzy=False):
     REFERENCE: https://stackoverflow.com/questions/25341945/check-if-string-has-date-any-format
     """
     try:
+       
         parse(text, fuzzy=fuzzy)
         return True
 
-    except ValueError:
+    except:
         return False
 
 
