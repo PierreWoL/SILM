@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # row / column-ordered for preprocessing
     parser.add_argument("--table_order", type=str, default='column')  # column pure_row
     # for sampling
-    parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
+    parser.add_argument("--sample_meth", type=str, default='tfidf_cell')  # head tfidfrow
     # mlflow tag
     parser.add_argument("--mlflow_tag", type=str, default=None)
 
@@ -59,7 +59,6 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-
     # Change the data paths to where the benchmarks are stored
 
     path = 'datasets/%s/Test' % hp.dataset

@@ -135,6 +135,22 @@ def tfidfSample(column, tfidfDict, method, max_tokens):
         for t in tokenList:
             if t in tokenFreq and t not in tokens:
                 tokens.append(t)
+    elif method == "tfidf_cell":
+        # token level
+        for colVal in column.unique():
+            ave_score = 0
+            for val in str(colVal).split(' '):
+                idf = tfidfDict[val]
+
+                ave_score+=idf
+            tokenFreq[str(colVal)] = ave_score/len(str(colVal).split(' '))
+            tokenList.append(str(colVal))
+        tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)[:max_tokens]}
+
+
+        for t in tokenList:
+            if t in tokenFreq and t not in tokens:
+                tokens.append(t)
 
     elif method == "tfidf_entity":
         # entity level
@@ -154,6 +170,7 @@ def tfidfSample(column, tfidfDict, method, max_tokens):
         for t in tokenList:
             if t in tokenFreq and t not in tokens:
                 tokens += str(t).split(' ')
+
     return tokens
 
 
