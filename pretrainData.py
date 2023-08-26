@@ -316,7 +316,7 @@ class PretrainTableDataset(data.Dataset):
 
     def encodings(self, output_path, setting=False):
         table_encodings = []
-        for idx in range(500, len(self.tables)):
+        for idx in range(0, len(self.tables)):
             table_ori = self._read_table(idx)
 
             if "row" in self.table_order:
@@ -332,19 +332,19 @@ class PretrainTableDataset(data.Dataset):
             embedding = self._encode(table_ori, Token=setting)
             # print(self.tables[idx], np.array(embedding),len(np.array(embedding)))
             table_encodings.append((self.tables[idx], np.array(embedding)))
-            break
+           
         if self.single_column:
-            output_file = "Pretrain_%s_%s_%s_%s_singleCol.pkl" % (self.lm, self.sample_meth,
-                                                                     self.table_order, self.check_subject_Column)
+            output_file = "Pretrain_%s_%s_%s_%s_%s_singleCol.pkl" % (self.lm, self.sample_meth,
+                                                                     self.table_order, self.check_subject_Column,setting)
         if self.subject_column:
-            output_file = "Pretrain__%s_%s_%s_%s_subCol.pkl" % ( self.lm, self.sample_meth,
-                                                              self.table_order,self.check_subject_Column)
+            output_file = "Pretrain__%s_%s_%s_%s_%s_subCol.pkl" % ( self.lm, self.sample_meth,
+                                                              self.table_order,self.check_subject_Column,setting)
         if self.header:
-            output_file = "Pretrain_%s_%s_%s_%s_header.pkl" % (self.lm, self.sample_meth,
-                                                                  self.table_order,  self.check_subject_Column)
+            output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (self.lm, self.sample_meth,
+                                                                  self.table_order,  self.check_subject_Column,setting)
         else:
-            output_file = "Pretrain_%s_%s_%s_%s.pkl" % (self.lm, self.sample_meth,
-                                                                  self.table_order,  self.check_subject_Column)
+            output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (self.lm, self.sample_meth,
+                                                                  self.table_order,  self.check_subject_Column,setting)
         
 
         target_path = os.path.join(output_path,output_file)
