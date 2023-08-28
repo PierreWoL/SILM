@@ -332,7 +332,8 @@ class PretrainTableDataset(data.Dataset):
             embedding = self._encode(table_ori, Token=setting)
             # print(self.tables[idx], np.array(embedding),len(np.array(embedding)))
             table_encodings.append((self.tables[idx], np.array(embedding)))
-           
+        output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (self.lm, self.sample_meth,
+                                                       self.table_order, self.check_subject_Column, setting)   
         if self.single_column:
             output_file = "Pretrain_%s_%s_%s_%s_%s_singleCol.pkl" % (self.lm, self.sample_meth,
                                                                      self.table_order, self.check_subject_Column,setting)
@@ -342,11 +343,7 @@ class PretrainTableDataset(data.Dataset):
         if self.header:
             output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (self.lm, self.sample_meth,
                                                                   self.table_order,  self.check_subject_Column,setting)
-        else:
-            output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (self.lm, self.sample_meth,
-                                                                  self.table_order,  self.check_subject_Column,setting)
         
-
         target_path = os.path.join(output_path,output_file)
 
         pickle.dump(table_encodings, open(target_path, "wb"))
