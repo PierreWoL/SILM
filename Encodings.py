@@ -89,6 +89,8 @@ def table_features(hp: Namespace):
         dataEmbeds.append((file, cl_features_file))
         # print(len(tables[file].columns),len(cl_features_file), cl_features_file)
 
+    output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+                                                   hp.table_order, hp.run_id, hp.check_subject_Column)
     if hp.single_column:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s_singleCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                                  hp.table_order, hp.run_id, hp.check_subject_Column)
@@ -98,9 +100,7 @@ def table_features(hp: Namespace):
     if hp.header:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s_header.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
                                                               hp.table_order, hp.run_id, hp.check_subject_Column)
-    else:
-        output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
-                                                       hp.table_order, hp.run_id, hp.check_subject_Column)
+
 
     output_path += output_file
     if hp.save_model:

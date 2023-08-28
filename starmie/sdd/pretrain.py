@@ -96,12 +96,16 @@ def train(trainset, hp):
 
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
-
             directory = os.path.join(hp.logdir, hp.method, hp.dataset)
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
             # save the checkpoints for each component
+            ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                     str(hp.augment_op) + "lm_" + str(
+                hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                hp.table_order) + '_' + str(
+                hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
             if hp.single_column:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
                                          str(hp.augment_op) +"lm_"+ str(
@@ -120,14 +124,6 @@ def train(trainset, hp):
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
                                              hp.run_id) + "_" + str(hp.check_subject_Column)+ "_header.pt")
-            else:
-                # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
-
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
             torch.save(ckpt, ckpt_path)
