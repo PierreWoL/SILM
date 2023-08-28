@@ -61,7 +61,7 @@ def get_df(dataFolder):
     print(dataFiles)
     dataDFs = {}
     for file in dataFiles:
-        df = pd.read_csv(file, lineterminator='\n')
+        df = pd.read_csv(file) #, lineterminator='\n'
         filename = file.split("/")[-1]
         dataDFs[filename] = df
     return dataDFs

@@ -14,7 +14,7 @@ from Encodings import table_features
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="SILM")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="WDC")  # TabFact open_data WDC
+    parser.add_argument("--dataset", type=str, default="TabFact")  # TabFact open_data WDC
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--size", type=int, default=10000)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--n_epochs", type=int, default=20)
-    parser.add_argument("--lm", type=str, default='roberta')
+    parser.add_argument("--lm", type=str, default='sbert')
     parser.add_argument("--pretrain", dest="pretrain", action="store_true")
     parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # row / column-ordered for preprocessing
     parser.add_argument("--table_order", type=str, default='column')  # column pure_row
     # for sampling
-    parser.add_argument("--sample_meth", type=str, default='tfidf_cell')  # head tfidfrow
+    parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow tfidf_cell
     # mlflow tag
     parser.add_argument("--mlflow_tag", type=str, default=None)
 
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     if hp.pretrain:
         trainset.encodings(output_path,setting=hp.NoContext)
     else:
-
+        #trainset[100]
         train(trainset, hp)
         table_features(hp)
+#--pretrain --subject_column

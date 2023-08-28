@@ -64,7 +64,7 @@ class PretrainTableDataset(data.Dataset):
         else:
             special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
             self.header_token = ('[header]', '[/header]')
-            self.SC_token = ('"[subjectcol]"', '[/subjectcol]')
+            self.SC_token = ('[subjectcol]', '[/subjectcol]')
             if self.pretrain:
                 print("SentenceTransformer")
                 self.model = SentenceTransformer(lm_mp[lm])
@@ -142,7 +142,6 @@ class PretrainTableDataset(data.Dataset):
             table = self.table_cache[table_id]
         else:
             fn = os.path.join(self.path, self.tables[table_id])
-            # print(fn)
             table = pd.read_csv(fn)  # encoding="latin-1",
             if self.isCombine:
                 table = table.iloc[:, 1:]  # encoding="latin-1",
@@ -168,7 +167,6 @@ class PretrainTableDataset(data.Dataset):
         Sub_cols_header = subjectCol(table, self.isCombine)
         # column-ordered preprocessing
         if self.table_order == 'column':
-            # print("table:\n", table.transpose())
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
             for column, col_text in col_texts.items():
                 column_mp[column] = len(res)
@@ -190,14 +188,12 @@ class PretrainTableDataset(data.Dataset):
                                       " " + self.header_token[1] + " "
                         max_tokens = self.max_len * 2 // len(table)  # // len(table)
                         budget = max(1, self.max_len)
-                        # print("header", header_text)
                         column_mp[index] = len(res)
                         encoding = self.tokenizer.encode(text=header_text,
                                                          max_length=budget,
                                                          add_special_tokens=False,
                                                          truncation=True)
                         res += encoding
-                        # table_text += header_text + self.tokenizer.sep_token + " "
                         continue
 
                 row_text = ""
@@ -210,7 +206,6 @@ class PretrainTableDataset(data.Dataset):
                     break
                 else:
                     table_text += row_text + self.tokenizer.sep_token + " "
-                # print(table_text)
                 encoding = self.tokenizer.encode(text=table_text,
                                                  max_length=budget,
                                                  add_special_tokens=False,
@@ -221,7 +216,6 @@ class PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
-        # print(len(res), len(column_mp))
         return res, column_mp
 
     def _column_stratgy(self, Sub_cols_header, table, tfidfDict, max_tokens, NoToken=False):
@@ -234,7 +228,7 @@ class PretrainTableDataset(data.Dataset):
             tokens = preprocess(column_values, tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
 
             string_token = ' '.join(tokens[:max_tokens])
-            # print("string_token",string_token)
+
             col_text = self.tokenizer.cls_token + " "
             # header-only mode
             if NoToken is False:
@@ -253,11 +247,11 @@ class PretrainTableDataset(data.Dataset):
                         col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                     else:
                         col_text += string_token + " "
+
                 col_texts[column] = col_text
             else:
-
                 column_token = fun.token_list(fun.remove_blank(column_values))
-                if column_token!=None:
+                if column_token != None:
                     col_texts[column] = column_token
                 else:
 
@@ -266,7 +260,6 @@ class PretrainTableDataset(data.Dataset):
         return col_texts
 
     def _encode(self, table: pd.DataFrame, Token=False):
-        # print(table.transpose(),len(table.columns))
         max_tokens = self.max_len * 2 // len(table.columns) if len(table.columns) != 0 else 512
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         budget = max(1, self.max_len // len(table.columns) - 1) if len(table.columns) != 0 else self.max_len
@@ -275,7 +268,6 @@ class PretrainTableDataset(data.Dataset):
         embeddings = []
         # column-ordered preprocessing
         if self.table_order == 'column':
-            # print("table:\n", table.transpose())
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens, NoToken=Token)
             for column, col_text in col_texts.items():
                 if self.lm == "sbert":
@@ -287,7 +279,6 @@ class PretrainTableDataset(data.Dataset):
                         embeddings.append(average)
 
                 if self.lm == "roberta":
-                    # print(col_text)
                     if Token is False:
                         tokens = self.tokenizer.encode_plus(col_text, add_special_tokens=True, max_length=512,
                                                             truncation=True, return_tensors="pt")
@@ -296,10 +287,9 @@ class PretrainTableDataset(data.Dataset):
                             outputs = self.model(**tokens)
                         # Extract the last hidden state (embedding) from the outputs
                         last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
-                        #  print(len(last_hidden_state[0]))
                         embeddings.append(last_hidden_state)
                     else:
-                        embeddings_per_col =[]
+                        embeddings_per_col = []
                         for text in col_text:
                             tokens = self.tokenizer.encode_plus(text, add_special_tokens=True, max_length=512,
                                                                 truncation=True, return_tensors="pt")
@@ -316,7 +306,7 @@ class PretrainTableDataset(data.Dataset):
 
     def encodings(self, output_path, setting=False):
         table_encodings = []
-        for idx in range(0, len(self.tables)):
+        for idx in range(len(self.tables)):
             table_ori = self._read_table(idx)
 
             if "row" in self.table_order:
@@ -330,25 +320,25 @@ class PretrainTableDataset(data.Dataset):
                 if len(cols) > 0:
                     table_ori = table_ori[cols]
             embedding = self._encode(table_ori, Token=setting)
-            # print(self.tables[idx], np.array(embedding),len(np.array(embedding)))
             table_encodings.append((self.tables[idx], np.array(embedding)))
+
         output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (self.lm, self.sample_meth,
-                                                       self.table_order, self.check_subject_Column, setting)   
+                                                       self.table_order, self.check_subject_Column, setting)
         if self.single_column:
             output_file = "Pretrain_%s_%s_%s_%s_%s_singleCol.pkl" % (self.lm, self.sample_meth,
-                                                                     self.table_order, self.check_subject_Column,setting)
+                                                                     self.table_order, self.check_subject_Column,
+                                                                     setting)
         if self.subject_column:
-            output_file = "Pretrain__%s_%s_%s_%s_%s_subCol.pkl" % ( self.lm, self.sample_meth,
-                                                              self.table_order,self.check_subject_Column,setting)
+            output_file = "Pretrain__%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
+                                                                   self.table_order, self.check_subject_Column, setting)
+
         if self.header:
             output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (self.lm, self.sample_meth,
-                                                                  self.table_order,  self.check_subject_Column,setting)
-        
-        target_path = os.path.join(output_path,output_file)
+                                                                  self.table_order, self.check_subject_Column, setting)
 
+        target_path = os.path.join(output_path, output_file)
         pickle.dump(table_encodings, open(target_path, "wb"))
         return table_encodings
-
 
     def __len__(self):
         """Return the size of the dataset."""
@@ -365,7 +355,6 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the second view
         """
         table_ori = self._read_table(idx)
-        # print("table_ori",table_ori)
         # single-column mode: only keep one random column
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
@@ -395,6 +384,7 @@ class PretrainTableDataset(data.Dataset):
             table_aug = augment(table_tmp, op2)
         else:
             table_aug = augment(table_ori, self.augment_op)
+
             if self.isCombine:
                 table_aug = aug(table_ori)
 
@@ -402,9 +392,7 @@ class PretrainTableDataset(data.Dataset):
             header = table_ori.columns.tolist()
             table_ori = pd.DataFrame([header] + table_ori.values.tolist(), columns=header)
             table_aug = pd.DataFrame([header] + table_aug.values.tolist(), columns=header)
-            # print("raw and augment:\n", table_ori, "\n", table_aug)
         x_ori, mp_ori = self._tokenize(table_ori)
-
         x_aug, mp_aug = self._tokenize(table_aug)
 
         cls_indices = []
@@ -434,7 +422,6 @@ class PretrainTableDataset(data.Dataset):
         # decompose the column alignment
         cls_ori = []
         cls_aug = []
-        # print("cls_indices is ",cls_indices)
         for item in cls_indices:
             cls_ori.append([])
             cls_aug.append([])
@@ -442,6 +429,5 @@ class PretrainTableDataset(data.Dataset):
             for idx1, idx2 in item:
                 cls_ori[-1].append(idx1)
                 cls_aug[-1].append(idx2)
-                # print("cls_ori and cls_aug   ", cls_ori, cls_aug)
 
         return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new), (cls_ori, cls_aug)
