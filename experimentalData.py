@@ -87,7 +87,7 @@ def get_concept(filepath):
     return concept
 
 from collections import Counter
-def get_concept_files(files, GroundTruth):
+def get_concept_files(files, GroundTruth, Nochange = False):
     """
     obtain the files' classes by
     mapping its name to the ground truth
@@ -101,20 +101,31 @@ def get_concept_files(files, GroundTruth):
     -------
 
     """
+
     test_gt_dic = {}
     test_gt = {}
     test_duplicate=[]
     i =0
     for file in files:
         name_without_extension = file
-        #print(name_without_extension)
         if GroundTruth.get(name_without_extension) is not None:
             ground_truth = GroundTruth.get(name_without_extension)
             test_gt_dic[name_without_extension] = ground_truth
             test_duplicate.append(len(test_gt_dic.keys()))
-            if test_gt.get(ground_truth) is None:
-                test_gt[ground_truth] = []
-            test_gt[ground_truth].append(file)
+            if type(ground_truth) is list:
+                if Nochange is False:
+                    for item in ground_truth:
+                        if test_gt.get(item) is None:
+                            test_gt[item] = []
+                        test_gt[item].append(file)
+                else:
+                    if test_gt.get(str(ground_truth)) is None:
+                        test_gt[str(ground_truth)] = []
+                    test_gt[str(ground_truth)].append(file)
+            else:
+                if test_gt.get(ground_truth) is None:
+                    test_gt[ground_truth] = []
+                test_gt[ground_truth].append(file)
         i+=1
     return test_gt_dic, test_gt
 

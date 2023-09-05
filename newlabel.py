@@ -104,31 +104,104 @@ def parallel_crawling():
         dataframes_list = query_wikidata_parallel(result_diction)
 
 
+abstract = [ 'PhysicalActivity','object', 'result', 'temporal entity', 'inconsistency', 'noun', 'noun phrase', 'remains', 'use',
+            'independent continuant', 'observable entity', 'artificial entity', 'natural physical object',
+            'occurrence', 'relation', 'group of physical objects', 'economic entity', 'group of works',
+            'concrete object', 'three-dimensional object', 'part', 'geographic entity', 'artificial geographic entity',
+            'source', 'group or class of physical objects', 'role', 'phenomenon', 'physical entity', 'means',
+            'spatio-temporal entity', 'spatial entity', 'one-dimensional space', 'physical object',
+            'continuant', 'collective entity', 'space object', 'type', 'information', 'anatomical entity',
+            'output', 'abstract object', 'class', 'non-physical entity', 'integral', 'quantity', 'former entity',
+            'occurrent', 'cause', 'idiom', 'lect', 'modification', 'alteration', 'control', 'consensus',
+            'social relation', 'process', 'rivalry', 'mental process', 'condition',
+            'social phenomenon', 'manifestation', 'work', 'source of information', 'knowledge type', 'action',
+            'time interval', 'interaction', 'record', 'language variety', 'intentional human activity',
+            'status', 'group of living things', 'agent', 'sign', 'content', 'converter', 'resource', 'metaclass',
+            'unit', 'human activity','effect', 'archives', 'sub-fonds', 'evaluation',
+            'interface', 'contributing factor', 'undesirable characteristic', 'structure', 'method', 'matter', 'change',
+            'physical phenomenon', 'binary relation', 'building work', 'power', 'management', 'long, thin object',
+            'definite integral', 'physical property', 'multi-organism process', 'data', 'multiset', 'line',
+            'proper noun', 'physicochemical process', 'group', 'collection', 'historical source'
+            'interaction', 'information resource', 'list', 'plan', 'scale', 'memory', 'social structure',
+            'source text', 'open content', 'written work', 'strategy', 'group of humans', 'system', 'deformation',
+            'representation', 'multicellular organismal process', 'operator', 'social system']
+top = ['Place', 'Action', 'Intangible', 'Organization', 'CreativeWork', 'MedicalEntity', 'BioChemEntity', 'Event', 'Product', 'Person', 'Taxon']
+similar_words = {}
+with open("filter_sim_all.pkl", "rb") as file:
+    all_sims = pickle.load(file)
+for key, value in all_sims.items():
+    for tuple in value.keys():
+        word = tuple[0]
+        if tuple[0] in similar_words.keys():
+            if tuple[1] not in similar_words[word]:
+                similar_words[word].append(tuple[1])
+        else:
+            similar_words[word] = [tuple[1]]
+
+for word, similar_word_list in similar_words.items():
+    if len(similar_word_list) == 1:
+        similar_words[word] = similar_word_list[0]
+
+#unique_items = list(set(similar_words.values()))
+
+
+
+node_length = 0
 G = nx.DiGraph()
 for index, row in ground_truth_csv.iterrows():
     if row["fileName"] in labels:
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
         df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
-        all_nodes = set(df.values.ravel()) - set(G.nodes())
-
-        G.add_nodes_from(all_nodes)
-
         for _, row2 in df.iterrows():
             labels_table = row2.dropna().tolist()
             for i in range(len(labels_table) - 1):
                 if labels_table[i + 1] != labels_table[i]:
-                    G.add_edge(labels_table[i + 1],labels_table[i])
+                    if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
+                        child_type = similar_words[labels_table[i]] \
+                            if labels_table[i] in similar_words.keys() else labels_table[i]
+                        if child_type in top:
+                            break
+                        else:
+                            if labels_table[i + 1] in G.nodes():
+                                if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
+                                    if labels_table[i + 1] not in similar_words.keys():
+                                        if labels_table[i + 1] != child_type \
+                                                and "process" not in labels_table[i + 1].lower() \
+                                                and "process" not in child_type.lower():
+                                            G.add_edge(labels_table[i + 1], child_type)
 
+                                            continue
+                                    else:
+                                        if similar_words[labels_table[i + 1]] != child_type and "process" not in \
+                                                labels_table[i + 1].lower() \
+                                                and "process" not in child_type.lower():
+                                            G.add_edge(similar_words[labels_table[i + 1]], child_type)
+                                            break
+                            else:
+                                if labels_table[i + 1] not in similar_words.keys():
+                                    if labels_table[i + 1] != child_type and "process" not in labels_table[
+                                        i + 1].lower() \
+                                            and "process" not in child_type.lower():
+                                        G.add_edge(labels_table[i + 1], child_type)
+                                        continue
+                                else:
+                                    if similar_words[labels_table[i + 1]] != child_type and "process" not in \
+                                            labels_table[i + 1].lower() \
+                                            and "process" not in child_type.lower():
+                                        G.add_edge(similar_words[labels_table[i + 1]], child_type)
+                                        break
+
+
+    """
     else:
         if row["class"] != " ":
             superclass = row["class"]
             classX = row["superclass"]
-
             all_nodes = {superclass, classX}
-
             all_nodes = all_nodes - set(G.nodes())
             G.add_nodes_from(all_nodes)
             G.add_edge(superclass,classX)
+    """
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:

@@ -15,21 +15,24 @@ def silm_clustering(hp: Namespace):
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-
     if hp.method == "starmie":
-        if hp.embedMethod!='':
-            files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn]  # pkl
-        else:
-            files = [fn for fn in os.listdir(datafile_path) if fn.endswith('sbert_.pickle')]  # pkl
+        files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn] # pkl
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
         SE = pickle.load(F_cluster)
-
     else:
         SE = {}
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
+
+    store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+    if hp.subjectCol is True:
+        store_path += "Subject_Col/"
+    else:
+        store_path += "All/"
+    mkdir(store_path)
+
     for file in files:
         print(file, hp.subjectCol)
         dict_file = {}
@@ -38,57 +41,50 @@ def silm_clustering(hp: Namespace):
         Z = []
         T = []
         content = [vectors for vectors in content if vectors[0] in available_data]
-        print(len(content),content[0])
+        # for showing the first item in content
+        #print(len(content), content[0])
         for vectors in content:
             T.append(vectors[0][:-4])
             if hp.subjectCol:
-                NE_list, headers, types = SE[vectors[0]]
-
-                if NE_list:
-                    vec_table = vectors[1][NE_list[0]]
-                else:
+                if file.endswith("subCol.pkl"):
                     vec_table = np.mean(vectors[1], axis=0)
+                else:
+                    NE_list, headers, types = SE[vectors[0]]
+                    if NE_list:
+                        vec_table = vectors[1][NE_list[0]]
+                    else:
+                        vec_table = np.mean(vectors[1], axis=0)
             else:
                 vec_table = np.mean(vectors[1], axis=0)
             Z.append(vec_table)
+        #
         """has_nan = np.isnan(Z).any()
         if has_nan:
             print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
-            clustering_method = ["Agglomerative",
-                                 "BIRCH"]
+            clustering_method = ["Agglomerative"] #, "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 1):
+                for i in range(0, 3):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
-
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict
-
                 mean_metric = metric_value_df.mean()
                 methods_metrics[method] = mean_metric
-
             e_df = pd.DataFrame()
             for i, v in methods_metrics.items():
                 e_df = pd.concat([e_df, v.rename(i)], axis=1)
-
-            store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-            if hp.subjectCol is True:
-                store_path += "Subject_Col/"
-            else:
-                store_path += "All/"
-            mkdir(store_path)
             e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
             print(e_df)
             dicts[file] = dict_file
         except ValueError as e:
             print(e)
             continue
-    with open(datafile_path + 'cluster_dict.pickle', 'wb') as handle:
+    with open(store_path + 'cluster_dict.pickle', 'wb') as handle:
         pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -103,8 +99,9 @@ def column_gts(dataset):
     """
     groundTruth_file = os.getcwd() + "/datasets/" + dataset + "/column_gt.csv"
     ground_truth_df = pd.read_csv(groundTruth_file, encoding='latin1')
-    print(len(ground_truth_df['ColumnLabel'].unique()))
-    Superclass = ground_truth_df['TopClass'].unique()
+    Superclass = ground_truth_df['TopClass'].dropna().unique()
+
+
     gt_clusters = {}
     ground_t = {}
     gt_cluster_dict = {}
@@ -133,7 +130,8 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
     mkdir(target_path)
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
-    Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
+    Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table,Nochange=True)
+    #print(Ground_t)#"\n\n\n\n",Gt_cluster_dict
     F = open(datafile_path + embedding_file, 'rb')
     content = pickle.load(F)
 
@@ -141,6 +139,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     Zs = {}
     Ts = {}
     gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
+
     with open(os.path.join(target_path, '_gt_cluster.pickle'),
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -187,7 +186,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             for method in clustering_method:
 
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 1):
+                for i in range(0, 3):
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
                                                                         gt_cluster_dict[clu], method,
                                                                         folderName=col_example_path,
@@ -208,7 +207,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                 pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
             for meth in clustering_method:
                 print(pickle_name)
-                hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle', hp)
+                hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle' ,embedding_file[0:-4], Ground_t, hp)
         except ValueError as e:
             print(e)
 
@@ -226,5 +225,7 @@ def starmie_clusterHierarchy(hp: Namespace):
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith("_" + hp.embedMethod + '.pkl') and hp.embed in fn]
-    starmie_columnClustering(files[0], hp)
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
+    files = [fn for fn in files if not fn.endswith("subCol.pkl")]
+    for file in files:
+        starmie_columnClustering(file, hp)

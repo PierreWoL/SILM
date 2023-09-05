@@ -1,3 +1,4 @@
+import ast
 import os
 from collections import Counter
 from typing import Optional
@@ -19,6 +20,26 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
+from itertools import combinations
+
+
+def rand_Index_custom(cluster_labels1, cluster_labels2):
+    def count_agreement_pairs(cluster_labels1, cluster_labels2):
+        pairs_in_same_cluster = 0
+        pairs_in_different_clusters = 0
+
+        for labels1, labels2 in combinations(zip(cluster_labels1, cluster_labels2), 2):
+            if len(set(labels1[0]) & set(labels1[1])) == len(set(labels2[0]) & set(labels2[1])):
+                pairs_in_same_cluster += 1
+            else:
+                pairs_in_different_clusters += 1
+
+        return pairs_in_same_cluster, pairs_in_different_clusters
+
+    same_cluster_pairs, different_cluster_pairs = count_agreement_pairs(cluster_labels1, cluster_labels2)
+    total_pairs = same_cluster_pairs + different_cluster_pairs
+    rand_index = same_cluster_pairs / total_pairs
+    return rand_index
 
 
 def create_or_find_indexes(data_path, threshold, embedding_mode=1):
@@ -304,17 +325,24 @@ def metric_Spee(labels_true, labels_pred):
     adjusted_random_score = metrics.adjusted_rand_score(labels_true, labels_pred)
     FMI = metrics.fowlkes_mallows_score(labels_true, labels_pred)
     # smc = SMC(labels_true, labels_pred)
-    return {"MI": MI, "NMI": NMI, "AMI": AMI, "random score": rand_score,
+    return {"MI": MI, "NMI": NMI, "AMI": AMI, "random Index": rand_score,
             "ARI": adjusted_random_score, "FMI": FMI}
 
 
-def most_frequent(list1):
+def most_frequent(list1, isFirst=True):
     """
     count the most frequent occurring annotated label in the cluster
     """
 
     count = Counter(list1)
-    return count.most_common(1)[0][0]
+    if isFirst is True:
+        return count.most_common(1)[0][0]
+    else:
+        most_common_elements = count.most_common()
+        max_frequency = most_common_elements[0][1]
+        most_common_elements_list = [element for element, frequency in most_common_elements if
+                                     frequency == max_frequency]
+        return most_common_elements_list
 
 
 """
@@ -328,7 +356,7 @@ gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cl
 """
 
 
-def data_classes(data_path, groundTruth_file, superclass=True):
+def data_classes(data_path, groundTruth_file, superclass=True, Nochange = False):
     """
     return three dict
     Parameters
@@ -350,12 +378,27 @@ def data_classes(data_path, groundTruth_file, superclass=True):
         dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 2]))
     else:
         dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
-
+    dict_gt = {key: ast.literal_eval(value) for key, value in dict_gt.items()}
     test_table2 = {}.fromkeys(test_table).keys()
 
-    gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt)
-    gt_cluster = pd.Series(gt_clusters.values()).unique()
-    gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
+    gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt, Nochange = Nochange)
+    if type(list(gt_clusters.values())[0]) is list:
+        if Nochange is False:
+            gt_cluster_dict = {}
+            for list_type in gt_clusters.values():
+                for item in list_type:
+                    if item not in gt_cluster_dict.keys():
+                        gt_cluster_dict[item] = len(gt_cluster_dict)
+        else:
+            gt_cluster_dict={}
+            for cluster in list(gt_clusters.values()):
+                set_cluster = str(cluster)
+                if set_cluster not in gt_cluster_dict.keys():
+                    gt_cluster_dict[set_cluster] = len(gt_cluster_dict)
+
+    else:
+        gt_cluster = pd.Series(gt_clusters.values()).unique()
+        gt_cluster_dict = {cluster: list(gt_cluster).index(cluster) for cluster in gt_cluster}
     return gt_clusters, ground_t, gt_cluster_dict
 
 
@@ -406,13 +449,17 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             if table != 'T2DV2_75' and table in gtclusters.keys():
                 tables.append(table)
                 label = gtclusters[table]
-                gt_table_label.append(gtclusters_dict[label])
-                labels.append(label)
-        # print(labels)
+                if type(label) is list:
+                    for item_label in label:
+                        labels.append(item_label)
+                    gt_table_label.append(label)
+                else:
+                    gt_table_label.append(gtclusters_dict[label])
+                    labels.append(label)
         if len(labels) == 0:
             continue
         else:
-            cluster_label = most_frequent(labels)
+            cluster_label = most_frequent(labels) if columns else most_frequent(labels, isFirst=False)
 
         clusters_label[index] = cluster_label
         if columns:
@@ -425,11 +472,19 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             columns_ref.append([tables_list, cluster_label, false_cols])
         for table in tables_list:
             if table != 'T2DV2_75' and table in gtclusters.keys():
-                table_label_index.append(gtclusters_dict[cluster_label])
-                if gtclusters[table] != cluster_label:
-                    false_ones.append([table, cluster_label, gtclusters[table]])
-    metric_dict = metric_Spee(gt_table_label, table_label_index)
-    cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
+                if type(cluster_label) is list:
+                    table_label_index.append(cluster_label)
+                    if len(list(set(gtclusters[table]) & set(cluster_label))) == 0:
+                        false_ones.append([table, cluster_label, gtclusters[table]])
+                else:
+                    table_label_index.append(gtclusters_dict[cluster_label])
+                    if gtclusters[table] != cluster_label:
+                        false_ones.append([table, cluster_label, gtclusters[table]])
+    if type(gt_table_label[0]) is not list:
+        metric_dict = metric_Spee(gt_table_label, table_label_index)
+    else:
+        metric_dict = {"random Index" : rand_Index_custom(gt_table_label, table_label_index)}
+    # cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
 
     if folder is not None and filename is not None:
@@ -459,7 +514,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
 def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, filename=None):
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
-
+   # print(gt_clusters, ground_t, gt_cluster_dict)
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)

@@ -308,28 +308,29 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     return TCS
 
 
-def hierarchicalColCluster(clustering, filename, hp: Namespace):
+def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    embedding_file = [fn for fn in os.listdir(datafile_path)
-                      if fn.endswith("_"+hp.embedMethod + '.pkl') and hp.embed in fn][0][0:-4]
+
     datafile_path = os.path.join(os.getcwd(), "result/starmie/", hp.dataset,
                                  "All/" + embedding_file + "/column")
-    ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"
+    # ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"
     data_path = os.getcwd() + "/datasets/TabFact/Test/"
-    Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
+    # Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
 
     target_path = os.getcwd() + "/result/Valerie/Column/" + \
                   hp.dataset + "/_gt_cluster.pickle"
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
 
+
     index_cols = int(filename.split("_")[0])
+    print(KEYS[index_cols])
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
-    tables = Ground_t[KEYS[index_cols]]
+    tables = Ground_t[str(KEYS[index_cols])]
     score_path = os.getcwd() + "/result/Valerie/" + hp.dataset + "/" + embedding_file + "/"
-    print(score_path)
+    #print(score_path)
     mkdir(score_path)
     if len(tables) > 1:
         jaccard_score = JaccardMatrix(col_cluster[clustering], data_path)[2]
@@ -343,6 +344,7 @@ def hierarchicalColCluster(clustering, filename, hp: Namespace):
 
         if index_cols not in df.index:
             new_data = {'Top Level Entity': KEYS[index_cols], 'Tree Consistency Score': TCS}
+            print(new_data)
             new_row = pd.DataFrame([new_data], index=[index_cols])
             # Concatenate the new DataFrame with the original DataFrame
             df = pd.concat([df, new_row])
