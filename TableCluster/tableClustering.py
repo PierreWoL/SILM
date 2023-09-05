@@ -124,7 +124,6 @@ def column_gts(dataset):
 
 
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
-    print(embedding_file)
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
@@ -134,7 +133,6 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     #print(Ground_t)#"\n\n\n\n",Gt_cluster_dict
     F = open(datafile_path + embedding_file, 'rb')
     content = pickle.load(F)
-
     # content is the embeddings for all datasets
     Zs = {}
     Ts = {}
@@ -147,11 +145,9 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
         futures = [executor.submit(colCluster, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
                                    gt_clusters, gt_cluster_dict) for index, clu in
                    enumerate(list(gt_cluster_dict.keys()))]
-
         # wait all parallel task to complete
         for future in futures:
             future.result()
-
     print("All parallel tasks completed.")
 
 
@@ -171,10 +167,9 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     clustering_method = ["Agglomerative"]
 
-    if len(Zs[clu]) >25000:
+    if len(Zs[clu]) <25000:
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
-
         try:
             methods_metrics = {}
             embedding_file_path = embedding_file.split(".")[0]
@@ -184,9 +179,8 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             mkdir(store_path)
             mkdir(col_example_path)
             for method in clustering_method:
-
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
+                for i in range(0, 1):
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
                                                                         gt_cluster_dict[clu], method,
                                                                         folderName=col_example_path,
@@ -198,7 +192,6 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                 mean_metric = metric_value_df.mean()
                 methods_metrics[method] = mean_metric
             print("methods_metrics is", methods_metrics)
-
             e_df = pd.DataFrame()
             for i, v in methods_metrics.items():
                 e_df = pd.concat([e_df, v.rename(i)], axis=1)

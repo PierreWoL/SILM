@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument("--embedMethod", type=str, default='')
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
-    parser.add_argument("--step", type=int, default=2)
+    parser.add_argument("--step", type=int, default=1)
     # single-column mode without table context
     parser.add_argument("--subjectCol", dest="subjectCol", action="store_true")
     # row / column-ordered for preprocessing
