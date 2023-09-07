@@ -240,6 +240,8 @@ def KMeans_param_search(input_data, cluster_num):
 
 
 def AgglomerativeClustering_param_search(input_data, cluster_num):
+    input_data =  np.array(input_data, dtype=np.float32)
+    print(type(input_data))
     score = -1
     best_model = AgglomerativeClustering()
     if cluster_num < 3:
