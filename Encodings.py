@@ -58,10 +58,11 @@ def get_df(dataFolder):
         dataDfs (dict): key is the filename, value is the dataframe of that table
     '''
     dataFiles = glob.glob(dataFolder + "/*.csv")
-    print(dataFiles)
+    #print(dataFiles)
     dataDFs = {}
     for file in dataFiles:
         df = pd.read_csv(file) #, lineterminator='\n'
+        #print(df.transpose())
         filename = file.split("/")[-1]
         dataDFs[filename] = df
     return dataDFs

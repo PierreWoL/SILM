@@ -23,23 +23,43 @@ import numpy as np
 from itertools import combinations
 
 
-def rand_Index_custom(cluster_labels1, cluster_labels2):
-    def count_agreement_pairs(cluster_labels1, cluster_labels2):
-        pairs_in_same_cluster = 0
-        pairs_in_different_clusters = 0
 
-        for labels1, labels2 in combinations(zip(cluster_labels1, cluster_labels2), 2):
-            if len(set(labels1[0]) & set(labels1[1])) == len(set(labels2[0]) & set(labels2[1])):
-                pairs_in_same_cluster += 1
-            else:
-                pairs_in_different_clusters += 1
 
-        return pairs_in_same_cluster, pairs_in_different_clusters
 
-    same_cluster_pairs, different_cluster_pairs = count_agreement_pairs(cluster_labels1, cluster_labels2)
-    total_pairs = same_cluster_pairs + different_cluster_pairs
-    rand_index = same_cluster_pairs / total_pairs
-    return rand_index
+def jaccard_similarity(set1, set2):
+    intersection = len(set1 & set2)
+    union = len(set1 | set2)
+    return intersection / union
+
+
+def rand_Index_custom(predicted_labels, ground_truth_labels):
+    true_positive = 0
+    true_negative = 0
+    false_positive = 0
+    false_negative = 0
+    all = 0
+    for i in range(len(predicted_labels)):
+        i_predict = predicted_labels[i]
+        i_true = ground_truth_labels[i]
+        for j in range(i, len(predicted_labels)):
+            if i != j:
+                j_predict = predicted_labels[j]
+                j_true = ground_truth_labels[j]
+                jaccard_sim_predict = jaccard_similarity(set(i_predict), set(j_predict))
+                jaccard_sim_true = jaccard_similarity(set(i_true), set(j_true))
+                if jaccard_sim_predict > 0 and jaccard_sim_true > 0:
+                    true_positive += 1
+                # print(all,i_predict,j_predict, "and ground truth", i_true,j_true )
+                elif jaccard_sim_predict == 0 and jaccard_sim_true == 0:
+                    true_negative += 1
+                elif jaccard_sim_predict > 0 and jaccard_sim_true == 0:
+                    # print(all, i_predict,j_predict, "and ground truth", i_true,j_true )
+                    false_positive += 1
+                elif jaccard_sim_predict == 0 and jaccard_sim_true > 0:
+                    false_negative += 1
+                all += 1
+    RI = (true_positive + true_negative) / all
+    return RI
 
 
 def create_or_find_indexes(data_path, threshold, embedding_mode=1):

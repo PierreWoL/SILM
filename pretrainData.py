@@ -145,6 +145,7 @@ class PretrainTableDataset(data.Dataset):
             table = pd.read_csv(fn)  # encoding="latin-1",
             if self.isCombine:
                 table = table.iloc[:, 1:]  # encoding="latin-1",
+
             self.table_cache[table_id] = table
         return table
 
@@ -161,13 +162,15 @@ class PretrainTableDataset(data.Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(table.columns) if len(table.columns) != 0 else 512
         budget = max(1, self.max_len // len(table.columns) - 1) if len(table.columns) != 0 else self.max_len
-        tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
+        tfidfDict = computeTfIdf(table,isCombine=self.isCombine) if "tfidf" in self.sample_meth else None  # from preprocessor.py
+
         # a map from column names to special token indices
         column_mp = {}
         Sub_cols_header = subjectCol(table, self.isCombine)
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
+            print(table.transpose(),len(table.columns), len(col_texts))
             for column, col_text in col_texts.items():
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
@@ -226,12 +229,11 @@ class PretrainTableDataset(data.Dataset):
             column_values = table.iloc[:, index] if self.isCombine is False \
                 else pd.Series(table.iloc[:, index][0].split(",")).rename(column)
             tokens = preprocess(column_values, tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
-
             string_token = ' '.join(tokens[:max_tokens])
-
             col_text = self.tokenizer.cls_token + " "
-            # header-only mode
+            # value in column as a whole string mode
             if NoToken is False:
+                # header-only mode
                 if self.header:
                     if 'subject' in self.check_subject_Column:
                         col_text += self.SC_token[0] + " " + str(column) + " " + self.SC_token[1] + " "  #
@@ -249,12 +251,12 @@ class PretrainTableDataset(data.Dataset):
                         col_text += string_token + " "
 
                 col_texts[column] = col_text
+            # average embedding of tokens mode
             else:
                 column_token = fun.token_list(fun.remove_blank(column_values))
                 if column_token != None:
                     col_texts[column] = column_token
                 else:
-
                     list_values = column_values.tolist()
                     col_texts[column] = [str(i) for i in list_values]
         return col_texts
@@ -269,6 +271,7 @@ class PretrainTableDataset(data.Dataset):
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens, NoToken=Token)
+            print(col_texts)
             for column, col_text in col_texts.items():
                 if self.lm == "sbert":
                     embedding = self.model.encode(col_text)
@@ -278,7 +281,7 @@ class PretrainTableDataset(data.Dataset):
                         average = np.mean(embedding, axis=0)
                         embeddings.append(average)
 
-                if self.lm == "roberta":
+                elif self.lm == "roberta":
                     if Token is False:
                         tokens = self.tokenizer.encode_plus(col_text, add_special_tokens=True, max_length=512,
                                                             truncation=True, return_tensors="pt")
@@ -307,8 +310,8 @@ class PretrainTableDataset(data.Dataset):
     def encodings(self, output_path, setting=False):
         table_encodings = []
         for idx in range(len(self.tables)):
-            table_ori = self._read_table(idx)
-
+            fn = os.path.join(self.path, self.tables[idx])
+            table_ori = pd.read_csv(fn)
             if "row" in self.table_order:
                 tfidfDict = computeTfIdf(table_ori)
                 table_ori = tfidfRowSample(table_ori, tfidfDict, 0)

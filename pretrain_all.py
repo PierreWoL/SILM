@@ -13,7 +13,7 @@ from Encodings import table_features
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="SILM")  # Valerie starmie
+    parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
     parser.add_argument("--dataset", type=str, default="TabFact")  # TabFact open_data WDC
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
@@ -69,6 +69,6 @@ if __name__ == '__main__':
         trainset.encodings(output_path,setting=hp.NoContext)
     else:
         #trainset[100]
-        train(trainset, hp)
+        #train(trainset, hp)
         table_features(hp)
 #--pretrain --subject_column

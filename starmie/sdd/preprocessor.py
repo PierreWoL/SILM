@@ -5,7 +5,7 @@ import string
 from pandas.api.types import infer_dtype
 
 
-def computeTfIdf(tableDf):
+def computeTfIdf(tableDf, isCombine = False):
     """ Compute tfIdf of each column independently
         Called by _tokenize() method in dataset.py
     Args:
@@ -35,7 +35,11 @@ def computeTfIdf(tableDf):
 
     idf = {}
     for column in tableDf.columns:
-        colVals = [val for entity in tableDf[column] for val in str(entity).split(' ')]
+        if isCombine is False:
+            colVals = [val for entity in tableDf[column] for val in str(entity).split(' ')]
+        else:
+            colVals = [val for entity in pd.Series(tableDf[column][0].split(",")).rename(column) for val in str(entity).split(' ')]
+
         wordSet = set(colVals)
         wordDict = dict.fromkeys(wordSet, 0)
         for val in colVals:
