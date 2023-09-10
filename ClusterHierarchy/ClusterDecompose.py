@@ -44,11 +44,11 @@ def labels_most_fre(datas: dict):
     return most_common_labels, max_frequency
 
 
-def ground_truth_labels(filename, top=False, inter=False):
-    ground_label_name1 = "01SourceTables.csv"  # "GroundTruth.csv"
-    data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
+def ground_truth_labels(filename, top=False, inter=False,dataset="TabFact"):
+    ground_label_name1 ="GroundTruth.csv" #
+    data_path = os.path.join(os.getcwd(), "datasets/"+dataset, ground_label_name1)
     ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
-    target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+    target_path = os.path.join(os.getcwd(), "datasets/"+dataset)
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
     row = ground_truth_csv[ground_truth_csv['fileName'] == filename]
@@ -57,10 +57,14 @@ def ground_truth_labels(filename, top=False, inter=False):
     topmost_parent = []
     classX = row["class"].iloc[0]  # LowestClass
     # table_label = ast.literal_eval(classX)
-    labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
+    if os.path.exists(os.path.join(os.getcwd(), "datasets/%s/Label" %dataset)):
+
+        labels = os.listdir(os.path.join(os.getcwd(), "datasets/%s/Label" %dataset))
+    else:
+        labels=[]
     if filename in labels:
         table_label = pd.read_csv(
-            os.path.join(os.getcwd(), "datasets/TabFact/Label", filename))[
+            os.path.join(os.getcwd(), "datasets/%s/Label"%dataset, filename))[
             "classLabel"].unique()
         for loa in table_label:
             lowest_parent.append(loa)
@@ -93,10 +97,10 @@ def ground_truth_labels(filename, top=False, inter=False):
     return [classX]
 
 
-def label_dict(tables: list, is_Parent=True):
+def label_dict(tables: list, is_Parent=True,dataset = "TabFact"):
     dict_table_labels = {}
     for table in tables:
-        dict_table_labels[table] = ground_truth_labels(table + ".csv", top=is_Parent)
+        dict_table_labels[table] = ground_truth_labels(table + ".csv", top=is_Parent,dataset=dataset)
     return dict_table_labels
 
 
@@ -109,7 +113,7 @@ def no_intersection(list1, list2):
         return False
 
 
-def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, timing):
+def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, timing,dataset):
     layer_info_dict = {}
     Parent_nodes_h = {}
     simple_tree = None
@@ -139,7 +143,7 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
                 Parent_nodes_h[cluster] = closest_parent
             else:
                 simple_tree.nodes[closest_parent]['type'] = 'data cluster node'
-            label_dict_cluster = label_dict(list(cluster), is_Parent=False)  # True
+            label_dict_cluster = label_dict(list(cluster), is_Parent=False,dataset=dataset)  # True
             labels, freq = labels_most_fre(label_dict_cluster)
             simple_tree.nodes[closest_parent]['label'] = labels
             """if len(cluster) > 1:
@@ -169,8 +173,8 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
     return simple_tree, layer_info_dict, Parent_nodes_h
 
 
-def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=True):
-    target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=True, dataset = "TabFact"):
+    target_path = os.path.join(os.getcwd(), "datasets/"+dataset)
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
     all_pathCompatibility = []
@@ -280,9 +284,9 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
         print("no hierarchy!")
         return None
     simple_tree, layer_info_dict, Parent_nodes_h = \
-        simple_tree_with_cluster_label(threCluster_dict, tree_test, tables, timing)
+        simple_tree_with_cluster_label(threCluster_dict, tree_test, tables, timing,dataset)
     start_time = time.time()
-    TCS, len_path = TreeConsistencyScore(simple_tree, layer_info_dict[0], Parent_nodes_h)
+    TCS, len_path = TreeConsistencyScore(simple_tree, layer_info_dict[0], Parent_nodes_h,dataset=dataset)
     end_time = time.time()
     timing['Tree Consistency Score'] = {'timing': end_time - start_time}
     info_path = os.path.join(file_path, "all_info.csv")
@@ -305,7 +309,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
         # Dump the data into the pickle file
         pickle.dump((dendrogra, linkage_matrix, threCluster_dict,
                      simple_tree, tree_test, layer_info_dict, Parent_nodes_h), file)
-    return TCS
+    return TCS,len_path
 
 
 def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Namespace):
@@ -315,16 +319,15 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
     datafile_path = os.path.join(os.getcwd(), "result/starmie/", hp.dataset,
                                  "All/" + embedding_file + "/column")
     # ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"
-    data_path = os.getcwd() + "/datasets/TabFact/Test/"
+    data_path = os.getcwd() + "/datasets/%s/Test/" %hp.dataset
     # Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
 
     target_path = os.getcwd() + "/result/Valerie/Column/" + \
                   hp.dataset + "/_gt_cluster.pickle"
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
-
-
     index_cols = int(filename.split("_")[0])
+    print(index_cols,"\n")
     print(KEYS[index_cols])
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
@@ -334,18 +337,25 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
     mkdir(score_path)
     if len(tables) > 1:
         jaccard_score = JaccardMatrix(col_cluster[clustering], data_path)[2]
-        TCS = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file, hp.dataset,
+        TCS,ALL_path = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file, hp.dataset,
                                       str(index_cols))
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'), index_col=0)
         else:
-            df = pd.DataFrame(columns=['Top Level Entity', 'Tree Consistency Score'])
+            df = pd.DataFrame(columns=['Top Level Entity', 'Tree Consistency Score','#Paths', 'ClusteringAlgorithm'])
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
 
         if index_cols not in df.index:
-            new_data = {'Top Level Entity': KEYS[index_cols], 'Tree Consistency Score': TCS}
+            new_data = {'Top Level Entity': KEYS[index_cols], 'Tree Consistency Score': TCS, "#Paths":ALL_path,'ClusteringAlgorithm':clustering}
             print(new_data)
             new_row = pd.DataFrame([new_data], index=[index_cols])
             # Concatenate the new DataFrame with the original DataFrame
             df = pd.concat([df, new_row])
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
+        else:
+            df.loc[index_cols,'Top Level Entity'] = KEYS[index_cols]
+            df.loc[index_cols, 'Tree Consistency Score'] =TCS
+            df.loc[index_cols, '#Paths'] =ALL_path
+            df.loc[index_cols, 'ClusteringAlgorithm'] = clustering
+            df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
+
