@@ -316,7 +316,7 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
     # os.path.abspath(os.path.dirname(os.getcwd()))
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
 
-    datafile_path = os.path.join(os.getcwd(), "result/starmie/", hp.dataset,
+    datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                  "All/" + embedding_file + "/column")
     # ground_truth_table = os.getcwd() + "/datasets/TabFact/groundTruth.csv"
     data_path = os.getcwd() + "/datasets/%s/Test/" %hp.dataset

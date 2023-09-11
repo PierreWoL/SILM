@@ -173,9 +173,9 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
     store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
     mkdir(store_path)
     clustering_method = ["Agglomerative","BIRCH"] #
-    if len(Zs[clu])>25000: #816 1328
-        # print(clu, Ground_t[clu])
 
+    if len(Zs[clu])<25000: #816 1328
+        # print(clu, Ground_t[clu])
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
         try:
@@ -217,7 +217,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn and "Pretrain" not in fn]
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
     for file in files:
         starmie_columnClustering(file, hp)
