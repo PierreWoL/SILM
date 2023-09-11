@@ -345,17 +345,17 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
             df = pd.DataFrame(columns=['Top Level Entity', 'Tree Consistency Score','#Paths', 'ClusteringAlgorithm'])
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
 
-        if index_cols not in df.index:
+        if str(index_cols)+clustering not in df.index:
             new_data = {'Top Level Entity': KEYS[index_cols], 'Tree Consistency Score': TCS, "#Paths":ALL_path,'ClusteringAlgorithm':clustering}
             print(new_data)
-            new_row = pd.DataFrame([new_data], index=[index_cols])
+            new_row = pd.DataFrame([new_data], index=[str(index_cols)+clustering])
             # Concatenate the new DataFrame with the original DataFrame
             df = pd.concat([df, new_row])
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
         else:
-            df.loc[index_cols,'Top Level Entity'] = KEYS[index_cols]
-            df.loc[index_cols, 'Tree Consistency Score'] =TCS
-            df.loc[index_cols, '#Paths'] =ALL_path
-            df.loc[index_cols, 'ClusteringAlgorithm'] = clustering
+            df.loc[str(index_cols)+clustering,'Top Level Entity'] = KEYS[index_cols]
+            df.loc[str(index_cols)+clustering, 'Tree Consistency Score'] =TCS
+            df.loc[str(index_cols)+clustering, '#Paths'] =ALL_path
+            df.loc[str(index_cols)+clustering, 'ClusteringAlgorithm'] = clustering
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
 
