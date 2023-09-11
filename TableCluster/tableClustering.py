@@ -41,10 +41,12 @@ def silm_clustering(hp: Namespace):
         Z = []
         T = []
         content = [vectors for vectors in content if vectors[0] in available_data]
+
         # for showing the first item in content
         #print(len(content), content[0])
         for vectors in content:
             T.append(vectors[0][:-4])
+            table = pd.read_csv(data_path + vectors[0], encoding="latin1")
             if hp.subjectCol:
                 if file.endswith("subCol.pkl"):
                     vec_table = np.mean(vectors[1], axis=0)
@@ -124,6 +126,8 @@ def column_gts(dataset):
 
 
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
+    print(embedding_file)
+
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
@@ -156,7 +160,9 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
     tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
     Ts[clu] = []
     Zs[clu] = []
+
     for vector in content:
+
         if vector[0].removesuffix(".csv") in Ground_t[clu]:
             table = pd.read_csv(data_path + vector[0], encoding="latin1")
             for i in range(0, len(table.columns)):
@@ -164,10 +170,12 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                 Zs[clu].append(vector[1][i])
 
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
-    store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-    clustering_method = ["Agglomerative"]
+    store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
+    mkdir(store_path)
+    clustering_method = ["Agglomerative","BIRCH"] #
+    if len(Zs[clu])>25000: #816 1328
+        # print(clu, Ground_t[clu])
 
-    if len(Zs[clu]) >25000:
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
         try:
@@ -180,11 +188,13 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             mkdir(col_example_path)
             for method in clustering_method:
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 1):
+                for i in range(0, 3):
+                    # TODO: add the naming part and ground truth of attribute name part
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
                                                                         gt_cluster_dict[clu], method,
                                                                         folderName=col_example_path,
                                                                         filename=f"{str(index)}.{method}")
+                    # print(cluster_dict)
                     if i == 0:
                         clusters_result[method] = cluster_dict
                     metric_df = pd.DataFrame([metric_dict])
@@ -205,20 +215,10 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             print(e)
 
 
-def starmie_clusterHierarchy(hp: Namespace):
-    data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
-    Gt_clusters, Gt_cluster_dict = data_classes(data_path, ground_truth_table)[0], \
-                                   data_classes(data_path, ground_truth_table)[2]
-    # print("Gt_clusters,Gt_cluster_dict", Gt_clusters, Gt_cluster_dict)
-    tables = []
-    for key, value in Gt_cluster_dict.items():
-        if value in ['People', "Animal"]:
-            tables.append(value)
-
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn and "Pretrain" not in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
     for file in files:
         starmie_columnClustering(file, hp)
+        break

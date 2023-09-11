@@ -69,6 +69,6 @@ if __name__ == '__main__':
         trainset.encodings(output_path,setting=hp.NoContext)
     else:
         #trainset[100]
-        #train(trainset, hp)
+        train(trainset, hp)
         table_features(hp)
 #--pretrain --subject_column

@@ -36,8 +36,8 @@ def JaccardMatrix(col_clusters: dict, table_path):
     for index, cluster in col_clusters.items():
         clusters_tables[index] = {}
         for columns in cluster:
-            table_name = columns.split("html.")[0] + "html"
-            column_name = columns.split("html.")[1]
+            table_name = columns.split("html.")[0] + "html" if "html" in columns else columns.split(".")[0]
+            column_name = columns.split("html.")[1] if "html" in columns else columns.split(".")[1]
             if table_name not in clusters_tables[index].keys():
                 clusters_tables[index][table_name] = [column_name]
             else:
