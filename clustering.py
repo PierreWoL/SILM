@@ -203,8 +203,8 @@ Find BIRCH clustering algorithms
 def OPTICS_param_search(input_data):
     score = -1
     best_optics = OPTICS()
-    for min_samples in range(1, 10):
-        for xi in np.linspace(0.01, 0.1, 10):
+    for min_samples in range(2, 10):
+        for xi in np.linspace(0.1, 1, 10):
             optics = OPTICS(min_samples=min_samples, xi=xi)
             optics.fit(input_data)
             labels = optics.labels_
@@ -223,12 +223,12 @@ def BIRCH_param_search(input_data, cluster_num):
     score = -1
     best_birch = Birch()
     if cluster_num < 5:
-        at_least = 0
+        at_least = 1
     else:
         at_least = cluster_num - 3
     for i in range(at_least, cluster_num + 3):
-        for threshold in np.arange(start=0.1, stop=0.6, step=0.1):
-            for branchingfactor in np.arange(start=5, stop=10, step=3):
+        for threshold in np.arange(start=0.1, stop=0.8, step=0.1):
+            for branchingfactor in np.arange(start=2, stop=10, step=2):
                 birch = Birch(n_clusters=i, threshold=threshold, branching_factor=branchingfactor)
                 birch.fit(input_data)
                 labels = birch.predict(input_data)
@@ -257,12 +257,11 @@ def KMeans_param_search(input_data, cluster_num):
 
 
 def AgglomerativeClustering_param_search(input_data, cluster_num):
-    input_data =  np.array(input_data, dtype=np.float32)
-    print(type(input_data))
+    input_data = np.array(input_data, dtype=np.float32)
     score = -1
     best_model = AgglomerativeClustering()
     if cluster_num < 10:
-        at_least = 0
+        at_least = 2
     else:
         at_least = cluster_num - 10
     for n_clusters in range(at_least, cluster_num + 10):
@@ -399,9 +398,7 @@ def data_classes(data_path, groundTruth_file, superclass=True, Nochange=False):
         dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 2]))
     else:
         dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
-    dict_gt = {key: ast.literal_eval(value) for key, value in dict_gt.items() if value!=" " and "[" in value}
-
-
+    dict_gt = {key: ast.literal_eval(value) for key, value in dict_gt.items() if value != " " and "[" in value}
 
     test_table2 = {}.fromkeys(test_table).keys()
 
@@ -497,7 +494,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
                     false_ones.append(column)
 
             columns_ref.append([column_list, cluster_label, false_cols])
-        #print(1 - len(false_cols) / len(column_list),len(false_cols), len(column_list))
+        # print(1 - len(false_cols) / len(column_list),len(false_cols), len(column_list))
 
     if type(gt_column_label[0]) is not list:
         metric_dict = metric_Spee(gt_column_label, column_label_index)
@@ -506,7 +503,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
     # cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["purity"] = 1 - len(false_ones) / len(column_label_index)
 
-    #print(metric_dict)
+    # print(metric_dict)
     if folder is not None and filename is not None:
         # df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
         if columns:
@@ -526,7 +523,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     for index, tables_list in clusterDict.items():
         labels = []
         for table in tables_list:
-            if table != 'T2DV2_75' and table in gtclusters.keys():
+            if table in gtclusters.keys():
                 tables.append(table)
                 label = gtclusters[table]
                 if type(label) is list:
@@ -543,7 +540,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
         clusters_label[index] = cluster_label
         for table in tables_list:
-            if table != 'T2DV2_75' and table in gtclusters.keys():
+            if table in gtclusters.keys():
                 if type(cluster_label) is list:
                     table_label_index.append(cluster_label)
                     if len(list(set(gtclusters[table]) & set(cluster_label))) == 0:

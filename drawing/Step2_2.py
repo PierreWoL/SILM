@@ -1,4 +1,5 @@
-from Step2_1 import box_plot, box_colorsM, naming
+from Step2_1 import box_plot,algo
+from Step1 import naming, colors
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,26 +7,30 @@ import pandas as pd
 
 
 def TreeConsistency():
-    overall_tcs = {}
-    data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact")
-    folders = [fn for fn in os.listdir(data_path) if "." not in fn and "_" in fn]
-    for index, fold in enumerate(folders):
-        name_cols = naming(fold)
-        table = pd.read_csv(os.path.join(data_path, fold, "TreeConsistencyScore.csv"), index_col=0)
-        table = table.sort_index()
-        if index == 0:
-            overall_tcs["label"] = table.iloc[:, 0]
-        print(table.iloc[:, 1])
-        overall_tcs[name_cols] = table.iloc[:, 1]
+    box_colorsM = colors[:5] + colors[10:]
+    for algorithm in algo:
+        overall_tcs = {}
+        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/WDC")
+        folders = [fn for fn in os.listdir(data_path) if "." not in fn and "_" in fn and 'sub']
+        for index, fold in enumerate(folders):
+            name_cols = naming(fold)
+            print(name_cols, fold)
+            table = pd.read_csv(os.path.join(data_path, fold, "TreeConsistencyScore.csv"), index_col=0)
+            table = table[table['ClusteringAlgorithm'].str.contains(algorithm)]
+            table = table.sort_index()
+            if index == 0:
+                overall_tcs["label"] = table.iloc[:, 0]
 
-    df2 = pd.DataFrame(overall_tcs)
-    new_df = df2.set_index('label')
-    df2.to_csv(os.path.join(data_path, "overall_tcs.csv"))
+            overall_tcs[name_cols] = table.iloc[:, 1]
 
-    y_name = "Tree Consistency Score"
-    title = "Tree Consistency Score of Embedding Methods"
-    fn = os.path.join(data_path, "overall_tcs.png")
-    box_plot(df2, box_colorsM[0:6], y_name, title, fn)
+        df2 = pd.DataFrame(overall_tcs)
+        new_df = df2.set_index('label')
+        df2.to_csv(os.path.join(data_path, algorithm+"_overall_tcs.csv"))
+
+        y_name = "Tree Consistency Score"
+        title = "Tree Consistency Score of Embedding Methods of %s Clustering Algorithm" %algorithm
+        fn = os.path.join(data_path, algorithm+"_overall_tcs.png")
+        box_plot(df2, box_colorsM, y_name, title, fn)
 
 
 TreeConsistency()
@@ -77,7 +82,7 @@ def metric_index():
             for xi in range(1, len(data.columns)):
                 r2 = [x + (xi - 1) * barWidth for x in np.arange(len(data.iloc[:, 0]))]
                 print(data.iloc[:, xi])
-                plt.bar(r2, data.iloc[:, xi], color=box_colorsM[xi - 1], width=barWidth, edgecolor='white',
+                plt.bar(r2, data.iloc[:, xi], color=colors[xi - 1], width=barWidth, edgecolor='white',
                         label=data.columns[xi])
             plt.xticks([r + barWidth for r in range(len(data.iloc[:, 0]))], LAYERS)
             plt.legend(bbox_to_anchor=(1.01, 0), loc=3, borderaxespad=0)
@@ -90,12 +95,12 @@ def metric_index():
             fn = os.path.join(data_path, f"{i}_LayerPurity.png")
             plt.savefig(fn)
             fn2 = os.path.join(data_path, f"{i}_LayerPurity_Box.png")
-            box_plot(data.iloc[:, 1:], box_colorsM, "Purity",
+            box_plot(data.iloc[:, 1:], colors, "Purity",
                      f"Layer Purity for CLUSTER {i} using Different Embedding Methods ", fn2)
             plt.show()
 
 
-metric_index()
+
 
 
 def box():

@@ -15,8 +15,8 @@ def silm_clustering(hp: Namespace):
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    if hp.method == "starmie":
-        files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn] # pkl
+
+    files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn and "subCol" in fn]
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -33,7 +33,7 @@ def silm_clustering(hp: Namespace):
         store_path += "All/"
     mkdir(store_path)
 
-    for file in files:
+    for file in files[1:]:
         print(file, hp.subjectCol)
         dict_file = {}
         F = open(datafile_path + file, 'rb')
@@ -65,12 +65,12 @@ def silm_clustering(hp: Namespace):
             print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
-            clustering_method = ["Agglomerative"] #, "BIRCH"
+            clustering_method = ["Agglomerative","KMeans","DBSCAN", "BIRCH","GMM","OPTICS"] #, "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
+                for i in range(0, 1):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
@@ -86,8 +86,9 @@ def silm_clustering(hp: Namespace):
         except ValueError as e:
             print(e)
             continue
-    with open(store_path + 'cluster_dict.pickle', 'wb') as handle:
-        pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        break
+    #with open(store_path + 'cluster_dict.pickle', 'wb') as handle:
+       # pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def column_gts(dataset):
@@ -174,8 +175,9 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
     mkdir(store_path)
     clustering_method = ["Agglomerative","BIRCH"] #
 
-    if len(Zs[clu])<25000: #816 1328
-        # print(clu, Ground_t[clu])
+    if len(Zs[clu])<4000: #816 1328
+        #print(clu, Ground_t[clu])
+        print(Zs[clu])
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
         try:
@@ -188,7 +190,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             mkdir(col_example_path)
             for method in clustering_method:
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
+                for i in range(0, 1):
                     # TODO: add the naming part and ground truth of attribute name part
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
                                                                         gt_cluster_dict[clu], method,
@@ -217,8 +219,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn and 'subjectheader' in fn and 'Pretrain' not in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
     for file in files:
         starmie_columnClustering(file, hp)
-        break

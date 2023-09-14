@@ -110,7 +110,7 @@ dataset = "TabFact" #TabFact
 Table_content = "Subject_Col" #Subject_Col All
 subCol_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                            os.path.join("result/starmie", dataset, Table_content))
-print(subCol_path)
+# print(subCol_path)
 data_summarize(subCol_path)
 colors = [(0.9677975592919913, 0.44127456009157356, 0.5358103155058701),
           (0.9688417625390765, 0.46710871459052145, 0.1965441952393453),
@@ -133,6 +133,9 @@ colors = [(0.9677975592919913, 0.44127456009157356, 0.5358103155058701),
 SUMMARIZE = os.path.join(subCol_path, "summarize.xlsx")
 Fine_tunedMethods = Methods[:9] if Table_content == "Subject_Col" else  Methods[:5]
 
+"""
+
+
 for i in [0,1]:
 
     if  Table_content != "Subject_Col":
@@ -150,7 +153,7 @@ for i in [0,1]:
                    "Pretrained Methods",subCol_path)
         metric_ALL(SUMMARIZE, i, Fine_tunedMethods, dataset + Table_content + "_FT", colors[:9], "Fine-tuned Methods",subCol_path)
 
-
+"""
 
 
 
