@@ -79,25 +79,16 @@ def query_wikidata_parallel(wiki_urls):
     return dataframes
 
 
-ground_label_name1 = "01SourceTables.csv"
-data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
-ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
-result_dict = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 2]))
-names = ground_truth_csv["fileName"].unique()
-labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
-no_labels = [i for i in names if i not in labels]
-# ground_truth_csv = ground_truth_csv[ground_truth_csv["fileName"].isin(no_labels)]
-ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
 
 
-def parallel_crawling():
+def parallel_crawling(gt_csv:dict):
     for i in range(0, 11):  # 160
 
         end = (i + 1) * 400 - 1
-        if end >= len(ground_truth_csv):
-            end = len(ground_truth_csv)
+        if end >= len(gt_csv):
+            end = len(gt_csv)
         start = i * 400
-        slice = ground_truth_csv[start:end]
+        slice = gt_csv[start:end]
 
         result_diction = dict(zip(slice.iloc[:, 0], slice.iloc[:, 2]))
 
@@ -125,7 +116,21 @@ abstract = [ 'PhysicalActivity','object', 'result', 'temporal entity', 'inconsis
             'interaction', 'information resource', 'list', 'plan', 'scale', 'memory', 'social structure',
             'source text', 'open content', 'written work', 'strategy', 'group of humans', 'system', 'deformation',
             'representation', 'multicellular organismal process', 'operator', 'social system']
+
 top = ['Place', 'Action', 'Intangible', 'Organization', 'CreativeWork', 'MedicalEntity', 'BioChemEntity', 'Event', 'Product', 'Person', 'Taxon']
+
+
+ground_label_name1 = "01SourceTables.csv"
+data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
+ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
+result_dict = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 2]))
+names = ground_truth_csv["fileName"].unique()
+labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
+no_labels = [i for i in names if i not in labels]
+# ground_truth_csv = ground_truth_csv[ground_truth_csv["fileName"].isin(no_labels)]
+ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
+
+
 similar_words = {}
 with open("filter_sim_all.pkl", "rb") as file:
     all_sims = pickle.load(file)
@@ -141,7 +146,7 @@ for key, value in all_sims.items():
 for word, similar_word_list in similar_words.items():
     if len(similar_word_list) == 1:
         similar_words[word] = similar_word_list[0]
-
+print(similar_words)
 #unique_items = list(set(similar_words.values()))
 
 
@@ -176,61 +181,6 @@ for index, row in ground_truth_csv.iterrows():
                                         G.add_edge(labels_table[i + 1], child_type)
                                         continue
 
-
-"""for index, row in ground_truth_csv.iterrows():
-    if row["fileName"] in labels:
-        label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
-        df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
-        for _, row2 in df.iterrows():
-            labels_table = row2.dropna().tolist()
-            for i in range(len(labels_table) - 1):
-                if labels_table[i + 1] != labels_table[i]:
-                    if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
-                        child_type = similar_words[labels_table[i]] \
-                            if labels_table[i] in similar_words.keys() else labels_table[i]
-                        if child_type in top:
-                            break
-                        else:
-                            if labels_table[i + 1] in G.nodes():
-                                if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
-                                    if labels_table[i + 1] not in similar_words.keys():
-                                        if labels_table[i + 1] != child_type \
-                                                and "process" not in labels_table[i + 1].lower() \
-                                                and "process" not in child_type.lower():
-                                            G.add_edge(labels_table[i + 1], child_type)
-
-                                            continue
-                                    else:
-                                        if similar_words[labels_table[i + 1]] != child_type and "process" not in \
-                                                labels_table[i + 1].lower() \
-                                                and "process" not in child_type.lower():
-                                            G.add_edge(similar_words[labels_table[i + 1]], child_type)
-                                            break
-                            else:
-                                if labels_table[i + 1] not in similar_words.keys():
-                                    if labels_table[i + 1] != child_type and "process" not in labels_table[
-                                        i + 1].lower() \
-                                            and "process" not in child_type.lower():
-                                        G.add_edge(labels_table[i + 1], child_type)
-                                        continue
-                                else:
-                                    if similar_words[labels_table[i + 1]] != child_type and "process" not in \
-                                            labels_table[i + 1].lower() \
-                                            and "process" not in child_type.lower():
-                                        G.add_edge(similar_words[labels_table[i + 1]], child_type)
-                                        break
-"""
-
-"""
-    else:
-        if row["class"] != " ":
-            superclass = row["class"]
-            classX = row["superclass"]
-            all_nodes = {superclass, classX}
-            all_nodes = all_nodes - set(G.nodes())
-            G.add_nodes_from(all_nodes)
-            G.add_edge(superclass,classX)
-"""
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth2.pkl"), "wb") as file:

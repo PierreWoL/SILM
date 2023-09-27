@@ -7,40 +7,77 @@ import pickle
 import matplotlib
 import pandas as pd
 from matplotlib import pyplot as plt
-from Step1 import  naming,Methods,colors
 
+
+import seaborn as sns
+def get_n_colors(n):
+    return sns.color_palette("husl", n)
 
 
 target_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/result/Valerie/Column/WDC/_gt_cluster.pickle"
 F_cluster = open(target_path, 'rb')
 KEYS = pickle.load(F_cluster)
 print(KEYS)
-RI = {'Agglomerative': {},'BIRCH': {}}  # 'BIRCH': {},
-ARI = {'Agglomerative': {},'BIRCH': {}}
-Purity = {'Agglomerative': {},'BIRCH': {}}
+RI = {'Agglomerative': {} }  # 'BIRCH': {},
+
+Purity = {'Agglomerative': {} }
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/WDC/All")
-EMBEDMETHODS = ['SBERT_none', 'RoBERTa_none', 'SBERT_subjectheader', 'RoBERTa_subjectheader', 'SBERT_header',
-                'RoBERTa_header']
+
 """EMBEDMETHODS = ['SBERT_Instance', 'RoBERTa_Instance',
                 'SBERT_SubAttr', 'RoBERTa_SubAttr',
                 'SBERT_AttrNameI', 'RoBERTa_AttrNameI']"""
+def reName(fileName:str):
+    re_name = ""
+    if fileName.startswith("cl_"):
+        fileName = fileName[3:]
+        fileName_split = fileName.split("_lm_")
+        Aug_op = fileName_split[0]
+        txt = fileName_split[1]
+        split_txt =  txt.split("_")
+        is_SubCol = False
+        if split_txt[-1] == "subCol":
+            LM, metadata = split_txt[0], split_txt[-2]
+            is_SubCol = True
+        else:
+            LM, metadata = split_txt[0], split_txt[-1]
+
+        meta = ""
+        if metadata == "none":
+            meta = "I"
+        elif metadata == "header":
+            meta = "HI"
+        elif metadata == "subjectheader":
+            meta = "SHI"
+        re_name = Aug_op + "_" + LM + "_" + meta
+        if is_SubCol is True:
+            re_name = Aug_op + "_" + LM + "_" + meta+"_"+"subAttr"
+    else:
+        re_name+="Pre_"
+        fileName = fileName.split("Pretrain_")[1].split("_")
+        meta = ""
+        if fileName[-2] =="none":
+            meta = "I"
+        elif   fileName[-2] == "header":
+            meta = "HI"
+        elif fileName[-2] =="subjectheader":
+            meta = "SHI"
+        re_name +=fileName[0]+"_"+meta
+    return re_name
+test = "cl_sample_cells_lm_sbert_head_column_0_subjectheader_subCol_metrics.csv".split("_metrics.csv")[0]
 
 
 def dataframes(folds,clustering_algo):
     for folder in folds:
-
-        method_name = naming(folder)
-        print(method_name,folder )
+        method_name = reName(folder)
+        print(method_name,folder)
         RI[clustering_algo][method_name] = {}
-        ARI[clustering_algo][method_name] = {}
+        #ARI[clustering_algo][method_name] = {}
         Purity[clustering_algo][method_name] = {}
-
         tar_folder = os.path.join(data_path, folder, "column") \
             if "column" in os.listdir(os.path.join(data_path, folder)) else os.path.join(data_path, folder)
         stat_files = [fn for fn in os.listdir(tar_folder) if fn.endswith(".csv")]
-
         for stat_file in stat_files:
             statist_col = pd.read_csv(os.path.join(tar_folder, stat_file), index_col=0)
             if tar_folder.endswith("column"):
@@ -48,16 +85,14 @@ def dataframes(folds,clustering_algo):
             else:
                 name_stat = stat_file[0:-4].split("_")[0]
             RI[clustering_algo][method_name][name_stat] = statist_col.loc['random Index', clustering_algo]
-
-            # ARI['BIRCH'][method_name][name_stat] = statist_col.loc['ARI', 'BIRCH']
-            ARI[clustering_algo][method_name][name_stat] = statist_col.loc['ARI', clustering_algo]
+            #ARI[clustering_algo][method_name][name_stat] = statist_col.loc['ARI', clustering_algo]
             Purity[clustering_algo][method_name][name_stat] = statist_col.loc['purity', clustering_algo]
 
 
 
 
 metric = ['Rand Index', 'ARI', 'Purity']
-algo = ['Agglomerative', 'BIRCH']  #
+algo = ['Agglomerative']  #
 
 
 def random_color():
@@ -67,7 +102,7 @@ def random_color():
 # rgb_colors = [plt.cm.colors.to_rgba(color) for color in box_colors]
 
 def box_plot(table, box_colors, y_label, name, fig_name, save=True):
-    plt.figure(figsize=(12,8))
+    plt.figure(figsize=(35,20))
     bp = table.boxplot(patch_artist=True, notch=True, vert=True, widths=0.5)
     # bp = plt.boxplot(table.values, labels=table.columns, patch_artist=True,notch=True,showfliers=False)
     boxes = bp.findobj(matplotlib.patches.PathPatch)
@@ -117,30 +152,24 @@ def naming2(metric_index, algo_index, tar_path):
     y_name = metric[metric_index]
     return y_name, name, fn
 def drawing():
-    box_colorsM = colors[:5]+colors[10:]
+
     folds = [fn for fn in os.listdir(data_path) if "." not in fn]
+    folds.sort()
+    colors = get_n_colors(len(folds))
     for algorithm in algo:
         dataframes(folds,algorithm)
-
         df_RI_A = pd.DataFrame(RI[algorithm])
         print(algorithm)
         filep = os.path.join(data_path, "RI.xlsx")
         to_xlsx(df_RI_A, file_path=filep,name = algorithm)
         y_name, name, fn = naming2(0, algo.index(algorithm), data_path)
-        box_plot(df_RI_A, box_colorsM, y_name, name, fn)
+        box_plot(df_RI_A, colors, y_name, name, fn)
 
-
-        y_name, name, fn = naming2(1,  algo.index(algorithm), data_path)
-        df_ARI_A = pd.DataFrame(ARI[algorithm])
-        filep = os.path.join(data_path, "ARI.xlsx")
-        to_xlsx(df_ARI_A, file_path=filep,name = algorithm)
-        box_plot(df_ARI_A, box_colorsM, y_name, name, fn)
 
 
         y_name, name, fn = naming2(2,  algo.index(algorithm), data_path)
         df_P_A = pd.DataFrame(Purity[algorithm])
         filep = os.path.join(data_path, "Purity.xlsx")
         to_xlsx(df_P_A, file_path=filep,name = algorithm)
-        box_plot(df_P_A, box_colorsM, y_name, name, fn)
-
+        box_plot(df_P_A, colors, y_name, name, fn)
 

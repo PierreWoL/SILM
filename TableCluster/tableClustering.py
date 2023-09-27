@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
@@ -10,20 +9,20 @@ from Utils import mkdir
 
 from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
 
-import sys
-#sys.setrecursionlimit(3000)  # or another higher value
 
 def silm_clustering(hp: Namespace):
     dicts = {}
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    if hp.method == "starmie":
-        files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn] # pkl
+
+    files =[fn for fn in os.listdir(datafile_path) if hp.embed in fn   and "subCol" in fn]# if fn.endswith("pkl")   and "subCol" in fn  and "cell" in fn and hp.embed in fn
+    print(files)
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
         SE = pickle.load(F_cluster)
+
     else:
         SE = {}
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
@@ -52,6 +51,7 @@ def silm_clustering(hp: Namespace):
             table = pd.read_csv(data_path + vectors[0], encoding="latin1")
             if hp.subjectCol:
                 if file.endswith("subCol.pkl"):
+                    print(vectors[1])
                     vec_table = np.mean(vectors[1], axis=0)
                 else:
                     NE_list, headers, types = SE[vectors[0]]
@@ -61,6 +61,7 @@ def silm_clustering(hp: Namespace):
                         vec_table = np.mean(vectors[1], axis=0)
             else:
                 vec_table = np.mean(vectors[1], axis=0)
+                print(vectors[1],len(vectors[1]))
             Z.append(vec_table)
         #
         """has_nan = np.isnan(Z).any()
@@ -75,6 +76,10 @@ def silm_clustering(hp: Namespace):
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
                 for i in range(0, 3):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
+                    if i ==2:
+                        print(cluster_dict)
+
+
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict
@@ -89,8 +94,9 @@ def silm_clustering(hp: Namespace):
         except ValueError as e:
             print(e)
             continue
-    with open(store_path + 'cluster_dict.pickle', 'wb') as handle:
-        pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    #with open(store_path + 'cluster_dict.pickle', 'wb') as handle:
+       # pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def column_gts(dataset):
@@ -171,14 +177,14 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             for i in range(0, len(table.columns)):
                 Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
                 Zs[clu].append(vector[1][i])
+
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
     store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
     mkdir(store_path)
-    clustering_method = ["Agglomerative"] #
+    clustering_method = ["Agglomerative","BIRCH"] #
 
-    if len(Zs[clu])<20000: #816 1328
+    if len(Zs[clu])<4000: #816 1328
         #print(clu, Ground_t[clu])
-        #print(Zs[clu])
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
         try:
@@ -213,18 +219,15 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                 pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
             for meth in clustering_method:
                 print(pickle_name)
-                try:
-                  hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle' ,embedding_file[0:-4], Ground_t, hp)
-                except:
-                  continue
+                hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle' ,embedding_file[0:-4], Ground_t, hp)
         except ValueError as e:
             print(e)
 
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn and 'subjectheader' in fn and 'Pretrain' not in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
-    print(len(files[hp.slice_start:hp.slice_stop]))
-    for file in files[hp.slice_start:hp.slice_stop]:
+    for file in files:
         starmie_columnClustering(file, hp)
+        break

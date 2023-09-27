@@ -102,26 +102,25 @@ def train(trainset, hp):
 
             # save the checkpoints for each component
             ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
-                                     str(hp.augment_op) + "_lm_" + str(
+                                     str(hp.augment_op) + "lm_" + str(
                 hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                 hp.table_order) + '_' + str(
                 hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
             if hp.single_column:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"_lm_"+ str(
+                                         str(hp.augment_op) +"lm_"+ str(
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
                                              hp.run_id) + "_" + str(hp.check_subject_Column)+ "_singleCol.pt")
-            elif hp.subject_column:
+            if hp.subject_column:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"_lm_"+ str(
+                                         str(hp.augment_op) +"lm_"+ str(
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
                                              hp.run_id) + "_" + str(hp.check_subject_Column)+ "_subCol.pt")
-                print(ckpt_path)
-            elif hp.header:
+            if hp.header:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"_lm_"+ str(
+                                         str(hp.augment_op) +"lm_"+ str(
                                              hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
                                              hp.table_order) + '_' + str(
                                              hp.run_id) + "_" + str(hp.check_subject_Column)+ "_header.pt")

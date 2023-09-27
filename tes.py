@@ -83,6 +83,8 @@ with open(os.path.join( "schemaorgTree.pkl"), "wb") as file:
     pickle.dump(G, file)
 
 """
+
+"""
 path = "datasets/TabFact/groundTruth.csv"
 df = pd.read_csv(path).dropna()
 df = df[df['superclass'].str.contains('\[')]
@@ -119,7 +121,7 @@ for tuple_type in similar_item:
 
 top = [i for i in G.nodes()  if G.in_degree(i) == 0]
 print(top)
-
+"""
 """
 wdc_label = pd.read_csv("datasets/WDC/groundTruth.csv")
 
@@ -148,3 +150,105 @@ wdc_label.to_csv("datasets/WDC/groundTruth.csv",index=False)
 with open(os.path.join( "datasets/WDC/schemaorgTree.pkl"), "wb") as file:
     pickle.dump(G, file)"""
 
+from collections import deque
+import ast
+import os
+import pickle
+import os.path
+import pickle
+import sys
+import io
+import requests
+
+from concurrent.futures import ThreadPoolExecutor
+
+
+
+
+target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+def run_hierarchy():
+    ground_label_name1 = "01SourceTables.csv"
+    data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
+    ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
+    result_dict = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 2]))
+    names = ground_truth_csv["fileName"].unique()
+    labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
+    no_labels = [i for i in names if i not in labels]
+    # ground_truth_csv = ground_truth_csv[ground_truth_csv["fileName"].isin(no_labels)]
+    ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
+
+    similar_words = {}
+    with open("filter_sim_all.pkl", "rb") as file:
+        all_sims = pickle.load(file)
+    for key, value in all_sims.items():
+        for tuple in value.keys():
+            word = tuple[0]
+            if tuple[0] in similar_words.keys():
+                if tuple[1] not in similar_words[word]:
+                    similar_words[word].append(tuple[1])
+            else:
+                similar_words[word] = [tuple[1]]
+
+    for word, similar_word_list in similar_words.items():
+        if len(similar_word_list) == 1:
+            similar_words[word] = similar_word_list[0]
+    print(similar_words)
+    # unique_items = list(set(similar_words.values()))
+
+    node_length = 0
+    G = nx.DiGraph()
+    for index, row in ground_truth_csv.iterrows():
+        if row["fileName"] in labels:
+            label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
+            df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
+            for _, row2 in df.iterrows():
+                labels_table = row2.dropna().tolist()
+                for i in range(len(labels_table) - 1):
+                    if labels_table[i + 1] != labels_table[i]:
+                        # if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
+                        child_type = labels_table[i]
+                        if labels_table[i + 1] in G.nodes():
+                            if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
+                                G.add_edge(labels_table[i + 1], child_type)
+                                continue
+                        else:
+                            G.add_edge(labels_table[i + 1], child_type)
+                            continue
+        else:
+            if row["class"] != " ":
+                superclass = row["class"]
+                classX = row["superclass"]
+                all_nodes = {superclass, classX}
+                all_nodes = all_nodes - set(G.nodes())
+                G.add_nodes_from(all_nodes)
+                G.add_edge(superclass, classX)
+
+    with open(os.path.join(target_path, "graphGroundTruth2.pkl"), "wb") as file:
+        pickle.dump(G, file)
+
+file_path = os.path.join(os.path.join(target_path, "graphGroundTruth2.pkl"))
+print(file_path)
+with open(file_path, "rb") as file:
+    G = pickle.load(file)
+    Top_level_nodes = [i for i in G.nodes if G.in_degree(i) == 0]
+print(Top_level_nodes,len(Top_level_nodes))
+
+labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
+ground_label_name = "01SourceTables.csv"
+data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name)
+ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
+for index, row in ground_truth_csv.iterrows():
+    if row["fileName"] in labels:
+        label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
+        df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
+        lowest_types = df.iloc[:, 0].unique()
+        top_level_types = []
+        for type_low in lowest_types:
+            if type_low in G.nodes():
+                parent_top_per = [item for item in nx.ancestors(G, type_low) if G.in_degree(item) == 0]
+                for top_per in parent_top_per:
+                    if top_per not in top_level_types:
+                        top_level_types.append(top_per)
+        ground_truth_csv.iloc[index, 4] = lowest_types
+        ground_truth_csv.iloc[index, 5] = top_level_types
+ground_truth_csv.to_csv(os.path.join(target_path, "new_test_origin.csv"))

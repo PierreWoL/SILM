@@ -30,23 +30,23 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
     Return:
         list of features for the dataframe
     '''
-    print(SubCol)
-    model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s.pt" % (
-            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
     if singleCol:
-        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s_singleCol.pt" % (
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%ssingleCol.pt" % (
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
-    elif SubCol:
-        model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s_subCol.pt" % (
+    if SubCol:
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%ssubCol.pt" % (
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
-    elif header:
-        model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s_header.pt" % (
+    if header:
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s_header.pt" % (
+            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
+    else:
+        model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s.pt" % (
             method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
     print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
     model, trainset = load_checkpoint(ckpt)
-  
+    print(trainset.tables)
     return inference_on_tables(dfs, model, trainset, batch_size=1024)
 
 
@@ -88,9 +88,6 @@ def table_features(hp: Namespace):
         # get features for this file / dataset
         cl_features_file = np.array(cl_features[i])
         dataEmbeds.append((file, cl_features_file))
-        if i<3:
-          print(len(tables[file].columns), len(cl_features_file))
-          
         # print(len(tables[file].columns),len(cl_features_file), cl_features_file)
 
     output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,

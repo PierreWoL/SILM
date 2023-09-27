@@ -170,7 +170,7 @@ class PretrainTableDataset(data.Dataset):
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
-         
+            print(table.transpose(),len(table.columns), len(col_texts))
             for column, col_text in col_texts.items():
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
@@ -332,7 +332,7 @@ class PretrainTableDataset(data.Dataset):
                                                                      self.table_order, self.check_subject_Column,
                                                                      setting)
         if self.subject_column:
-            output_file = "Pretrain_%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
+            output_file = "Pretrain__%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
                                                                    self.table_order, self.check_subject_Column, setting)
 
         if self.header:
