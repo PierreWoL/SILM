@@ -45,7 +45,7 @@ def labels_most_fre(datas: dict):
 
 
 def ground_truth_labels(filename, top=False, inter=False,dataset="TabFact"):
-    ground_label_name1 ="GroundTruth.csv" #
+    ground_label_name1 ="groundTruth.csv" #
     data_path = os.path.join(os.getcwd(), "datasets/"+dataset, ground_label_name1)
     ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
     target_path = os.path.join(os.getcwd(), "datasets/"+dataset)

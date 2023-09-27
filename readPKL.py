@@ -234,17 +234,36 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
                 continue
         except:
             continue
-    print("best silhouette, ", silhouette, len(best_clustersR.keys()))
-    # return best_threshold, best_clusters
-    clusters.append((best_threshold, best_clustersR))
-    numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
-    # else:
-    # if low < highest_y:
-    #   silhouette, best_clusters = sliced_clusters(linkage_m, low, data)
-    #  print("best silhouette, ", silhouette, len(best_clusters.keys()))
-    # return best_threshold, best_clusters
-    # else:
-    if estimate_num_cluster != 0:
+    if best_clustersR is None:
+      numbers_with_boundaries = np.linspace(best_threshold, highest_y, 20)
+      print(numbers_with_boundaries)
+    # if low == -1:
+    for threshold in numbers_with_boundaries[1:-1]:
+        try:
+            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
+            # print(silhouette_avg, len(custom_clusters))
+            if silhouette_avg > silhouette:
+                best_clustersR = custom_clusters
+                silhouette = silhouette_avg
+                best_threshold = threshold
+            else:
+                continue
+        except:
+            continue
+    if best_clustersR is None:
+      return None
+    else:
+      print("best silhouette, ", silhouette, len(best_clustersR.keys()))
+      # return best_threshold, best_clusters
+      clusters.append((best_threshold, best_clustersR))
+      numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
+      # else:
+      # if low < highest_y:
+      #   silhouette, best_clusters = sliced_clusters(linkage_m, low, data)
+      #  print("best silhouette, ", silhouette, len(best_clusters.keys()))
+      # return best_threshold, best_clusters
+      # else:
+      if estimate_num_cluster != 0:
         for threshold in numbers_with_boundaries[1:-1]:
             try:
                 silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
@@ -257,8 +276,9 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
                         clusters.append((threshold, custom_clusters))
             except:
                 continue
-    print(f'the total layer number is {len(clusters)}')
-    return clusters
+      print(f'the total layer number is {len(clusters)}')
+      return clusters     
+      
 
 
 def slice_tree(tree: nx.DiGraph(), custom_clusters, node_labels, is_Label=True):
@@ -513,20 +533,21 @@ def test_tree_consistency_metric():
     dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
     tree_test = dendrogram_To_DirectedGraph(embedding_file, linkage_matrix, node_labels, target_path=folder)
     threCluster_dict = best_clusters(dendrogra, linkage_matrix, embedding_file, estimate_num_cluster=3)
-    simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
+    if threCluster_dict is not None:
+        simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
                                                                                   ground_truth, node_labels,
                                                                                   data=node_labels)
-    print(layer_info_dict[0])
-    for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
-        for clusterP, closest_parentP in Parent_nodes_h.items():
-            if closest_parentP in mutual_parent_nodes:
-                path = sorted(list(mutual_parent_nodes))
-                path = path[0:path.index(closest_parentP) + 1]
-                print(path)
-                for i in path:
-                    label = simple_tree.nodes[i].get('label', 0)
-                    print(i, label)
-    print_path_label(simple_tree, layer_info_dict, Parent_nodes_h)
+        print(layer_info_dict[0])
+        for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
+            for clusterP, closest_parentP in Parent_nodes_h.items():
+                if closest_parentP in mutual_parent_nodes:
+                    path = sorted(list(mutual_parent_nodes))
+                    path = path[0:path.index(closest_parentP) + 1]
+                    print(path)
+                    for i in path:
+                        label = simple_tree.nodes[i].get('label', 0)
+                        print(i, label)
+        print_path_label(simple_tree, layer_info_dict, Parent_nodes_h)
 
 
 def test():

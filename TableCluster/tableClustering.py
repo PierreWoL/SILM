@@ -9,6 +9,8 @@ from Utils import mkdir
 
 from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
 
+import sys
+#sys.setrecursionlimit(3000)  # or another higher value
 
 def silm_clustering(hp: Namespace):
     dicts = {}
@@ -145,7 +147,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
     with open(os.path.join(target_path, '_gt_cluster.pickle'),
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(colCluster, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
                                    gt_clusters, gt_cluster_dict) for index, clu in
                    enumerate(list(gt_cluster_dict.keys()))]
@@ -168,14 +170,14 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             for i in range(0, len(table.columns)):
                 Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
                 Zs[clu].append(vector[1][i])
-
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
     store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
     mkdir(store_path)
-    clustering_method = ["Agglomerative","BIRCH"] #
+    clustering_method = ["Agglomerative"] #
 
-    if len(Zs[clu])<25000: #816 1328
-        # print(clu, Ground_t[clu])
+    if len(Zs[clu])<20000: #816 1328
+        #print(clu, Ground_t[clu])
+        #print(Zs[clu])
         print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
           f" \n ground truth class {clu} {Zs[clu].dtype}")
         try:
@@ -188,7 +190,7 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
             mkdir(col_example_path)
             for method in clustering_method:
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
+                for i in range(0, 1):
                     # TODO: add the naming part and ground truth of attribute name part
                     cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
                                                                         gt_cluster_dict[clu], method,
@@ -210,7 +212,10 @@ def colCluster(index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_f
                 pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
             for meth in clustering_method:
                 print(pickle_name)
-                hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle' ,embedding_file[0:-4], Ground_t, hp)
+                try:
+                  hierarchicalColCluster(meth, str(index) + '_colcluster_dict.pickle' ,embedding_file[0:-4], Ground_t, hp)
+                except:
+                  continue
         except ValueError as e:
             print(e)
 
@@ -219,6 +224,6 @@ def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
-    for file in files:
+    print(len(files[hp.slice_start:hp.slice_stop]))
+    for file in files[hp.slice_start:hp.slice_stop]:
         starmie_columnClustering(file, hp)
-        break
