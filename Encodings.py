@@ -16,7 +16,7 @@ import TableAnnotation as TA
 
 
 def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column,
-                   singleCol=False, SubCol=False, header=False):
+                   singleCol=False, SubCol=False, header=False, isCombing = False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -47,7 +47,7 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
     # load_checkpoint from sdd/pretain
     model, trainset = load_checkpoint(ckpt)
   
-    return inference_on_tables(dfs, model, trainset, batch_size=1024)
+    return inference_on_tables(dfs, model, trainset, batch_size=1024,subject_column=SubCol,isCombine=isCombing)
 
 
 def get_df(dataFolder):
@@ -77,9 +77,13 @@ def table_features(hp: Namespace):
     table_number = len(tables)
     dfs_count = 0
     # Extract model vectors
+    if hp.dataset =="TabFact":
+        isCombine = True
+    else:
+        isCombine = False
     cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column,
-                                 SubCol=hp.subject_column, header=hp.header)
+                                 SubCol=hp.subject_column, header=hp.header,isCombing=isCombine)
     output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
     mkdir(output_path)
     print(output_path)

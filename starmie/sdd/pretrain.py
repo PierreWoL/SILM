@@ -16,7 +16,7 @@ from tqdm import tqdm
 from torch.utils import data
 from transformers import AdamW, get_linear_schedule_with_warmup
 from typing import List
-
+from Utils import subjectCol
 
 def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     """Perform a single training step
@@ -158,7 +158,9 @@ def inference_on_tables(tables: List[pd.DataFrame],
                         model: BarlowTwinsSimCLR,
                         unlabeled: PretrainTableDataset,
                         batch_size=128,
-                        total=None):
+                        total=None,
+                        subject_column = False,
+                        isCombine = False):
     """Extract column vectors from a table.
 
     Args:
@@ -175,6 +177,8 @@ def inference_on_tables(tables: List[pd.DataFrame],
     results = []
     for tid, table in tqdm(enumerate(tables), total=total):
         # print(tid, table)
+        if subject_column is True:
+            table = subjectCol(table,  isCombine)
         x, _ = unlabeled._tokenize(table)
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:
