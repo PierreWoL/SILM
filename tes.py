@@ -1,3 +1,4 @@
+import ast
 import os
 import pickle
 
@@ -42,7 +43,7 @@ for index, row in inst.iterrows():
     inst.iloc[index,2] = str(new_dict[row["Lowest level type"]])
 inst.to_csv(os.path.join(os.getcwd(), "datasets/TabFact/New.csv"),index=False)
 """
-import networkx as nx
+"""import networkx as nx
 import json
 excpetion = []
 # 读取JSON文件
@@ -81,8 +82,19 @@ print(top_level_typ,len(G.nodes()))
 with open(os.path.join( "schemaorgTree.pkl"), "wb") as file:
     pickle.dump(G, file)
 
+"""
+path = "datasets/TabFact/groundTruth.csv"
+df = pd.read_csv(path).dropna()
+df = df[df['superclass'].str.contains('\[')]
+df['superclass'] = df['superclass'].apply(ast.literal_eval)
 
+# 展开superclass列
+df = df.explode('superclass')
 
+# 对展开后的数据进行分组并统计
+summary = pd.DataFrame(df.groupby('superclass').size().reset_index(name='count'))
+summary.to_csv("datasets/TabFact/agre1.csv")
+print(summary)
 
 similar_item = [('AcademicJournal', 'Manuscript'),
                 ('AdministrativeRegion', 'DefinedRegion'),

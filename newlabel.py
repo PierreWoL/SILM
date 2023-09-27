@@ -157,6 +157,35 @@ for index, row in ground_truth_csv.iterrows():
             for i in range(len(labels_table) - 1):
                 if labels_table[i + 1] != labels_table[i]:
                     if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
+                        child_type = labels_table[i]
+
+
+                        if labels_table[i + 1] in G.nodes():
+                                if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
+                                        if labels_table[i + 1] != child_type \
+                                                and "process" not in labels_table[i + 1].lower() \
+                                                and "process" not in child_type.lower():
+                                            G.add_edge(labels_table[i + 1], child_type)
+                                            continue
+
+                        else:
+
+                                    if labels_table[i + 1] != child_type and "process" not in labels_table[
+                                        i + 1].lower() \
+                                            and "process" not in child_type.lower():
+                                        G.add_edge(labels_table[i + 1], child_type)
+                                        continue
+
+
+"""for index, row in ground_truth_csv.iterrows():
+    if row["fileName"] in labels:
+        label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
+        df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
+        for _, row2 in df.iterrows():
+            labels_table = row2.dropna().tolist()
+            for i in range(len(labels_table) - 1):
+                if labels_table[i + 1] != labels_table[i]:
+                    if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
                         child_type = similar_words[labels_table[i]] \
                             if labels_table[i] in similar_words.keys() else labels_table[i]
                         if child_type in top:
@@ -190,9 +219,9 @@ for index, row in ground_truth_csv.iterrows():
                                             and "process" not in child_type.lower():
                                         G.add_edge(similar_words[labels_table[i + 1]], child_type)
                                         break
+"""
 
-
-    """
+"""
     else:
         if row["class"] != " ":
             superclass = row["class"]
@@ -201,10 +230,10 @@ for index, row in ground_truth_csv.iterrows():
             all_nodes = all_nodes - set(G.nodes())
             G.add_nodes_from(all_nodes)
             G.add_edge(superclass,classX)
-    """
+"""
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
+with open(os.path.join(target_path, "graphGroundTruth2.pkl"), "wb") as file:
     pickle.dump(G, file)
 
 # Setting graph attributes for top-to-bottom layout
