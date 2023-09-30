@@ -178,7 +178,9 @@ def inference_on_tables(tables: List[pd.DataFrame],
     for tid, table in tqdm(enumerate(tables), total=total):
         # print(tid, table)
         if subject_column is True:
-            table = subjectCol(table,  isCombine)
+            cols = subjectCol(table,  isCombine)
+            if len(cols) > 0:
+                table = table[cols]
         x, _ = unlabeled._tokenize(table)
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:

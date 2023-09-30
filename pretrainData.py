@@ -170,7 +170,7 @@ class PretrainTableDataset(data.Dataset):
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
-            print(table.transpose(),len(table.columns), len(col_texts))
+           
             for column, col_text in col_texts.items():
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
