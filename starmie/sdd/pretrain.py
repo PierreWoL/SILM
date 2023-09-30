@@ -10,13 +10,14 @@ import os
 
 from .utils import evaluate_column_matching, evaluate_clustering
 from .model import BarlowTwinsSimCLR
-from .dataset import PretrainTableDataset
-
+# from .dataset import PretrainTableDataset
+from pretrainData import PretrainTableDataset
 from tqdm import tqdm
 from torch.utils import data
 from transformers import AdamW, get_linear_schedule_with_warmup
 from typing import List
 from Utils import subjectCol
+
 
 def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     """Perform a single training step
@@ -32,8 +33,130 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     Returns:
         None
     """
+
+    def loss_model_fp16(loss):
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+    def loss_model(loss):
+        loss.backward()
+        optimizer.step()
+
+    num_augs = 2  # default value
+    if "," in hp.augment_op:
+        num_augs = len(hp.augment_op.split(','))
+
     for i, batch in enumerate(train_iter):
-        x_ori, x_aug, cls_indices = batch
+        optimizer.zero_grad()
+
+        if num_augs <= 2:
+            x_ori, x_aug, cls_indices = batch
+            losses = [model(x_ori, x_aug, cls_indices, mode='simclr')]
+        else:
+            x_vals = batch[:-1]  # Separate out cls_indices
+            cls_indices = batch[-1]
+
+            # Compute all unique combinations of x_vals and calculate loss
+            losses = [model(x_vals[j], x_vals[k], cls_indices, mode='simclr') for j in range(len(x_vals)) for k in
+                      range(j + 1, len(x_vals))]
+
+        avg_loss = sum(losses) / len(losses)
+
+        if hp.fp16:
+            with torch.cuda.amp.autocast():
+                loss_model_fp16(avg_loss)
+        else:
+            loss_model(avg_loss)
+
+        scheduler.step()
+
+        if i % 10 == 0:  # monitoring
+            print(f"step: {i}, losses: {tuple(l.item() for l in losses)}")
+
+        for loss in losses:
+            del loss
+"""
+def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
+    def loss_model_fp16(loss):
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+    def loss_model(loss):
+        loss.backward()
+        optimizer.step()
+
+    for i, batch in enumerate(train_iter):
+        pos_pair = 0
+        if "," in hp.augment_op:
+            augs = hp.augment_op.split(',')
+            pos_pair = len(augs)
+        if pos_pair <= 2:
+            x_ori, x_aug, cls_indices = batch
+            optimizer.zero_grad()
+            if hp.fp16:
+                with torch.cuda.amp.autocast():
+                    loss = model(x_ori, x_aug, cls_indices, mode='simclr')
+                    loss_model_fp16(loss)
+            else:
+                loss = model(x_ori, x_aug, cls_indices, mode='simclr')
+                loss_model(loss)
+            scheduler.step()
+            if i % 10 == 0:  # monitoring
+                print(f"step: {i}, loss: {loss.item()}")
+            del loss
+        else:
+            if pos_pair == 3:
+                x_ori, x_aug, x_aug2, cls_indices = batch
+                optimizer.zero_grad()
+
+                if hp.fp16:
+                    with torch.cuda.amp.autocast():
+                        loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
+                        loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
+                        loss3 = model(x_aug, x_aug2, cls_indices, mode='simclr')
+                        avg_loss = (loss1 + loss2 + loss3) / 3
+                        loss_model_fp16(avg_loss)
+                else:
+                    loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
+                    loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
+                    loss3 = model(x_aug, x_aug2, cls_indices, mode='simclr')
+                    avg_loss = (loss1 + loss2 + loss3) / 3
+                    loss_model(avg_loss)
+                scheduler.step()
+                if i % 10 == 0:  # monitoring
+                    print(f"step: {i}, loss: {loss1.item(), loss2.item(), loss3.item()}")
+                del loss1, loss2, loss3
+
+            else:
+                x_ori, x_aug, x_aug2, x_aug3, cls_indices = batch
+                optimizer.zero_grad()
+                if hp.fp16:
+                    with torch.cuda.amp.autocast():
+                        loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
+                        loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
+                        loss3 = model(x_ori, x_aug3, cls_indices, mode='simclr')
+                        loss4 = model(x_aug, x_aug2, cls_indices, mode='simclr')
+                        loss5 = model(x_aug, x_aug3, cls_indices, mode='simclr')
+                        loss6 = model(x_aug2, x_aug3, cls_indices, mode='simclr')
+                        avg_loss = (loss1 + loss2 + loss3 + loss4 + loss5 + loss6) / 6
+                        loss_model_fp16(avg_loss)
+                else:
+                    loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
+                    loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
+                    loss3 = model(x_aug, x_aug2, cls_indices, mode='simclr')
+                    loss4 = model(x_aug, x_aug2, cls_indices, mode='simclr')
+                    loss5 = model(x_aug, x_aug3, cls_indices, mode='simclr')
+                    loss6 = model(x_aug2, x_aug3, cls_indices, mode='simclr')
+                    avg_loss = (loss1 + loss2 + loss3 + loss4 + loss5 + loss6) / 6
+                    loss_model(avg_loss)
+                scheduler.step()
+                if i % 10 == 0:  # monitoring
+                    print(
+                        f"step: {i}, loss: {loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item(), loss6.item()}")
+                del loss1, loss2, loss3, loss4, loss5, loss6
+    # This is the original 
+    x_ori, x_aug, cls_indices = batch
         optimizer.zero_grad()
 
         if hp.fp16:
@@ -50,7 +173,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
         scheduler.step()
         if i % 10 == 0:  # monitoring
             print(f"step: {i}, loss: {loss.item()}")
-        del loss
+        del loss"""
 
 
 def train(trainset, hp):
@@ -107,24 +230,24 @@ def train(trainset, hp):
                 hp.table_order) + '_' + str(
                 hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
             if hp.single_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"_lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "_singleCol.pt")
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                         str(hp.augment_op) + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_singleCol.pt")
             elif hp.subject_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"_lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "_subCol.pt")
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                         str(hp.augment_op) + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_subCol.pt")
                 print(ckpt_path)
             elif hp.header:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"_lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "_header.pt")
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                         str(hp.augment_op) + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_header.pt")
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
             torch.save(ckpt, ckpt_path)
@@ -159,8 +282,8 @@ def inference_on_tables(tables: List[pd.DataFrame],
                         unlabeled: PretrainTableDataset,
                         batch_size=128,
                         total=None,
-                        subject_column = False,
-                        isCombine = False):
+                        subject_column=False,
+                        isCombine=False):
     """Extract column vectors from a table.
 
     Args:
@@ -178,9 +301,7 @@ def inference_on_tables(tables: List[pd.DataFrame],
     for tid, table in tqdm(enumerate(tables), total=total):
         # print(tid, table)
         if subject_column is True:
-            cols = subjectCol(table,  isCombine)
-            if len(cols) > 0:
-                table = table[cols]
+            table = subjectCol(table, isCombine)
         x, _ = unlabeled._tokenize(table)
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:
@@ -218,15 +339,15 @@ def load_checkpoint(ckpt):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # print(device)
-    #todo change the resize by passing a parameter
-    if hp.lm=='roberta':
-      Resize=50269
+    # todo change the resize by passing a parameter
+    if hp.lm == 'roberta':
+        Resize = 50269
     else:
-       Resize=30529
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=Resize)#50269 30529
+        Resize = 30529
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=Resize)  # 50269 30529
     model = model.to(device)
     model.load_state_dict(ckpt['model'])
-    ds_path = os.path.join(os.getcwd(),'datasets/%s/Test' % hp.dataset)
+    ds_path = os.path.join(os.getcwd(), 'datasets/%s/Test' % hp.dataset)
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
     return model, dataset
 

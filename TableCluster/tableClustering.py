@@ -19,7 +19,7 @@ def silm_clustering(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     if hp.method == "starmie":
-        files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn] # pkl
+        files =[fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn and 'subCol' not in fn and 'cell' in fn] # pkl
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -73,8 +73,9 @@ def silm_clustering(hp: Namespace):
             for method in clustering_method:
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 3):
+                for i in range(0, 1):
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
+                    print(cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict

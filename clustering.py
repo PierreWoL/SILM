@@ -549,6 +549,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
                     table_label_index.append(gtclusters_dict[cluster_label])
                     if gtclusters[table] != cluster_label:
                         false_ones.append([table, cluster_label, gtclusters[table]])
+    print(false_ones)
     if type(gt_table_label[0]) is not list:
         metric_dict = metric_Spee(gt_table_label, table_label_index)
     else:

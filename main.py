@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument("--augment_op", type=str, default='drop_num_col')
     parser.add_argument("--strict", dest="strict", action="store_true")
 
-    parser.add_argument("--embed", type=str, default='roberta')
+    parser.add_argument("--embed", type=str, default='sbert')
 
     parser.add_argument("--embedMethod", type=str, default='')
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
