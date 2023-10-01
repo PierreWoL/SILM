@@ -391,8 +391,8 @@ class PretrainTableDataset(data.Dataset):
             tables = tables[:2]
         else:
             tables=tables[1:]
-        for i in tables:
-            print(i)
+        """for i in tables:
+            print(i)"""
 
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
@@ -408,7 +408,7 @@ class PretrainTableDataset(data.Dataset):
         for col in mp_values[0]:
             if all(col in mp for mp in mp_values):
                 cls_indices.append(tuple(mp[col] for mp in mp_values))
-        print(  *x_values, cls_indices)
+        #print(*x_values, cls_indices)
         return *x_values, cls_indices
 
     def pad(self, batch):

@@ -82,24 +82,18 @@ def augment(table: pd.DataFrame, op: str):
         for ind in sampleRowIdx:
             table.iloc[ind, col_idx] = ""
     elif op =="highlight_cells":
-
             table = table.copy()
-
             table = table.astype(str)
             tfidf_scores = table_tfidf(table)
-
             augmented_cols = []
-
             for col in table.columns:
                 # Calculate the number of cells to retain based on top 50%
                 num_to_retain = len(table[col]) // 2
 
                 # Sort the column based on TFIDF scores and keep only the top 50%
                 sorted_indices = np.argsort(tfidf_scores[col])[::-1][:num_to_retain]
-
                 augmented_col = table[col].iloc[sorted_indices].reset_index(drop=True)
                 augmented_cols.append(augmented_col)
-
             # Combine the augmented columns to form the new table
             augmented_table = pd.concat(augmented_cols, axis=1)
 
@@ -110,11 +104,8 @@ def augment(table: pd.DataFrame, op: str):
 
     elif op =="replace_high_cells":
         table = table.copy()
-
         table = table.astype(str)
-
         tfidf_scores = table_tfidf(table)
-        print(table,"\n",tfidf_scores)
         for col in table.columns:
             # Check if the column is in the tfidf_dict
             if col not in tfidf_scores:
