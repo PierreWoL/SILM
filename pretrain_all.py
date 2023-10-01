@@ -26,7 +26,7 @@ if __name__ == '__main__':
     parser.add_argument("--pretrain", dest="pretrain", action="store_true")
     parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
-    parser.add_argument("--augment_op", type=str, default='shuffle_col,replace_high_cells,highlight_cells,sample_row')
+    parser.add_argument("--augment_op", type=str, default='shuffle_col,replace_high_cells,highlight_cells,sample_row') #
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # column header-only mode without table context
@@ -70,6 +70,6 @@ if __name__ == '__main__':
         trainset.encodings(output_path,setting=hp.NoContext)
     else:
         trainset[200]
-        #train(trainset, hp)
+        train(trainset, hp)
         #table_features(hp)
 #--pretrain --subject_column

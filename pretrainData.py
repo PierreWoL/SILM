@@ -15,7 +15,7 @@ from typing import List
 from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
 from SubjectColumnDetection import ColumnType
 import d3l.utils.functions as fun
-from Utils import aug,split
+from Utils import aug, split
 
 # map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
@@ -340,7 +340,7 @@ class PretrainTableDataset(data.Dataset):
                                                                      setting)
         if self.subject_column:
             output_file = "Pretrain_%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
-                                                                   self.table_order, self.check_subject_Column, setting)
+                                                                  self.table_order, self.check_subject_Column, setting)
 
         if self.header:
             output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (self.lm, self.sample_meth,
@@ -353,7 +353,6 @@ class PretrainTableDataset(data.Dataset):
     def __len__(self):
         """Return the size of the dataset."""
         return len(self.tables)
-
 
     def __getitem__(self, idx):
         """Return a tokenized item of the dataset.
@@ -387,10 +386,10 @@ class PretrainTableDataset(data.Dataset):
         tables = [table_ori]
         for aug in augs:
             tables.append(augment(tables[-1], aug))
-        if self.pos_pair <2:
+        if self.pos_pair < 2:
             tables = tables[:2]
         else:
-            tables=tables[1:]
+            tables = tables[1:]
         """for i in tables:
             print(i)"""
 
@@ -404,11 +403,12 @@ class PretrainTableDataset(data.Dataset):
         mp_values = [mp for _, mp in tokenized_tables]
 
         cls_indices = []
-        #x_values = x_values[:2] if len(augs) == 1 else x_values[1:]
+        # x_values = x_values[:2] if len(augs) == 1 else x_values[1:]
         for col in mp_values[0]:
+            # print(col, [mp[col] for mp in mp_values if col in mp])
             if all(col in mp for mp in mp_values):
                 cls_indices.append(tuple(mp[col] for mp in mp_values))
-        #print(*x_values, cls_indices)
+
         return *x_values, cls_indices
 
     def pad(self, batch):
@@ -428,23 +428,31 @@ class PretrainTableDataset(data.Dataset):
 
         # Separate sequences and cls_indices
         sequences = [t for t in zip(*batch)][:-1]  # Exclude cls_indices
+        print(f"sequences {len(sequences)}")
         cls_indices_all = batch[0][-1]  # Assuming all batches have the same structure for cls_indices
-
+        print(f"cls_indices_all {cls_indices_all}")
         # Compute max length across all sequences for padding
         maxlen = max([len(x) for seq in sequences for x in seq])
-
+        print(f"maxlen {maxlen}")
         # Pad sequences
         sequences_padded = []
         for seq in sequences:
             sequences_padded.append([xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in seq])
 
         # Process cls_indices
-        cls_all = []
+        """cls_all = []
         for cls_indices in cls_indices_all:
             cls_list = []
             for idxs in cls_indices:
-                cls_list.append(list(idxs))
-            cls_all.append(cls_list)
+                print(idxs)
+                cls_list.append([idxs])
+            cls_all.append(cls_list)"""
+        cls_all = tuple([[] for _ in range(len(cls_indices_all[0]))])
+        #print(f"cls_indices_all {cls_indices_all}")
+        for item in cls_indices_all:
+            for i, idx in enumerate(item):
+                cls_all[i].append(idx)
+        #print(cls_all)
 
         # Convert to torch tensors
         sequences_padded = [torch.LongTensor(seq) for seq in sequences_padded]
