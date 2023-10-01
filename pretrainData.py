@@ -15,7 +15,7 @@ from typing import List
 from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
 from SubjectColumnDetection import ColumnType
 import d3l.utils.functions as fun
-from Utils import aug
+from Utils import aug,split
 
 # map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
@@ -139,8 +139,8 @@ class PretrainTableDataset(data.Dataset):
         else:
             fn = os.path.join(self.path, self.tables[table_id])
             table = pd.read_csv(fn)  # encoding="latin-1",
-            if self.isCombine:
-                table = table.iloc[:, 1:]  # encoding="latin-1",
+            """if self.isCombine:
+                table = table.iloc[:, 1:]  # encoding="latin-1","""
 
             self.table_cache[table_id] = table
         return table
@@ -160,7 +160,6 @@ class PretrainTableDataset(data.Dataset):
         budget = max(1, self.max_len // len(table.columns) - 1) if len(table.columns) != 0 else self.max_len
         tfidfDict = computeTfIdf(table,
                                  isCombine=self.isCombine) if "tfidf" in self.sample_meth else None  # from preprocessor.py
-
         # a map from column names to special token indices
         column_mp = {}
         Sub_cols_header = subjectCol(table, self.isCombine)
@@ -224,7 +223,7 @@ class PretrainTableDataset(data.Dataset):
             table = tfidfRowSample(table, tfidfDict, max_tokens)
         for index, column in enumerate(table.columns):
             column_values = table.iloc[:, index] if self.isCombine is False \
-                else pd.Series(table.iloc[:, index][0].split(",")).rename(column)
+                else pd.Series(split(table.iloc[:, index][0])).rename(column)
             tokens = preprocess(column_values, tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
             string_token = ' '.join(tokens[:max_tokens])
             col_text = self.tokenizer.cls_token + " "
@@ -340,7 +339,7 @@ class PretrainTableDataset(data.Dataset):
                                                                      self.table_order, self.check_subject_Column,
                                                                      setting)
         if self.subject_column:
-            output_file = "Pretrain__%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
+            output_file = "Pretrain_%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
                                                                    self.table_order, self.check_subject_Column, setting)
 
         if self.header:
@@ -354,6 +353,7 @@ class PretrainTableDataset(data.Dataset):
     def __len__(self):
         """Return the size of the dataset."""
         return len(self.tables)
+
 
     def __getitem__(self, idx):
         """Return a tokenized item of the dataset.
@@ -386,7 +386,13 @@ class PretrainTableDataset(data.Dataset):
 
         tables = [table_ori]
         for aug in augs:
-            tables.append(augment(table_ori, aug))
+            tables.append(augment(tables[-1], aug))
+        if self.pos_pair <2:
+            tables = tables[:2]
+        else:
+            tables=tables[1:]
+        for i in tables:
+            print(i)
 
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
@@ -398,10 +404,11 @@ class PretrainTableDataset(data.Dataset):
         mp_values = [mp for _, mp in tokenized_tables]
 
         cls_indices = []
+        #x_values = x_values[:2] if len(augs) == 1 else x_values[1:]
         for col in mp_values[0]:
             if all(col in mp for mp in mp_values):
                 cls_indices.append(tuple(mp[col] for mp in mp_values))
-        #print(*x_values, cls_indices)
+        print(  *x_values, cls_indices)
         return *x_values, cls_indices
 
     def pad(self, batch):

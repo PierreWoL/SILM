@@ -1,6 +1,8 @@
+import numpy as np
 import pandas as pd
 import random
 from d3l.utils.functions import tokenize_str
+from TFIDF import table_tfidf
 def augment(table: pd.DataFrame, op: str):
     """Apply an augmentation operator on a table.
 
@@ -79,6 +81,58 @@ def augment(table: pd.DataFrame, op: str):
             sampleRowIdx.append(random.randint(0, len(table) - 1))
         for ind in sampleRowIdx:
             table.iloc[ind, col_idx] = ""
+    elif op =="highlight_cells":
+
+            table = table.copy()
+
+            table = table.astype(str)
+            tfidf_scores = table_tfidf(table)
+
+            augmented_cols = []
+
+            for col in table.columns:
+                # Calculate the number of cells to retain based on top 50%
+                num_to_retain = len(table[col]) // 2
+
+                # Sort the column based on TFIDF scores and keep only the top 50%
+                sorted_indices = np.argsort(tfidf_scores[col])[::-1][:num_to_retain]
+
+                augmented_col = table[col].iloc[sorted_indices].reset_index(drop=True)
+                augmented_cols.append(augmented_col)
+
+            # Combine the augmented columns to form the new table
+            augmented_table = pd.concat(augmented_cols, axis=1)
+
+            # Since the lengths of the augmented columns might differ, we fill NaN values for mismatched lengths
+            augmented_table.fillna("", inplace=True)
+            table = augmented_table
+
+
+    elif op =="replace_high_cells":
+        table = table.copy()
+
+        table = table.astype(str)
+
+        tfidf_scores = table_tfidf(table)
+        print(table,"\n",tfidf_scores)
+        for col in table.columns:
+            # Check if the column is in the tfidf_dict
+            if col not in tfidf_scores:
+                continue
+            # Sort the indices in the column based on their TFIDF values
+            # sorted_indices = np.argsort(tfidf_scores[col])[::-1]   # [::-1] is to sort in descending order
+            sorted_series = tfidf_scores[col].sort_values(ascending=False)
+
+            # Select half of the rows randomly
+            num_rows = len(table[col])
+
+            selected_rows = np.random.choice(sorted_series.index, num_rows // 2, replace=False)
+
+            # Replace the randomly selected cells with high-TFIDF cells
+            for idx in selected_rows:
+                index_selected = sorted_series.iloc[:len(sorted_series) // 2].index
+                table.at[idx, col] = table.at[random.choice(index_selected), col]
+
     elif op == 'swap_cells':
         # randomly swap two cells
         table = table.copy()

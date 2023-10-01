@@ -3,9 +3,9 @@ import math
 import collections
 import string
 from pandas.api.types import infer_dtype
+from Utils import split
 
-
-def computeTfIdf(tableDf, isCombine = False):
+def computeTfIdf(tableDf, isCombine=False):
     """ Compute tfIdf of each column independently
         Called by _tokenize() method in dataset.py
     Args:
@@ -38,7 +38,8 @@ def computeTfIdf(tableDf, isCombine = False):
         if isCombine is False:
             colVals = [val for entity in tableDf[column] for val in str(entity).split(' ')]
         else:
-            colVals = [val for entity in pd.Series(tableDf[column][0].split(",")).rename(column) for val in str(entity).split(' ')]
+            colVals = [val for entity in pd.Series(split(tableDf[column][0])).rename(column) for val in
+                       str(entity).split(' ')]
 
         wordSet = set(colVals)
         wordDict = dict.fromkeys(wordSet, 0)
@@ -146,11 +147,10 @@ def tfidfSample(column, tfidfDict, method, max_tokens):
             for val in str(colVal).split(' '):
                 idf = tfidfDict[val]
 
-                ave_score+=idf
-            tokenFreq[str(colVal)] = ave_score/len(str(colVal).split(' '))
+                ave_score += idf
+            tokenFreq[str(colVal)] = ave_score / len(str(colVal).split(' '))
             tokenList.append(str(colVal))
         tokenFreq = {k: v for k, v in sorted(tokenFreq.items(), key=lambda item: item[1], reverse=True)[:max_tokens]}
-
 
         for t in tokenList:
             if t in tokenFreq and t not in tokens:

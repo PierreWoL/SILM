@@ -33,7 +33,13 @@ def aug(table: pd.DataFrame):
             exists.append(index)
     return table.iloc[:, exists]
 
-
+def split(column:pd.Series):
+        if "," in column:
+            return column.split(",")
+        elif "|" in column:
+            return column.split("|")
+        else:
+            return column.tolist()
 def subjectCol(table: pd.DataFrame, combine=False):
     sub_cols_header = []
     anno = TA.TableColumnAnnotation(table, isCombine=combine)
