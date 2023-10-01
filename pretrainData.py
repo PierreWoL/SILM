@@ -428,12 +428,12 @@ class PretrainTableDataset(data.Dataset):
 
         # Separate sequences and cls_indices
         sequences = [t for t in zip(*batch)][:-1]  # Exclude cls_indices
-        print(f"sequences {len(sequences)}")
+        #print(f"sequences {len(sequences)}")
         cls_indices_all = batch[0][-1]  # Assuming all batches have the same structure for cls_indices
-        print(f"cls_indices_all {cls_indices_all}")
+        #print(f"cls_indices_all {cls_indices_all}")
         # Compute max length across all sequences for padding
         maxlen = max([len(x) for seq in sequences for x in seq])
-        print(f"maxlen {maxlen}")
+        #print(f"maxlen {maxlen}")
         # Pad sequences
         sequences_padded = []
         for seq in sequences:
