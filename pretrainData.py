@@ -427,7 +427,7 @@ class PretrainTableDataset(data.Dataset):
         num_sequences = len(batch[0]) - 1  # subtract 1 for cls_indices
 
         # Separate sequences and cls_indices
-        sequences = [list(t) for t in zip(*batch)][:-1]  # Exclude cls_indices
+        sequences = [t for t in zip(*batch)][:-1]  # Exclude cls_indices
         cls_indices_all = batch[0][-1]  # Assuming all batches have the same structure for cls_indices
 
         # Compute max length across all sequences for padding
