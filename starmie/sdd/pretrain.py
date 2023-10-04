@@ -330,7 +330,7 @@ def inference_on_tables(tables: List[pd.DataFrame],
             # model inference
             with torch.no_grad():
                 x, _, _ = unlabeled.pad(batch)
-                # print(x, _, _)
+                print("All",x, _, _)
                 # all column vectors in the batch
                 column_vectors = model.inference(x)
                 # print("column_vectors ", column_vectors)

@@ -446,6 +446,7 @@ class PretrainTableDataset(data.Dataset):
 
          # Decompose the column alignment
  
+         """
          cls_lists = tuple([[] for _ in range(len(cls_indices[0][0]))])
          for table_batch in cls_indices:
            table_batch_indices = [[] for _ in range(len(cls_indices[0][0]))]
@@ -453,7 +454,19 @@ class PretrainTableDataset(data.Dataset):
                for i, idx in enumerate(item):
                    table_batch_indices[i].append(idx)
            for i,item in enumerate(table_batch_indices):
-             cls_lists[i].append(item)
+             cls_lists[i].append(item)"""
+         if len(cls_indices[0])==0:
+            per_cls_indices = [[] for _ in range(len(cls_indices))]
+            cls_lists = per_cls_indices,per_cls_indices
+         else:
+            cls_lists = tuple([[] for _ in range(len(cls_indices[0][0]))])
+            for table_batch in cls_indices:
+                table_batch_indices = [[] for _ in range(len(cls_indices[0][0]))]
+                for item in table_batch:
+                    for i, idx in enumerate(item):
+                        table_batch_indices[i].append(idx)
+                for i, item in enumerate(table_batch_indices):
+                      cls_lists[i].append(item)
          return *x_new_seqs, cls_lists
     
      

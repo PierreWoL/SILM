@@ -69,7 +69,7 @@ if __name__ == '__main__':
     if hp.pretrain:
         trainset.encodings(output_path,setting=hp.NoContext)
     else:
-        trainset[200]
+       
         train(trainset, hp)
-        ##table_features(hp)
+        table_features(hp)
 #--pretrain --subject_column
