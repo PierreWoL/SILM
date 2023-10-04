@@ -19,8 +19,10 @@ from typing import List
 from Utils import subjectCol
 
 
+ 
 def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
-    """Perform a single training step
+    """
+    Perform a single training step
 
     Args:
         train_iter (Iterator): the train data loader
@@ -49,17 +51,26 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
 
     for i, batch in enumerate(train_iter):
         optimizer.zero_grad()
-
         if num_augs <= 2:
             x_ori, x_aug, cls_indices = batch
+            #print(cls_indices)
             losses = [model(x_ori, x_aug, cls_indices, mode='simclr')]
         else:
             x_vals = batch[:-1]  # Separate out cls_indices
             cls_indices = batch[-1]
-
+            #print(cls_indices)
             # Compute all unique combinations of x_vals and calculate loss
-            losses = [model(x_vals[j], x_vals[k], cls_indices, mode='simclr') for j in range(len(x_vals)) for k in
-                      range(j + 1, len(x_vals))]
+            #losses = [model(x_vals[j], x_vals[k],tuple(cls_indices[j],cls_indices[k]), mode='simclr') for j in range(len(x_vals)) for k in
+                   #   range(j + 1, len(x_vals))] 
+            losses = []
+            for j in range(len(x_vals)):
+               for k in range(j + 1, len(x_vals)):
+                   cls_indices_ij = (cls_indices[j],cls_indices[k])
+                   #print(cls_indices_ij)
+                   loss = model(x_vals[j], x_vals[k],cls_indices_ij, mode='simclr')
+                   losses.append(loss)
+                   
+            
 
         avg_loss = sum(losses) / len(losses)
 
@@ -77,6 +88,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
         for loss in losses:
             del loss
 """
+ 
 def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     def loss_model_fp16(loss):
         scaler.scale(loss).backward()
@@ -93,6 +105,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
             pos_pair = len(augs)
         if pos_pair <= 2:
             x_ori, x_aug, cls_indices = batch
+            print(f"cls_indices {cls_indices}")
             optimizer.zero_grad()
             if hp.fp16:
                 with torch.cuda.amp.autocast():
@@ -108,6 +121,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
         else:
             if pos_pair == 3:
                 x_ori, x_aug, x_aug2, cls_indices = batch
+                print(f"{len(x_ori)} cls_indices {cls_indices}")
                 optimizer.zero_grad()
 
                 if hp.fp16:
@@ -156,25 +170,31 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
                         f"step: {i}, loss: {loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item(), loss6.item()}")
                 del loss1, loss2, loss3, loss4, loss5, loss6
     # This is the original 
-    x_ori, x_aug, cls_indices = batch
-        optimizer.zero_grad()
+    #x_ori, x_aug, cls_indices = batch
+    #optimizer.zero_grad()
 
-        if hp.fp16:
-            with torch.cuda.amp.autocast():
-                loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-        else:
-            loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-            loss.backward()
-            optimizer.step()
+        #if hp.fp16:
+            #with torch.cuda.amp.autocast():
+                #loss = model(x_ori, x_aug, cls_indices, mode='simclr')
+                #scaler.scale(loss).backward()
+                #scaler.step(optimizer)
+                #scaler.update()
+        #else:
+            #loss = model(x_ori, x_aug, cls_indices, mode='simclr')
+           # loss.backward()
+           # optimizer.step()
 
-        scheduler.step()
-        if i % 10 == 0:  # monitoring
-            print(f"step: {i}, loss: {loss.item()}")
-        del loss"""
-
+        #scheduler.step()
+        #if i % 10 == 0:  # monitoring
+           # print(f"step: {i}, loss: {loss.item()}")
+        #del loss """
+def simplify_string(augment_op):
+    string_split_list = augment_op.split(",")
+    simplified_elements = [''.join([word[0].upper() for word in element.split("_")]) for element in string_split_list]
+    if len(set(simplified_elements)) == 1:
+        return f"{simplified_elements[0]}{len(simplified_elements)}"
+    else:
+        return ",".join(simplified_elements)
 
 def train(trainset, hp):
     """Train and evaluate the model
@@ -216,35 +236,37 @@ def train(trainset, hp):
         # train
         model.train()
         train_step(train_iter, model, optimizer, scheduler, scaler, hp)
-
+        
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
             directory = os.path.join(hp.logdir, hp.method, hp.dataset)
+            op_augment_new =simplify_string( str(hp.augment_op))
             if not os.path.exists(directory):
                 os.makedirs(directory)
+                
 
             # save the checkpoints for each component
             ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
-                                     str(hp.augment_op) + "_lm_" + str(
+                                     op_augment_new + "_lm_" + str(
                 hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                 hp.table_order) + '_' + str(
                 hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
             if hp.single_column:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
-                                         str(hp.augment_op) + "_lm_" + str(
+                                        op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_singleCol.pt")
             elif hp.subject_column:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
-                                         str(hp.augment_op) + "_lm_" + str(
+                                        op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_subCol.pt")
                 print(ckpt_path)
             elif hp.header:
                 ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
-                                         str(hp.augment_op) + "_lm_" + str(
+                                        op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_header.pt")

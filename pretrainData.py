@@ -354,8 +354,11 @@ class PretrainTableDataset(data.Dataset):
         """Return the size of the dataset."""
         return len(self.tables)
 
+    
+     
     def __getitem__(self, idx):
-        """Return a tokenized item of the dataset.
+        """
+        Return a tokenized item of the dataset.
 
         Args:
             idx (int): the index of the item
@@ -364,6 +367,7 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the first view
             List of int: token ID's of the second view
         """
+        
         table_ori = self._read_table(idx)
 
         if "row" in self.table_order:
@@ -390,8 +394,7 @@ class PretrainTableDataset(data.Dataset):
             tables = tables[:2]
         else:
             tables = tables[1:]
-        """for i in tables:
-            print(i)"""
+         
 
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
@@ -409,10 +412,10 @@ class PretrainTableDataset(data.Dataset):
             if all(col in mp for mp in mp_values):
                 cls_indices.append(tuple(mp[col] for mp in mp_values))
 
-        return *x_values, cls_indices
-
-    def pad(self, batch):
-        """Merge a list of dataset items into a training batch
+        return *x_values, cls_indices 
+        
+        
+    """Merge a list of dataset items into a training batch
 
         Args:
             batch (list of tuple): a list of sequences
@@ -421,45 +424,41 @@ class PretrainTableDataset(data.Dataset):
             LongTensor: x_ori of shape (batch_size, seq_len)
             LongTensor: x_aug of shape (batch_size, seq_len)
             tuple of List: the cls indices
-        """
-
+    """
+   
+    def pad(self, batch):
+        
         # Dynamically determine the number of sequences
-        num_sequences = len(batch[0]) - 1  # subtract 1 for cls_indices
+         num_sequences = len(batch[0])
+         sequences = list(zip(*batch))
+         x_seqs = sequences[:-1]
+         
+         cls_indices = sequences[-1]
+         #print(cls_indices)
+         # Determine maximum length across all sequences
+         maxlen = max([max([len(x) for x in seq]) for seq in x_seqs])
+         
+         # Pad the sequences
+         x_new_seqs = []
+         for seq in x_seqs:
+                  x_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in seq]
+                  x_new_seqs.append(torch.LongTensor(x_new))
 
-        # Separate sequences and cls_indices
-        sequences = [t for t in zip(*batch)][:-1]  # Exclude cls_indices
-        #print(f"sequences {len(sequences)}")
-        cls_indices_all = batch[0][-1]  # Assuming all batches have the same structure for cls_indices
-        #print(f"cls_indices_all {cls_indices_all}")
-        # Compute max length across all sequences for padding
-        maxlen = max([len(x) for seq in sequences for x in seq])
-        #print(f"maxlen {maxlen}")
-        # Pad sequences
-        sequences_padded = []
-        for seq in sequences:
-            sequences_padded.append([xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in seq])
-
-        # Process cls_indices
-        """cls_all = []
-        for cls_indices in cls_indices_all:
-            cls_list = []
-            for idxs in cls_indices:
-                print(idxs)
-                cls_list.append([idxs])
-            cls_all.append(cls_list)"""
-        cls_all = tuple([[] for _ in range(len(cls_indices_all[0]))])
-        #print(f"cls_indices_all {cls_indices_all}")
-        for item in cls_indices_all:
-            for i, idx in enumerate(item):
-                cls_all[i].append(idx)
-        #print(cls_all)
-
-        # Convert to torch tensors
-        sequences_padded = [torch.LongTensor(seq) for seq in sequences_padded]
-
-        return *sequences_padded, cls_all
-
-    """def __getitem__(self, idx):
+         # Decompose the column alignment
+ 
+         cls_lists = tuple([[] for _ in range(len(cls_indices[0][0]))])
+         for table_batch in cls_indices:
+           table_batch_indices = [[] for _ in range(len(cls_indices[0][0]))]
+           for item in table_batch:
+               for i, idx in enumerate(item):
+                   table_batch_indices[i].append(idx)
+           for i,item in enumerate(table_batch_indices):
+             cls_lists[i].append(item)
+         return *x_new_seqs, cls_lists
+    
+     
+    """
+    def __getitem__(self, idx):
         
         table_ori = self._read_table(idx)
         # single-column mode: only keep one random column
@@ -542,13 +541,15 @@ class PretrainTableDataset(data.Dataset):
 
                     cls_indices.append((mp_ori[col], mp_aug[col],mp_aug2[col],mp_aug3[col]))
 
-            return x_ori, x_aug,x_aug2,x_aug3, cls_indices"""
-
-    """def pad(self, batch):
+            return x_ori, x_aug,x_aug2,x_aug3, cls_indices
+    """
+    """
+    def pad(self, batch):
       
         if self.pos_pair  <=2:
 
             x_ori, x_aug, cls_indices = zip(*batch)
+            print(cls_indices)
             max_len_ori = max([len(x) for x in x_ori])
             max_len_aug = max([len(x) for x in x_aug])
             maxlen = max(max_len_ori, max_len_aug)
@@ -620,4 +621,4 @@ class PretrainTableDataset(data.Dataset):
                     cls_aug2[-1].append(idx3)
                     cls_aug3[-1].append(idx4)
             return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new), torch.LongTensor(x_aug2_new),  \
-                   torch.LongTensor(x_aug3_new),(cls_ori, cls_aug, cls_aug2,cls_aug3)"""
+                   torch.LongTensor(x_aug3_new),(cls_ori, cls_aug, cls_aug2,cls_aug3)  """

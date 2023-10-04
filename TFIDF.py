@@ -64,7 +64,7 @@ def table_tfidf(table:pd.DataFrame):
                 column_copy[:] = 0
                 return column_copy
 
-
+    """
     if len(table)==1:
         result =[]
         for i in table.columns:
@@ -74,9 +74,10 @@ def table_tfidf(table:pd.DataFrame):
 
         return result
     else:
+    """
         # Compute average TF-IDF for each column and store in a new dataframe
-        result = table.apply(compute_avg_tfidf)
-        return result
+    result = table.apply(compute_avg_tfidf)
+    return result
 
 
 """df = pd.DataFrame({

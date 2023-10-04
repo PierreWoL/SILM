@@ -71,5 +71,5 @@ if __name__ == '__main__':
     else:
         trainset[200]
         train(trainset, hp)
-        #table_features(hp)
+        ##table_features(hp)
 #--pretrain --subject_column

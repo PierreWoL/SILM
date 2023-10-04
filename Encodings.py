@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from starmie.sdd.pretrain import load_checkpoint, inference_on_tables
+from starmie.sdd.pretrain import load_checkpoint, inference_on_tables,simplify_string
 import torch
 import pandas as pd
 import numpy as np
@@ -31,17 +31,18 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
         list of features for the dataframe
     '''
     print(SubCol)
+    op_augment_new =simplify_string(augment)
     model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s.pt" % (
-            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
+            method, dataset, op_augment_new, lm, sample, table_order, run_id, check_subject_Column)
     if singleCol:
         model_path = "model/%s/%s/model_%slm_%s_%s_%s_%d_%s_singleCol.pt" % (
-            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
+            method, dataset, op_augment_new, lm, sample, table_order, run_id, check_subject_Column)
     elif SubCol:
         model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s_subCol.pt" % (
-            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
+            method, dataset, op_augment_new, lm, sample, table_order, run_id, check_subject_Column)
     elif header:
         model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s_header.pt" % (
-            method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column)
+            method, dataset, op_augment_new, lm, sample, table_order, run_id, check_subject_Column)
     print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
