@@ -226,7 +226,7 @@ def run_hierarchy():
     with open(os.path.join(target_path, "graphGroundTruth2.pkl"), "wb") as file:
         pickle.dump(G, file)
 
-file_path = os.path.join(os.path.join(target_path, "graphGroundTruth2.pkl"))
+file_path = os.path.join(os.path.join(target_path, "graphGroundTruth3.pkl"))
 print(file_path)
 with open(file_path, "rb") as file:
     G = pickle.load(file)
@@ -246,9 +246,10 @@ for index, row in ground_truth_csv.iterrows():
         for type_low in lowest_types:
             if type_low in G.nodes():
                 parent_top_per = [item for item in nx.ancestors(G, type_low) if G.in_degree(item) == 0]
+                print(type_low,parent_top_per)
                 for top_per in parent_top_per:
                     if top_per not in top_level_types:
                         top_level_types.append(top_per)
         ground_truth_csv.iloc[index, 4] = lowest_types
         ground_truth_csv.iloc[index, 5] = top_level_types
-ground_truth_csv.to_csv(os.path.join(target_path, "new_test_origin.csv"))
+ground_truth_csv.to_csv(os.path.join(target_path, "new_test_origin3.csv"))

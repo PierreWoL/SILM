@@ -1,7 +1,10 @@
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
+import math
 from Utils import split
 from d3l.utils.functions import tokenize_str as tokenize
+
 """
 # Sample list of phrases
 phrases = [
@@ -30,19 +33,16 @@ avg_tfidf = tfidf_scores.mean(axis=1)
 """
 
 
-
-
-def table_tfidf(table:pd.DataFrame):
+def table_tfidf(table: pd.DataFrame):
     # Create a TF-IDF vectorizer
     vectorizer = TfidfVectorizer(use_idf=True)
 
     # Function to compute average TF-IDF for a list of phrases
     def compute_avg_tfidf(column):
 
-
         # Compute TF-IDF scores
 
-        if isinstance(column,list):
+        if isinstance(column, list):
             tfidf_matrix = vectorizer.fit_transform(column)
             # Extract the scores for each phrase
             tfidf_scores = pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out(),
@@ -51,7 +51,7 @@ def table_tfidf(table:pd.DataFrame):
             result_dict = {}
             for index, value in mid.items():
                 if index not in result_dict:
-                    result_dict[index] =value
+                    result_dict[index] = value
             return result_dict
         else:
             column_copy = column.copy().apply(tokenize)
@@ -75,21 +75,38 @@ def table_tfidf(table:pd.DataFrame):
         return result
     else:
     """
-        # Compute average TF-IDF for each column and store in a new dataframe
+    # Compute average TF-IDF for each column and store in a new dataframe
     result = table.apply(compute_avg_tfidf)
     return result
 
 
-"""df = pd.DataFrame({
-    'A': ['cat', 'dog', 'animals', 'mammal animals'],
-    'B': ['apple', 'orange', 'fruit', 'organic fruit']
-})
-df = pd.read_csv("datasets/WDC/Test/T2DV2_253.csv")
-df = df.astype(str)
+def roulette_wheel_selection(index,size, values: pd.Series):
+    total = sum(values)
+    if total ==0:
+        return np.random.choice(index, size=size, replace=False)
+    selection_probs = values / total
+    return np.random.choice(index, size=size, replace=False, p=selection_probs)
 
-print(table_tfidf(df))
 
-table1 = pd.read_csv("datasets/TabFact/Test/1-2709-4.html.csv")
+def roulette_row_selection(table, fraction=0.5):
+    """
+        Select rows using roulette wheel selection method
 
-print(table_tfidf(table1))
-"""
+         df: DataFrame, containing the data you want
+         fraction: Ratio of selected rows (between 0-1)
+        return: subset of selected rows
+    """
+    if len(table) == 1:
+        return table
+    table = table.astype(str)
+    df_tfidf = table_tfidf(table)
+    df_tfidf['avg_tfidf'] = df_tfidf.mean(axis=1)
+    """total_tfidf = sum(df_tfidf['avg_tfidf'])
+    probabilities = df_tfidf['avg_tfidf'] / total_tfidf
+    num_selections = math.ceil((len(df_tfidf) * fraction))
+    selected_indices = np.random.choice(df_tfidf.index, size=num_selections, replace=False, p=probabilities)"""
+    selected_indices = roulette_wheel_selection(df_tfidf.index, math.ceil((len(df_tfidf) * fraction)),
+                                                df_tfidf['avg_tfidf'])
+    print(table, table.loc[selected_indices])
+    del df_tfidf
+    return table.loc[selected_indices]

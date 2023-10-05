@@ -79,9 +79,7 @@ def query_wikidata_parallel(wiki_urls):
     return dataframes
 
 
-
-
-def parallel_crawling(gt_csv:dict):
+def parallel_crawling(gt_csv: dict):
     for i in range(0, 11):  # 160
 
         end = (i + 1) * 400 - 1
@@ -95,7 +93,8 @@ def parallel_crawling(gt_csv:dict):
         dataframes_list = query_wikidata_parallel(result_diction)
 
 
-abstract = [ 'PhysicalActivity','object', 'result', 'temporal entity', 'inconsistency', 'noun', 'noun phrase', 'remains', 'use',
+abstract = ['PhysicalActivity', 'object', 'result', 'temporal entity', 'inconsistency', 'noun', 'noun phrase',
+            'remains', 'use',
             'independent continuant', 'observable entity', 'artificial entity', 'natural physical object',
             'occurrence', 'relation', 'group of physical objects', 'economic entity', 'group of works',
             'concrete object', 'three-dimensional object', 'part', 'geographic entity', 'artificial geographic entity',
@@ -108,17 +107,18 @@ abstract = [ 'PhysicalActivity','object', 'result', 'temporal entity', 'inconsis
             'social phenomenon', 'manifestation', 'work', 'source of information', 'knowledge type', 'action',
             'time interval', 'interaction', 'record', 'language variety', 'intentional human activity',
             'status', 'group of living things', 'agent', 'sign', 'content', 'converter', 'resource', 'metaclass',
-            'unit', 'human activity','effect', 'archives', 'sub-fonds', 'evaluation',
+            'unit', 'human activity', 'effect', 'archives', 'sub-fonds', 'evaluation',
             'interface', 'contributing factor', 'undesirable characteristic', 'structure', 'method', 'matter', 'change',
             'physical phenomenon', 'binary relation', 'building work', 'power', 'management', 'long, thin object',
             'definite integral', 'physical property', 'multi-organism process', 'data', 'multiset', 'line',
             'proper noun', 'physicochemical process', 'group', 'collection', 'historical source'
-            'interaction', 'information resource', 'list', 'plan', 'scale', 'memory', 'social structure',
+                                                                             'interaction', 'information resource',
+            'list', 'plan', 'scale', 'memory', 'social structure',
             'source text', 'open content', 'written work', 'strategy', 'group of humans', 'system', 'deformation',
             'representation', 'multicellular organismal process', 'operator', 'social system']
 
-top = ['Place', 'Action', 'Intangible', 'Organization', 'CreativeWork', 'MedicalEntity', 'BioChemEntity', 'Event', 'Product', 'Person', 'Taxon']
-
+top = ['Place', 'Action', 'Intangible', 'Organization', 'CreativeWork', 'MedicalEntity', 'BioChemEntity', 'Event',
+       'Product', 'Person', 'Taxon']
 
 ground_label_name1 = "01SourceTables.csv"
 data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
@@ -129,7 +129,6 @@ labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
 no_labels = [i for i in names if i not in labels]
 # ground_truth_csv = ground_truth_csv[ground_truth_csv["fileName"].isin(no_labels)]
 ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
-
 
 similar_words = {}
 with open("filter_sim_all.pkl", "rb") as file:
@@ -147,8 +146,7 @@ for word, similar_word_list in similar_words.items():
     if len(similar_word_list) == 1:
         similar_words[word] = similar_word_list[0]
 print(similar_words)
-#unique_items = list(set(similar_words.values()))
-
+# unique_items = list(set(similar_words.values()))
 
 
 node_length = 0
@@ -161,29 +159,27 @@ for index, row in ground_truth_csv.iterrows():
             labels_table = row2.dropna().tolist()
             for i in range(len(labels_table) - 1):
                 if labels_table[i + 1] != labels_table[i]:
-                    if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
-                        child_type = labels_table[i]
+                    # if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
+                    child_type = labels_table[i]
 
+                    if labels_table[i + 1] in G.nodes():
+                        if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
+                            if labels_table[ i + 1] != child_type:
+                                # and "process" not in labels_table[i + 1].lower() and "process" not in child_type.lower()
+                                G.add_edge(labels_table[i + 1], child_type)
+                                continue
 
-                        if labels_table[i + 1] in G.nodes():
-                                if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
-                                        if labels_table[i + 1] != child_type \
-                                                and "process" not in labels_table[i + 1].lower() \
-                                                and "process" not in child_type.lower():
-                                            G.add_edge(labels_table[i + 1], child_type)
-                                            continue
+                    else:
 
-                        else:
-
-                                    if labels_table[i + 1] != child_type and "process" not in labels_table[
-                                        i + 1].lower() \
-                                            and "process" not in child_type.lower():
-                                        G.add_edge(labels_table[i + 1], child_type)
-                                        continue
-
+                        if labels_table[i + 1] != child_type:
+                            G.add_edge(labels_table[i + 1], child_type)
+                            continue
+    else:
+        if row["class"]!="" or row["class"]!=" ":
+            G.add_edge(row["superclass"], row["class"])
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth2.pkl"), "wb") as file:
+with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
     pickle.dump(G, file)
 
 # Setting graph attributes for top-to-bottom layout

@@ -111,28 +111,24 @@ def ground_truth_labels(tree):
                 print(f"fileName: {filename} node: {[classX]}, top level type {top_level_type}")
 
 
-abstract = ['object', 'result', 'temporal entity', 'inconsistency', 'noun', 'noun phrase', 'remains', 'use',
-            'independent continuant', 'observable entity', 'artificial entity', 'natural physical object',
-            'occurrence', 'relation', "group of physical objects", 'economic entity',
-            'concrete object', 'three-dimensional object', 'part', 'geographic entity', 'artificial geographic entity',
-            'source', 'group or class of physical objects', 'role', 'phenomenon', 'physical entity', 'means',
-            'spatio-temporal entity', 'spatial entity', 'one-dimensional space', 'physical object',
-            'continuant', 'collective entity', 'space object', 'type', 'information', 'anatomical entity',
-            'output', 'abstract object', 'non-physical entity', 'integral', 'quantity', 'former entity',
-            'occurrent', 'cause', 'idiom', 'lect', 'modification', 'alteration', 'control', 'consensus',
-            'social relation',
-            'social phenomenon', 'manifestation', 'work', 'source of information', 'knowledge type', 'action',
-            'time interval', 'effect', 'class',
-            'status', 'group of living things', 'agent', 'sign', 'content', 'converter', 'resource', 'metaclass',
-            'unit',
-            'interface', 'contributing factor', 'undesirable characteristic', 'structure', 'method', 'matter', 'change',
-            'physical phenomenon', 'binary relation', 'building work', 'power', 'management', 'long, thin object',
-
-            'definite integral', 'physical property', 'multi-organism process', 'data', 'multiset', 'line',
-            'proper noun',
-            'interaction', 'information resource', 'list', 'plan', 'scale', 'memory', 'social structure',
-            'source text', 'open content', 'written work', 'strategy', 'group of humans', 'system', 'deformation',
-            'representation', 'multicellular organismal process', 'operator', 'social system']  # 'series'
+abstract = ['abstract object','action','agent', 'alteration','anatomical entity', 'artificial entity',
+ 'artificial geographic entity','aspect', 'aspect of history','behavior','binary relation', 'cause',
+ 'change','class', 'collective entity', 'concrete object', 'consensus', 'content', 'continuant',
+ 'contributing factor', 'control','data','definite integral', 'deformation', 'dyad','historical source',
+ 'effect', 'facility', 'former entity', 'group of living things', 'group of physical objects','size-specific military unit',
+ 'group or class of physical objects', 'idiom', 'inconsistency','text','collection','nonfiction',
+ 'independent continuant', 'individual', 'information', 'information resource', 'integral', 'interaction', 'knowledge type',
+ 'lect', 'line',  'long, thin object', 'management', 'manifestation', 'matter', 'means','memory','group of works',
+ 'metaclass', 'method', 'modification', 'multi-organism process', 'multicellular organismal process',
+ 'multiset', 'narrative', 'natural physical object', 'non-physical entity','noun','season','recorded history',
+ 'noun phrase', 'object', 'observable entity', 'occurrence', 'occurrent', 'one-dimensional space', 'operator',
+ 'output', 'part', 'part of a work', 'pattern', 'periodic process', 'phenomenon','group',
+ 'physical entity', 'physical object', 'physical property', 'plan','historical source','egodocument',
+ 'power', 'process', 'proper noun','quantity', 'record', 'recurrent event edition','personal testimonial',
+ 'relation', 'remains', 'representation', 'resource', 'result', 'role', 'scale', 'sign','single', 'source',
+ 'source of information', 'source text', 'space object', 'spacetime volume', 'spatial entity', 'spatio-temporal entity',
+ 'status', 'strategy', 'structure', 'system','temporal entity', 'textinterface', 'three-dimensional object',
+ 'time interval', 'type', 'undesirable characteristic', 'unit', 'use', 'work']
 
 """
 for i in abstract:
@@ -172,8 +168,9 @@ def close_child(G, nodes, child, is_mutual=True):
 
         min_dist = min(list(dict_distance.keys()))
         sorted_dict = dict(sorted(node_d.items(), key=lambda item: item[1]))
-        # print(sorted_dict)
-        return min_dist, dict_distance, node_d
+        sorted_distance = dict(sorted(dict_distance.items(), key=lambda item: item[0]))
+
+        return min_dist, sorted_distance, node_d
     else:
         common_descendants = nodes
         return None
@@ -207,21 +204,14 @@ gt_csv.to_csv(data_path, index=False)"""
 
 new_dict = {}
 
-with open(os.path.join(target_path, "graphGroundTruth2.pkl"), "rb") as file:
+with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "rb") as file:
     G_tree = pickle.load(file)
 removal = ['PhysicalActivity', 'Season', 'nonfiction', 'Manuscript', 'conceptual system', 'historical source', 'text',
            'Psychiatric', 'nonfiction', 'VisualArtwork']
 #
 lower = {i.lower(): i for i in G_tree.nodes()}
 
-abstract = ['relation', 'aspect', 'type', 'object', 'result', 'spatio-temporal entity', 'role', 'relation',
-            'means', 'role', 'time interval', 'effect', 'class', 'text', 'occurrent', 'narrative', 'behavior',
-            'collective entity', 'information', 'part', 'temporal entity', 'inconsistency', 'status', 'system',
-            'noun', 'noun phrase', 'remains', 'use', 'work', 'output', 'part of a work', 'periodic process', 'politics',
-            'spacetime volume', 'facility', 'network', 'record', 'artificial entity', 'spatial entity', 'activity',
-            'economic entity', 'sign', 'structure', 'structure', 'three-dimensional object', 'pattern',
-            'individual', 'source', 'metaclass', 'lect', 'power', 'interaction', 'line', 'process', 'dyad',
-            'control', 'single', 'unit', 'integral', 'effect', 'work', 'matter', 'change']
+
 G_tree.remove_nodes_from(abstract)
 
 
@@ -250,9 +240,15 @@ def reduce_G(tree: nx.DiGraph()):
                         parent = [item for item in nx.ancestors(tree, type_low)]
                         intersect = others.intersection(set(parent))
                         mutuals = close_child(tree, parent_top_per, type_low)
+
                         #  print(  f" the top level {parent_top_per},\n the upper type {intersect}  ")# \n the parent {parent} ,, \n\n
                         if mutuals != None:
-                            top_nodes_keep.update(set(mutuals[1][mutuals[0]]))
+                            nodes_in_record = mutuals[2].keys()
+                            mutual_in_record = others.intersection(set(nodes_in_record))
+                            if len(mutual_in_record)>0:
+                                top_nodes_keep.update(mutual_in_record)
+                            else:
+                                top_nodes_keep.update(set(mutuals[1][mutuals[0]]))
                             # print(f"lowest type {type_low}")
                             # print(  f" \n mutual closest is {mutuals[1][mutuals[0]]} \n\n")
                             continue
@@ -306,7 +302,7 @@ def converging_reduce(num, some_threshold):
             previous_value = current_value
             if rate_of_change < some_threshold:
                 print("Converging")
-                with open(os.path.join(target_path, "graphGroundTruth2_reduced.pkl"), "wb") as file:
+                with open(os.path.join(target_path, "graphGroundTruth3_reduced.pkl"), "wb") as file:
                     pickle.dump(G_tree, file)
                 exceptions = []
                 labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
@@ -328,7 +324,11 @@ def converging_reduce(num, some_threshold):
                                 parent_top_pers.extend(parent_top_per)
                                 print(f" {type_low} the top level {parent_top_per}")
                         ground_truth_csv.iloc[index, 4] = lowest_type_unqi
-                        ground_truth_csv.iloc[index, 5] = list(set(parent_top_pers))
+                        if len(list(set(parent_top_pers)))==0:
+                            ground_truth_csv.iloc[index, 5] = lowest_type_unqi
+                        else:
+                            ground_truth_csv.iloc[index, 5] = list(set(parent_top_pers))
+
                     else:
                         if row["class"] != " ":
                             type_low = row["class"]
@@ -339,12 +339,8 @@ def converging_reduce(num, some_threshold):
                                 print(f"{type_low}  the top level {parent_top_per} ")
                             ground_truth_csv.iloc[index, 4] = type_low
                             ground_truth_csv.iloc[index, 5] = list(set(parent_top_pers))
-                ground_truth_csv.to_csv(os.path.join(target_path, "new_test_reduced1.csv"))
-
+                ground_truth_csv.to_csv(os.path.join(target_path, "new_test_reduced3.csv"))
                 break
-
-
-
 
 
 def find_duplicates(input_list):
@@ -394,9 +390,10 @@ def reduce_graph(tree: nx.DiGraph(), node_list):
     for node_delete in deletes:
         tree.remove_node(node_delete)
     return tree
-#converging_reduce(200, 0.05)
+converging_reduce(200, 0.05)
 
-with open(os.path.join(target_path, "graphGroundTruth2_reduced.pkl"), "rb") as file:
+"""
+with open(os.path.join(target_path, "graphGroundTruth3_reduced.pkl"), "rb") as file:
     G_tree = pickle.load(file)
 labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
 ground_label_name1 = "01SourceTables.csv"
@@ -440,6 +437,7 @@ for index, row in ground_truth_csv.iterrows():
 class_count = ground_truth_csv['superclass'].explode().value_counts()
 print(class_count)
 class_count = class_count[(class_count >= 10) & (class_count.index != ' ')]
+"""
 
 # Plot
 """plt.figure(figsize=(25, 15))
@@ -450,7 +448,7 @@ plt.xticks(fontsize=11)
 class_count.plot(kind='bar')
 plt.show()
 """
-from upsetplot import UpSet
+"""from upsetplot import UpSet
 from collections import Counter
 ground_truth_csv['superclass'] = ground_truth_csv['superclass'].apply(frozenset)
 ground_truth_csv = ground_truth_csv[ground_truth_csv['superclass'] != frozenset()]
@@ -497,3 +495,4 @@ plt.xlabel('Counts')
 plt.ylabel('Unique Sets')
 plt.title('Count of Each Unique Set')
 plt.show()
+"""
