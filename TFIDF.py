@@ -110,6 +110,5 @@ def roulette_row_selection(table, fraction=0.5):
     selected_indices = np.random.choice(df_tfidf.index, size=num_selections, replace=False, p=probabilities)"""
     selected_indices = roulette_wheel_selection(df_tfidf.index, math.ceil((len(df_tfidf) * fraction)),
                                                 df_tfidf['avg_tfidf'])
-    print(table, table.loc[selected_indices])
     del df_tfidf
     return table.loc[selected_indices]
