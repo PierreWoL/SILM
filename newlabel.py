@@ -151,6 +151,7 @@ print(similar_words)
 
 node_length = 0
 G = nx.DiGraph()
+previous_values =0
 for index, row in ground_truth_csv.iterrows():
     if row["fileName"] in labels:
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
@@ -178,6 +179,13 @@ for index, row in ground_truth_csv.iterrows():
         if row["class"]!="" or row["class"]!=" ":
             G.add_edge(row["superclass"], row["class"])
 
+
+    if previous_values<len(G.nodes):
+        previous_values = len(G.nodes)
+        graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
+        plt.figure(figsize=(23, 23))
+        nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+        plt.show()
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
     pickle.dump(G, file)
@@ -189,10 +197,7 @@ with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
 
 # Drawing the directed graph
 """
-graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
-plt.figure(figsize=(12, 10))
-nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-plt.show()"""
+"""
 """
 
 # results = [(ground_truth_csv.iloc[i, 0], ground_truth_csv.iloc[i, 2]) for i in range(0, len(ground_truth_csv))]

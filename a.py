@@ -2,6 +2,8 @@
 """df = pd.read_csv("datasets/WDC/Test/T2DV2_253.csv")
 augment(df,"highlight_cells")
 augment(df,"replace_high_cells")"""
+import os
+
 import pandas as pd
 
 """G = nx.DiGraph()
@@ -23,8 +25,15 @@ print(f"{node_A} 祖先列表：{as_root}")
 print(f"{node_A} 不知道什么玩意：{te}")"""
 from starmie.sdd.augment import augment
 table = pd.read_csv("datasets/WDC/Test/SOTAB_1.csv")
-t1 = augment(table, "sample_row_TFIDF")
 t2 = augment(table, "sample_cells_TFIDF")
 t3 = augment(table, "replace_cells_TFIDF")
-t4 = augment(table, "highlight_cells")
-t5 = augment(table, "replace_high_cells")
+
+data_path = os.getcwd() + "/datasets/WDC/Test/"
+
+files = [fn for fn in os.listdir(data_path)]
+
+for file in files:
+    print(file)
+    table = pd.read_csv(os.path.join(data_path, file))
+    t3 = augment(table, "replace_cells_TFIDF")
+    t2 = augment(table, "sample_cells_TFIDF")

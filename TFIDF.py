@@ -85,6 +85,9 @@ def roulette_wheel_selection(index,size, values: pd.Series):
     if total ==0:
         return np.random.choice(index, size=size, replace=False)
     selection_probs = values / total
+    non_zero_count = np.count_nonzero(selection_probs)
+    if non_zero_count < size:
+        return np.random.choice(index, size=size, replace=False)
     return np.random.choice(index, size=size, replace=False, p=selection_probs)
 
 
