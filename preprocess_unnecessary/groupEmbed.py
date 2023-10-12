@@ -142,7 +142,7 @@ sum_gen(dp)
 sum_clustering(dp)
 """
 
-from clustering import clustering_results, data_classes, clusteringColumnResults, clustering_hier_results
+from clustering import data_classes,  clustering_hier_results
 
 
 def matrixs():

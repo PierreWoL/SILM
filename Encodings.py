@@ -8,8 +8,7 @@ import glob
 import pickle
 from argparse import Namespace
 import os
-from clustering import clustering_results, data_classes, clusteringColumnResults, AgglomerativeClustering_param_search, \
-    BIRCH_param_search, cluster_discovery, cluster_Dict, evaluate_cluster
+from clustering import data_classes, clusteringColumnResults,  cluster_discovery, cluster_Dict, evaluate_cluster
 from Utils import mkdir
 from SubjectColumnDetection import ColumnType
 import TableAnnotation as TA
@@ -192,7 +191,7 @@ def hierarchical_clustering(hp: Namespace):
             continue"""
 
 
-def silm_clustering(hp: Namespace):
+"""def silm_clustering(hp: Namespace):
     dicts = {}
     files = []
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
@@ -229,9 +228,7 @@ def silm_clustering(hp: Namespace):
             else:
                 vec_table = np.mean(vectors[1], axis=0)
             Z.append(vec_table)
-        """has_nan = np.isnan(Z).any()
-        if has_nan:
-            print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
+      
         Z = np.array(Z)
         try:
             clustering_method = ["Agglomerative",
@@ -270,7 +267,7 @@ def silm_clustering(hp: Namespace):
     with open(datafile_path + 'cluster_dict.pickle', 'wb') as handle:
         pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-
+"""
 """
  
  #        + "_" + str(hp.sample_meth) + "_" + str(hp.table_order) + '_' + str(hp.run_id) + "singleCol.pt"

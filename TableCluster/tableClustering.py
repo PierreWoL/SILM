@@ -17,11 +17,14 @@ import sys
 def silm_clustering(hp: Namespace):
     dicts = {}
     files = []
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/" #subjectheader/
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     if hp.method == "starmie":
         files = [fn for fn in os.listdir(datafile_path) if
-                 '.pkl' in fn and hp.embed in fn and 'subCol' not in fn and 'cell' in fn]  # pkl
+                 '.pkl' in fn and hp.embed in fn and 'subCol' in fn]  # pkl  and 'cell' in fn
+
+        files =[fn for fn in files if "sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF" in fn]
+        print(files)
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -76,8 +79,10 @@ def silm_clustering(hp: Namespace):
                 print(method)
                 metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
                 for i in range(0, 1):
-                    cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method)
-                    print(cluster_dict)
+                    new_path = os.path.join(store_path,file[:-4])
+                    mkdir(new_path)
+                    cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,folderName=new_path)
+                    #print(cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict
@@ -92,8 +97,7 @@ def silm_clustering(hp: Namespace):
         except ValueError as e:
             print(e)
             continue
-    with open(store_path + 'cluster_dict.pickle', 'wb') as handle:
-        pickle.dump(dicts, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 
 def column_gts(dataset):

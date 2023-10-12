@@ -22,6 +22,9 @@ from sklearn.cluster import KMeans
 import numpy as np
 from itertools import combinations
 
+from sklearn.manifold import TSNE
+import plotly.express as px
+
 
 def jaccard_similarity(set1, set2):
     intersection = len(set1 & set2)
@@ -398,11 +401,21 @@ def data_classes(data_path, groundTruth_file, superclass=True, Nochange=False):
         dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 2]))
     else:
         dict_gt = dict(zip(ground_truth_df.iloc[:, 0].str.removesuffix(".csv"), ground_truth_df.iloc[:, 1]))
-    dict_gt = {key: ast.literal_eval(value) for key, value in dict_gt.items() if value != " " and "[" in value}
 
+    # dict_gt = {key: ast.literal_eval(value) for key, value in dict_gt.items() if value != " " and "[" in value}
+    dict_gt0 = {}
+    for key, value in dict_gt.items():
+        if value != " ":
+            if "[" in value:
+                dict_gt0[key] = ast.literal_eval(value)
+            else:
+                dict_gt0[key] = value
+    dict_gt = dict_gt0
+    # print(f"dict_gt {dict_gt}")
     test_table2 = {}.fromkeys(test_table).keys()
 
     gt_clusters, ground_t = ed.get_concept_files(ed.get_files(data_path), dict_gt, Nochange=Nochange)
+    # print(gt_clusters.values())
     if type(list(gt_clusters.values())[0]) is list:
         if Nochange is False:
             gt_cluster_dict = {}
@@ -512,14 +525,19 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
     return metric_dict
 
 
-def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None, filename=None,
+def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None,
                      tables_gt: Optional[dict] = None):
     clusters_label = {}
     table_label_index = []
     false_ones = []
+
     gt_table_label = []
     tables = []
-    columns_ref = []
+
+    overall_info = []
+    overall_clustering = []
+
+
     for index, tables_list in clusterDict.items():
         labels = []
         for table in tables_list:
@@ -539,17 +557,36 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             cluster_label = most_frequent(labels, isFirst=False)
 
         clusters_label[index] = cluster_label
+        current_ones = []
+
         for table in tables_list:
             if table in gtclusters.keys():
                 if type(cluster_label) is list:
                     table_label_index.append(cluster_label)
                     if len(list(set(gtclusters[table]) & set(cluster_label))) == 0:
                         false_ones.append([table, cluster_label, gtclusters[table]])
+                        if tables_gt is not None and folder is not None:
+                            current_ones.append([table, index,"False", tables_gt[table], gtclusters[table]])
+                    else:
+                        if tables_gt is not None and folder is not None:
+                            current_ones.append([table, index, "True", tables_gt[table], gtclusters[table]])
+
                 else:
                     table_label_index.append(gtclusters_dict[cluster_label])
                     if gtclusters[table] != cluster_label:
                         false_ones.append([table, cluster_label, gtclusters[table]])
-    print(false_ones)
+                        if tables_gt is not None and folder is not None:
+                            current_ones.append([table,index ,"False", tables_gt[table], gtclusters[table]])
+                    else:
+                        if tables_gt is not None and folder is not None:
+                            current_ones.append([table, index, "True", tables_gt[table], gtclusters[table]])
+
+        if tables_gt is not None and folder is not None:
+            purity_index = 1 - len(current_ones) / len(tables_list)
+            overall_clustering.extend(current_ones)
+            overall_info.append([index, cluster_label, purity_index, len(tables_list)])
+            del current_ones, purity_index
+
     if type(gt_table_label[0]) is not list:
         metric_dict = metric_Spee(gt_table_label, table_label_index)
     else:
@@ -557,17 +594,11 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     # cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
 
-    if folder is not None and filename is not None:
-        # df = pd.DataFrame(false_ones, columns=['table name', 'result label', 'true label'])
-        results = []
-        # for key in clusters_label.keys():
-        # results.append([key, clusterDict[key], clusters_label[key]])
-        # df2 = pd.DataFrame(results, columns=['cluster number', 'tables', 'label'])
-        # baselinePath = os.getcwd() + "/result/subject_column/"
-        # df.to_csv(folder + filename + 'HeaderLSH.csv', encoding='utf-8', index=False)
-        # df2.to_csv(folder + filename + 'HeaderLSH_meta.csv', encoding='utf-8', index=False)
-        # cb_pairs.to_csv(folder + filename + 'HeaderLSH_cb.csv', encoding='utf-8', index=False)
-        # print(cb_pairs)
+    if tables_gt is not None and folder is not None:
+        df = pd.DataFrame(overall_clustering, columns=['tableName','cluster id' ,'table type', 'lowest type', 'top level type'])
+        df2 = pd.DataFrame(overall_info, columns=['cluster id', 'corresponding top level type', 'cluster purity', 'size'])
+        df.to_csv(os.path.join(folder,'overall_clustering.csv'), encoding='utf-8', index=False)
+        df2.to_csv( os.path.join(folder, 'purityCluster.csv'), encoding='utf-8', index=False)
     return metric_dict
 
 
@@ -579,9 +610,10 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     return Z, T"""
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, filename=None):
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None):
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
-    # print(gt_clusters, ground_t, gt_cluster_dict)
+    gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
+    del ground_t0,gt_cluster_dict0
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
@@ -597,9 +629,29 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
         parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
     clusters = cluster_discovery(parameters, tables)
     cluster_dict = cluster_Dict(clusters)
-    table_dict = None
-    table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
+
+    """
+    tsne = TSNE(n_components=2, perplexity=30, random_state=0)
+    transformed_data = tsne.fit_transform(input_data)
+    df_display = pd.DataFrame(transformed_data, columns=['Component 1', 'Component 2'])
+    df_display['name'] = tables
+
+    df_display['label'] = [str(gt_clusters[i]) for i in tables]
+    df_display['cluster'] = [f"cluster_{i[1]}" for i in clusters]
+    
+    fig = px.scatter(df_display, x='Component 1', y='Component 2', text='name', hover_data=['cluster','label','name'], color='label')
+    fig.update_traces(marker=dict(size=12),
+                      selector=dict(mode='markers+text'))
+    fig.write_html("output_plot.html")
+
+    fig = px.scatter(df_display, x='Component 1', y='Component 2', text='name', hover_data=['cluster', 'label', 'name'],
+                     color='cluster')
+    fig.update_traces(marker=dict(size=12),
+                      selector=dict(mode='markers+text'))
+
+    fig.write_html("output_plot2.html")"""
+    # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, gt_clusters0)
     return cluster_dict, metrics_value
 
 
