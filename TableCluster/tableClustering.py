@@ -228,6 +228,6 @@ def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
-    print(len(files[hp.slice_start:hp.slice_stop]))
-    for file in files[hp.slice_start:hp.slice_stop]:
+    # print(len(files[hp.slice_start:hp.slice_stop]))
+    for file in files: #[hp.slice_start:hp.slice_stop]
         starmie_columnClustering(file, hp)
