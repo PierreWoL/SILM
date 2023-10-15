@@ -2,9 +2,9 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import math
-from Utils import split
-from d3l.utils.functions import tokenize_str as tokenize
 
+from d3l.utils.functions import tokenize_str as tokenize
+from typing import Iterable
 """
 # Sample list of phrases
 phrases = [
@@ -33,16 +33,14 @@ avg_tfidf = tfidf_scores.mean(axis=1)
 """
 
 
-def table_tfidf(table: pd.DataFrame):
+def compute_avg_tfidf(column):
+    # Function to compute average TF-IDF for a list of phrases
     # Create a TF-IDF vectorizer
     vectorizer = TfidfVectorizer(use_idf=True)
+    # Compute TF-IDF scores
+    if isinstance(column, list):
 
-    # Function to compute average TF-IDF for a list of phrases
-    def compute_avg_tfidf(column):
-
-        # Compute TF-IDF scores
-
-        if isinstance(column, list):
+        try:
             tfidf_matrix = vectorizer.fit_transform(column)
             # Extract the scores for each phrase
             tfidf_scores = pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out(),
@@ -53,17 +51,22 @@ def table_tfidf(table: pd.DataFrame):
                 if index not in result_dict:
                     result_dict[index] = value
             return result_dict
-        else:
-            column_copy = column.copy().apply(tokenize)
-            try:
-                tfidf_matrix = vectorizer.fit_transform(column_copy)
-                tfidf_scores = pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
-                # Compute average TF-IDF scores for each cell
-                return tfidf_scores.mean(axis=1).tolist()
-            except:
-                column_copy[:] = 0
-                return column_copy
+        except:
+            result_dict = {i:1 for i in column}
+            return result_dict
+    else:
+        column_copy = column.copy().apply(tokenize)
+        try:
+            tfidf_matrix = vectorizer.fit_transform(column_copy)
+            tfidf_scores = pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out())
+            # Compute average TF-IDF scores for each cell
+            return tfidf_scores.mean(axis=1).tolist()
+        except:
+            column_copy[:] = 0
+            return column_copy
 
+
+def table_tfidf(table: pd.DataFrame):
     """
     if len(table)==1:
         result =[]
@@ -80,7 +83,9 @@ def table_tfidf(table: pd.DataFrame):
     return result
 
 
-def roulette_wheel_selection(index,size, values: pd.Series):
+def roulette_wheel_selection(index,size, values:Iterable):
+    if not isinstance(values, pd.Series):
+        values = pd.Series(values)
     total = sum(values)
     if total ==0:
         return np.random.choice(index, size=size, replace=False)

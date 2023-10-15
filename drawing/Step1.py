@@ -19,25 +19,29 @@ test = "cl_sample_cells_lm_sbert_head_column_0_subjectheader_subCol_metrics.csv"
 def data_summarize(path):
     fn = {fn: reName(fn.split("_metrics.csv")[0]) for fn in os.listdir(path) if
           fn.endswith(".csv") and reName(fn) is not None}
-    Results = {'Rand Index': {}, 'Purity': {}}  # 'BIRCH': {},
+    Results = {'Rand Index': {}, 'Purity': {} , 'ACCS':{}}  # 'BIRCH': {},
 
     for key, v in fn.items():
         result_method = pd.read_csv(os.path.join(path, key), index_col=0)
 
-        Results['Rand Index'][v] = result_method.loc['random Index', 'Agglomerative']
-        Results['Purity'][v] = result_method.loc['purity', 'Agglomerative']
-    RI = pd.DataFrame(list(Results['Rand Index'].items()), columns=['Embedding Methods', 'Rand Index'])
-    purity = pd.DataFrame(list(Results['Purity'].items()), columns=['Embedding Methods', 'purity'])
+        Results['Rand Index'][v] = result_method.loc['Random Index', 'Agglomerative']
+        Results['Purity'][v] = result_method.loc['Purity', 'Agglomerative']
+        Results['ACCS'][v] = result_method.loc['Average cluster consistency score', 'Agglomerative']
 
-    def to_xlsx(df1=None, df2=None, file_path='', n1='Rand Index', n2='Purity'):
+    RI = pd.DataFrame(list(Results['Rand Index'].items()), columns=['Embedding Methods', 'Rand Index'])
+    purity = pd.DataFrame(list(Results['Purity'].items()), columns=['Embedding Methods', 'Purity'])
+    ACCS = pd.DataFrame(list(Results['ACCS'].items()), columns=['Embedding Methods', 'Average cluster consistency score'])
+
+    def to_xlsx(df1=None, df2=None, df3=None, file_path='', n1='Rand Index', n2='Purity' ,n3 = 'ACCS'):
         with pd.ExcelWriter(file_path) as writer:
             if df1 is not None:
                 df1.to_excel(writer, sheet_name=n1, index=False)
             if df2 is not None:
                 df2.to_excel(writer, sheet_name=n2, index=False)
-
+            if df3 is not None:
+                df3.to_excel(writer, sheet_name=n3, index=False)
     target_file = os.path.join(path, "summarize.xlsx")
-    to_xlsx(RI, purity, file_path=target_file)
+    to_xlsx(RI, purity, ACCS, file_path=target_file)
 
 
 # colors = get_n_colors(16)

@@ -15,7 +15,7 @@ from typing import List
 from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
 from SubjectColumnDetection import ColumnType
 import d3l.utils.functions as fun
-from Utils import aug, split
+from Utils import split
 
 # map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
@@ -389,7 +389,7 @@ class PretrainTableDataset(data.Dataset):
 
         tables = [table_ori]
         for aug in augs:
-            tables.append(augment(tables[-1], aug))
+            tables.append(augment(tables[-1], aug, isTabFact= self.isCombine))
         if self.pos_pair < 2:
             tables = tables[:2]
         else:

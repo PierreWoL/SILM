@@ -16,15 +16,16 @@ import sys
 
 def silm_clustering(hp: Namespace):
     dicts = {}
-    files = []
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/" #subjectheader/
+    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  # subjectheader/
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    if hp.method == "starmie":
-        files = [fn for fn in os.listdir(datafile_path) if
-                 '.pkl' in fn and hp.embed in fn and 'subCol' in fn]  # pkl  and 'cell' in fn
 
-        files =[fn for fn in files if "sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF" in fn]
-        print(files)
+    #Read the groung truth hierarchy
+    F_graph = open(os.path.join(os.getcwd(),
+                                  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
+    graph_gt = pickle.load(F_graph)
+
+    files = [fn for fn in os.listdir(datafile_path) if
+             '.pkl' in fn and hp.embed in fn and 'subCol' in fn]  # pkl  and 'cell' in fn
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -33,6 +34,7 @@ def silm_clustering(hp: Namespace):
         SE = {}
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
+
 
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     if hp.subjectCol is True:
@@ -77,12 +79,14 @@ def silm_clustering(hp: Namespace):
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
-                metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
+                metric_value_df = pd.DataFrame(columns=["Random Index", "Purity",
+                                                        "Average cluster consistency score"])  # "ARI", "MI", "NMI", "AMI"
                 for i in range(0, 1):
-                    new_path = os.path.join(store_path,file[:-4])
+                    new_path = os.path.join(store_path, file[:-4])
                     mkdir(new_path)
-                    cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,folderName=new_path)
-                    #print(cluster_dict)
+                    cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,
+                                                                   folderName=new_path,graph= graph_gt)
+                    # print(cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
                     dict_file[method + "_" + str(i)] = cluster_dict
@@ -97,8 +101,6 @@ def silm_clustering(hp: Namespace):
         except ValueError as e:
             print(e)
             continue
-
-
 
 def column_gts(dataset):
     """
@@ -233,5 +235,5 @@ def files_columns_running(hp: Namespace):
     files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
     # print(len(files[hp.slice_start:hp.slice_stop]))
-    for file in files: #[hp.slice_start:hp.slice_stop]
+    for file in files:  # [hp.slice_start:hp.slice_stop]
         starmie_columnClustering(file, hp)

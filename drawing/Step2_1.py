@@ -172,6 +172,9 @@ def drawing():
         filep = os.path.join(data_path, "Purity.xlsx")
         to_xlsx(df_P_A, file_path=filep,name = algorithm)
         #box_plot(df_P_A, colors, y_name, name, fn)
+
+
+drawing()
 """
 df_RI_A = pd.read_excel(os.path.join(data_path, "RI.xlsx"),sheet_name=algo[0])
 print(df_RI_A,len(df_RI_A.columns)-1)
@@ -180,9 +183,9 @@ fn = os.path.join(data_path, f"{metric[0]}_{algo[0]}.png")
 name = f"{metric[0]} of Column clustering using {algo[0]} clustering"
 box_plot(df_RI_A, colors, metric[0],name , fn)"""
 
-df_RI_A = pd.read_excel(os.path.join(data_path, "Purity.xlsx"),sheet_name=algo[0])
+"""df_RI_A = pd.read_excel(os.path.join(data_path, "Purity.xlsx"),sheet_name=algo[0])
 print(df_RI_A,len(df_RI_A.columns)-1)
 colors = get_n_colors(len(df_RI_A.columns))
 fn = os.path.join(data_path, f"{metric[2]}_{algo[0]}.png")
 name = f"{metric[2]} of Column clustering using {algo[0]} clustering"
-box_plot(df_RI_A, colors, metric[2],name , fn)
+box_plot(df_RI_A, colors, metric[2],name , fn)"""

@@ -20,10 +20,13 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
-from itertools import combinations
+from Graph import consistency_of_cluster
+import networkx as nx
+
+"""from itertools import combinations
 
 from sklearn.manifold import TSNE
-import plotly.express as px
+import plotly.express as px"""
 
 
 def jaccard_similarity(set1, set2):
@@ -526,7 +529,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
 
 
 def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None,
-                     tables_gt: Optional[dict] = None):
+                     tables_gt: Optional[dict] = None, graph: Optional[nx.DiGraph()] = None):
     clusters_label = {}
     table_label_index = []
     false_ones = []
@@ -536,7 +539,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
     overall_info = []
     overall_clustering = []
-
+    ave_consistency = 0
 
     for index, tables_list in clusterDict.items():
         labels = []
@@ -566,7 +569,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
                     if len(list(set(gtclusters[table]) & set(cluster_label))) == 0:
                         false_ones.append([table, cluster_label, gtclusters[table]])
                         if tables_gt is not None and folder is not None:
-                            current_ones.append([table, index,"False", tables_gt[table], gtclusters[table]])
+                            current_ones.append([table, index, "False", tables_gt[table], gtclusters[table]])
                     else:
                         if tables_gt is not None and folder is not None:
                             current_ones.append([table, index, "True", tables_gt[table], gtclusters[table]])
@@ -576,29 +579,36 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
                     if gtclusters[table] != cluster_label:
                         false_ones.append([table, cluster_label, gtclusters[table]])
                         if tables_gt is not None and folder is not None:
-                            current_ones.append([table,index ,"False", tables_gt[table], gtclusters[table]])
+                            current_ones.append([table, index, "False", tables_gt[table], gtclusters[table]])
                     else:
                         if tables_gt is not None and folder is not None:
                             current_ones.append([table, index, "True", tables_gt[table], gtclusters[table]])
-
+        lowest_gt = [i[3] for i in current_ones]
+        consistency_score = consistency_of_cluster(graph, lowest_gt)
+        ave_consistency += consistency_score
         if tables_gt is not None and folder is not None:
             purity_index = 1 - len(current_ones) / len(tables_list)
             overall_clustering.extend(current_ones)
-            overall_info.append([index, cluster_label, purity_index, len(tables_list)])
-            del current_ones, purity_index
+            overall_info.append([index, cluster_label, purity_index, consistency_score, len(tables_list)])
+
+            del current_ones, purity_index, consistency_score, lowest_gt
 
     if type(gt_table_label[0]) is not list:
         metric_dict = metric_Spee(gt_table_label, table_label_index)
     else:
-        metric_dict = {"random Index": rand_Index_custom(gt_table_label, table_label_index)}
+        metric_dict = {"Random Index": rand_Index_custom(gt_table_label, table_label_index)}
     # cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
-    metric_dict["purity"] = 1 - len(false_ones) / len(gtclusters)
+    metric_dict["Purity"] = 1 - len(false_ones) / len(gtclusters)
+    metric_dict["Average cluster consistency score"] = ave_consistency / len(clusterDict)
 
     if tables_gt is not None and folder is not None:
-        df = pd.DataFrame(overall_clustering, columns=['tableName','cluster id' ,'table type', 'lowest type', 'top level type'])
-        df2 = pd.DataFrame(overall_info, columns=['cluster id', 'corresponding top level type', 'cluster purity', 'size'])
-        df.to_csv(os.path.join(folder,'overall_clustering.csv'), encoding='utf-8', index=False)
-        df2.to_csv( os.path.join(folder, 'purityCluster.csv'), encoding='utf-8', index=False)
+        df = pd.DataFrame(overall_clustering,
+                          columns=['tableName', 'cluster id', 'table type', 'lowest type', 'top level type'])
+        df2 = pd.DataFrame(overall_info, columns=['Cluster id', 'Corresponding top level type', 'cCluster purity',
+                                                  'Consistency of cluster', 'Size'])
+        df.to_csv(os.path.join(folder, 'overall_clustering.csv'), encoding='utf-8', index=False)
+        df2.to_csv(os.path.join(folder, 'purityCluster.csv'), encoding='utf-8', index=False)
+        del df, df2
     return metric_dict
 
 
@@ -610,10 +620,10 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     return Z, T"""
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None):
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, graph = None):
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
     gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
-    del ground_t0,gt_cluster_dict0
+    del ground_t0, gt_cluster_dict0
     parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
@@ -631,6 +641,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     cluster_dict = cluster_Dict(clusters)
 
     """
+    # THE FOLLOWING IS TO USE TSNE to show 2D figure of existing clusters
     tsne = TSNE(n_components=2, perplexity=30, random_state=0)
     transformed_data = tsne.fit_transform(input_data)
     df_display = pd.DataFrame(transformed_data, columns=['Component 1', 'Component 2'])
@@ -651,7 +662,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
     fig.write_html("output_plot2.html")"""
     # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, gt_clusters0)
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, gt_clusters0,graph = graph)
     return cluster_dict, metrics_value
 
 
@@ -672,10 +683,10 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
         parameters = BIRCH_param_search(input_data, len(gt_cluster_dict))
     clusters = cluster_discovery(parameters, tables)
     cluster_dict = cluster_Dict(clusters)
-    table_dict = None
-    table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
+
+    # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
     # print("cluster_dict",cluster_dict)
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename, table_dict)
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)  # , table_dict
     # print(metrics_value)
     return cluster_dict, metrics_value
 

@@ -39,7 +39,8 @@ def split(column:pd.Series):
         elif "|" in column:
             return column.split("|")
         else:
-            return column.tolist()
+            return column.split(" ")
+            #return column.tolist()
 def subjectCol(table: pd.DataFrame, combine=False):
     sub_cols_header = []
     anno = TA.TableColumnAnnotation(table, isCombine=combine)

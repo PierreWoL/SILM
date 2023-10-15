@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from collections import deque
-
+from Graph import compute_max_distance, compute_maxD, close_child
 from matplotlib import pyplot as plt
 
 from ClusterHierarchy.ClusterDecompose import find_frequent_labels
@@ -17,42 +17,6 @@ from clustering import data_classes
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 
-
-# 要查询的节点
-def compute_max_distance(graph, start_node, target_node):
-    visited = set()
-    queue = deque([(start_node, 0)])  # (节点, 距离)
-    max_distance = -1
-
-    while queue:
-        node, distance = queue.popleft()
-
-        if node not in visited:
-            visited.add(node)
-            max_distance = max(max_distance, distance)
-
-            if node == target_node:
-                return max_distance
-
-            for successor in graph.successors(node):
-                queue.append((successor, distance + 1))
-
-    return max_distance
-
-
-def compute_maxD(ancestors, graph, target_node):
-    max_distance = -1
-    NodeMax = None
-    dict_dis = {}
-    for an in ancestors:
-        shortest_path_lengths = nx.shortest_path_length(graph.reverse(), target=an, source=target_node)
-        # print(f"节点 {an}: {shortest_path_lengths}")
-        if shortest_path_lengths in dict_dis.keys():
-            dict_dis[shortest_path_lengths].append(an)
-        else:
-            dict_dis[shortest_path_lengths] = [an]
-
-    return dict_dis[max(list(dict_dis.keys()))]
 
 
 """
@@ -141,39 +105,6 @@ print(len(top_level_typ), "\n", top_level_typ)
 
 # 找到父节点共同的最近子节点
 
-
-def close_child(G, nodes, child, is_mutual=True):
-    # common_elements = set.intersection(*sets)
-
-    closest_child = None
-    dict_distance = {}
-    node_d = {}
-    child_set = [set(nx.descendants(G, node)) for node in nodes]
-    if child_set != []:
-        common_descendants = set.intersection(*child_set)
-        for descendant in common_descendants:
-            if is_mutual is True:
-                distances = [nx.shortest_path_length(G, source=parent_node, target=descendant)
-                             for parent_node in nodes if nx.has_path(G, descendant, child)]
-            else:
-                distances = [nx.shortest_path_length(G, source=parent_node, target=descendant)
-                             for parent_node in nodes]
-            if len(distances) > 0:
-                avg_distance = sum(distances) / len(distances)
-                node_d[descendant] = avg_distance
-                if avg_distance in dict_distance.keys():
-                    dict_distance[avg_distance].append(descendant)
-                else:
-                    dict_distance[avg_distance] = [descendant]
-
-        min_dist = min(list(dict_distance.keys()))
-        sorted_dict = dict(sorted(node_d.items(), key=lambda item: item[1]))
-        sorted_distance = dict(sorted(dict_distance.items(), key=lambda item: item[0]))
-
-        return min_dist, sorted_distance, node_d
-    else:
-        common_descendants = nodes
-        return None
 
 
 # print(lower.values())
