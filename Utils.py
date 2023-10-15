@@ -25,6 +25,14 @@ def are_all_numbers(values):
                       pd.notna(val) and str(val).strip() != '' and val not in ["n / a", "n/a", "N/A"]]
     return all(val.isdigit() for val in cleaned_values)
 
+def simplify_string(augment_op):
+    string_split_list = augment_op.split(",")
+    simplified_elements = [''.join([word[0].upper() for word in element.split("_")]) for element in string_split_list]
+    if len(set(simplified_elements)) == 1:
+        return f"{simplified_elements[0]}{len(simplified_elements)}"
+    else:
+        return ",".join(simplified_elements)
+
 
 def aug(table: pd.DataFrame):
     exists = []

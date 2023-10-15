@@ -85,7 +85,9 @@ def table_features(hp: Namespace):
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column,
                                  SubCol=hp.subject_column, header=hp.header,isCombing=isCombine)
     output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
+    op_augment_new = simplify_string(str(hp.augment_op))
     mkdir(output_path)
+
     print(output_path)
     for i, file in enumerate(tables):
         dfs_count += 1
@@ -94,19 +96,19 @@ def table_features(hp: Namespace):
         dataEmbeds.append((file, cl_features_file))
         if i<3:
           print(len(tables[file].columns), len(cl_features_file))
-          
+
         # print(len(tables[file].columns),len(cl_features_file), cl_features_file)
 
-    output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+    output_file = "cl_%s_lm_%s_%s_%s_%d_%s.pkl" % (op_augment_new, hp.lm, hp.sample_meth,
                                                    hp.table_order, hp.run_id, hp.check_subject_Column)
     if hp.single_column:
-        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_singleCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_singleCol.pkl" % (op_augment_new, hp.lm, hp.sample_meth,
                                                                  hp.table_order, hp.run_id, hp.check_subject_Column)
     if hp.subject_column:
-        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_subCol.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_subCol.pkl" % (op_augment_new, hp.lm, hp.sample_meth,
                                                               hp.table_order, hp.run_id, hp.check_subject_Column)
     if hp.header:
-        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_header.pkl" % (hp.augment_op, hp.lm, hp.sample_meth,
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_header.pkl" % (op_augment_new, hp.lm, hp.sample_meth,
                                                               hp.table_order, hp.run_id, hp.check_subject_Column)
 
 

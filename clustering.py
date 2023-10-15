@@ -587,11 +587,12 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
         consistency_score = consistency_of_cluster(graph, lowest_gt)
         ave_consistency += consistency_score
         if tables_gt is not None and folder is not None:
-            purity_index = 1 - len(current_ones) / len(tables_list)
+            falses = [i for i in current_ones if i[2] == "False"]
+            purity_index = 1 - len(falses) / len(tables_list)
             overall_clustering.extend(current_ones)
             overall_info.append([index, cluster_label, purity_index, consistency_score, len(tables_list)])
 
-            del current_ones, purity_index, consistency_score, lowest_gt
+
 
     if type(gt_table_label[0]) is not list:
         metric_dict = metric_Spee(gt_table_label, table_label_index)

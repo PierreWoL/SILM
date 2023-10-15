@@ -7,7 +7,7 @@ import sklearn.metrics as metrics
 import mlflow
 import pandas as pd
 import os
-
+from Utils import simplify_string
 from .utils import evaluate_column_matching, evaluate_clustering
 from .model import BarlowTwinsSimCLR
 # from .dataset import PretrainTableDataset
@@ -188,13 +188,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
         #if i % 10 == 0:  # monitoring
            # print(f"step: {i}, loss: {loss.item()}")
         #del loss """
-def simplify_string(augment_op):
-    string_split_list = augment_op.split(",")
-    simplified_elements = [''.join([word[0].upper() for word in element.split("_")]) for element in string_split_list]
-    if len(set(simplified_elements)) == 1:
-        return f"{simplified_elements[0]}{len(simplified_elements)}"
-    else:
-        return ",".join(simplified_elements)
+
 
 def train(trainset, hp):
     """Train and evaluate the model
@@ -240,7 +234,7 @@ def train(trainset, hp):
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
             directory = os.path.join(hp.logdir, hp.method, hp.dataset)
-            op_augment_new =simplify_string( str(hp.augment_op))
+            op_augment_new =simplify_string( )
             if not os.path.exists(directory):
                 os.makedirs(directory)
                 
