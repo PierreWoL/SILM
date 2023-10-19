@@ -529,7 +529,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
 
 
 def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None,
-                     tables_gt: Optional[dict] = None, graph: Optional[nx.DiGraph()] = None):
+                     tables_gt: Optional[dict] = None, graph = None):
     clusters_label = {}
     table_label_index = []
     false_ones = []
