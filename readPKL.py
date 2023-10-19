@@ -95,16 +95,21 @@ on ground truth hierarchy
 
 def hierarchy_tree(tree: nx.DiGraph(), target_folder=None):
     # Define the layout for the tree structure with top-down direction
-    pos = nx.nx_agraph.graphviz_layout(tree, prog='dot', args="-Grankdir=TB")
+
     # Draw the tree structure
-    file_path = "tree_dendrogram.pdf"
-    target_path = os.path.join(target_folder, file_path)
-    if os.path.exists(target_path) is False:
-        plt.figure(figsize=(8, 6))
-        nx.draw(tree, pos, with_labels=True, node_color='lightblue', node_size=1500, arrows=True)  # pos,
-        plt.title("Tree Structure")
-        plt.savefig(target_path)
+
+
+    if os.path.exists(target_folder) is False:
+        graph_layout = nx.drawing.nx_agraph.graphviz_layout(tree, prog="dot", args="-Grankdir=TB")
+        plt.figure(figsize=(25, 25))
+        nx.draw(tree, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
         plt.show()
+        #plt.savefig(target_folder)
+        return tree
+    return tree
+
+
+
 
 
 def present_children(tree, parent):
@@ -147,7 +152,7 @@ def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels, target_path=N
     # Assign labels to the tree nodes
     tree = nx.relabel_nodes(tree, {i: label for i, label in enumerate(labels)})
     if target_path != None:
-        hierarchy_tree(tree, target_path)
+        return hierarchy_tree(tree, target_path)
     return tree
 
 

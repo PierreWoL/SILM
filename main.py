@@ -35,5 +35,5 @@ if __name__ == '__main__':
         silm_clustering(hp)
     if hp.step == 2:
         files_columns_running(hp)
-    if hp.step ==3:
+    if hp.step ==4:
         relationshipDiscovery(hp)

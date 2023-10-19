@@ -16,7 +16,7 @@ import sys
 
 def silm_clustering(hp: Namespace):
     dicts = {}
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/Subject attribute/None/"  # subjectheader/
+    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  #  /Subject attribute/None
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
 
     # Read the groung truth hierarchy
@@ -157,15 +157,16 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
     clustering_method = ["Agglomerative"]  #
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    """with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(colCluster, clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
                                    gt_clusters, gt_cluster_dict) for index, clu in
                    enumerate(list(gt_cluster_dict.keys()))]
         # wait all parallel task to complete
         for future in futures:
-            future.result()
+            future.result()"""
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
         ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+        break
     print("All parallel tasks completed.")
 
 
@@ -250,3 +251,4 @@ def files_columns_running(hp: Namespace):
     # print(len(files[hp.slice_start:hp.slice_stop]))
     for file in files:  # [hp.slice_start:hp.slice_stop]
         starmie_columnClustering(file, hp)
+        break

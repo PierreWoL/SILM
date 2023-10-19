@@ -270,11 +270,13 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     table_ids = [i for i in range(0, len(tables))]
     dendrogra = sch.dendrogram(linkage_matrix, labels=tables)
     # dendrogra = PKL.plot_tree(linkage_matrix, file_path, node_labels=tables)
-    tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
+    tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables ) #target_path= "results/Valerie/WDC/a.png"
+
     start_time = time.time()
     layers = 4
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
                                          estimate_num_cluster=layers, customMatrix=custom_metric)
+    # print(threCluster_dict)
     end_time = time.time()
     # Calculate the elapsed time
     timing['Finding Layers'] = {'timing': end_time - start_time}
@@ -285,6 +287,17 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
         return None
     simple_tree, layer_info_dict, Parent_nodes_h = \
         simple_tree_with_cluster_label(threCluster_dict, tree_test, tables, timing,dataset)
+
+    print("label now!", "\n\n", Parent_nodes_h, simple_tree)  # "\n\n" ,Parent_nodes_h
+
+
+    """ """
+           # tree_without_tables.remove_node(node)
+
+    #PKL.hierarchy_tree(simple_tree, target_folder="results/Valerie/WDC/simple.png")
+    """for node in simple_tree.nodes():
+        print(node, simple_tree.nodes[node]['type'])"""
+
     start_time = time.time()
     TCS, len_path = TreeConsistencyScore(simple_tree, layer_info_dict[0], Parent_nodes_h,dataset=dataset)
     end_time = time.time()
@@ -327,7 +340,7 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
     index_cols = int(filename.split("_")[0])
-    print(index_cols,"\n")
+    print("index col",index_cols,"\n")
     print(KEYS[index_cols])
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)

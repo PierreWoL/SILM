@@ -23,26 +23,25 @@ print(f"{node_A} 的出节点列表：{successors_list}")
 print(f"{node_A} 祖先列表：{as_root}")
 print(f"{node_A} 不知道什么玩意：{te}")"""
 
-"""from starmie.sdd.augment import augment
-table = pd.read_csv("datasets/WDC/Test/SOTAB_1.csv")
-t2 = augment(table, "sample_cells_TFIDF")
-t3 = augment(table, "replace_cells_TFIDF")
+from starmie.sdd.augment import augment
+table = pd.read_csv("datasets/WDC/Test/T2DV2_7.csv")
+t2 = augment(table, "sample_row_TFIDF")
 
-data_path = os.getcwd() + "/datasets/TabFact/Test/"
 
-files = [fn for fn in os.listdir(data_path)]
+data_path = os.getcwd() + "/datasets/WDC/Test/"
+
+"""files = [fn for fn in os.listdir(data_path)]
 #'replace_cells_TFIDF' ,
-augmentation = [ 'replace_high_cells', 'sample_cells_TFIDF', 'highlight_cells']
+augmentation = ['sample_row_TFIDF', 'sample_cells_TFIDF']
 for aug in augmentation:
-    for file in files:
-        print(file)
+    for file in files[300:]:
+
         table = pd.read_csv(os.path.join(data_path, file))
-        # t3 = augment(table, "replace_cells_TFIDF",isTabFact = True)
-        # t2 = augment(table, "sample_cells_TFIDF",isTabFact = True)
-        t2 = augment(table, aug, isTabFact=True)
+        print(file, aug)
+        t2 = augment(table, aug, isTabFact=False)
         # print(table.transpose(),"\n", t2.transpose())
-        # break
-"""
+        break"""
+
 
 """
 import numpy as np
@@ -77,3 +76,5 @@ fig.show()
 fig.write_html("output_plot1.html")
     
 """
+
+
