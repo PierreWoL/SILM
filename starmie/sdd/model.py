@@ -95,26 +95,26 @@ class BarlowTwinsSimCLR(nn.Module):
         labels = torch.cat([torch.arange(batch_size) for i in range(n_views)], dim=0)
         labels = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
         labels = labels.to(self.device)
-        print(f"features {features}")
+       
         features = F.normalize(features, dim=1)
         similarity_matrix = torch.matmul(features, features.T)
-        print(f"features {features} \n & similarity matrix {similarity_matrix}")
+      
         # discard the main diagonal from both: labels and similarities matrix
         mask = torch.eye(labels.shape[0], dtype=torch.bool).to(self.device)
         labels = labels[~mask].view(labels.shape[0], -1)
         similarity_matrix = similarity_matrix[~mask].view(similarity_matrix.shape[0], -1)
-        print(f"labels {labels} \n & similarity matrix {similarity_matrix}")
+    
         # assert similarity_matrix.shape == labels.shape
 
         # select and combine multiple positives
         positives = similarity_matrix[labels.bool()].view(labels.shape[0], -1)
-        print("positives ",positives)
+      
         # select only the negatives
         negatives = similarity_matrix[~labels.bool()].view(similarity_matrix.shape[0], -1)
-        print("negatives ",negatives)
+   
         logits = torch.cat([positives, negatives], dim=1)
         labels = torch.zeros(logits.shape[0], dtype=torch.long).to(self.device)
-        print("labels ",labels)
+    
         logits = logits / temperature
         return logits, labels
 

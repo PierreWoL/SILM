@@ -234,7 +234,7 @@ def train(trainset, hp):
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
             directory = os.path.join(hp.logdir, hp.method, hp.dataset)
-            op_augment_new =simplify_string( )
+            op_augment_new =simplify_string(hp.augment_op)
             if not os.path.exists(directory):
                 os.makedirs(directory)
                 

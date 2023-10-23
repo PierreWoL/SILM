@@ -139,6 +139,7 @@ class PretrainTableDataset(data.Dataset):
         else:
             fn = os.path.join(self.path, self.tables[table_id])
             table = pd.read_csv(fn)  # encoding="latin-1",
+           
             """if self.isCombine:
                 table = table.iloc[:, 1:]  # encoding="latin-1","""
 
