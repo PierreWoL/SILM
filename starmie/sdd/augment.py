@@ -76,11 +76,15 @@ def augment(table: pd.DataFrame, op: str, isTabFact=False):
         else:
             table = table.copy()
             col_index = random.choice(range(0, len(table.columns)))
-            column_list = split(table.iloc[:, col_index][0])
-            num_to_change = len(column_list) // 2
+            column_list = split(str(table.iloc[:, col_index][0]))
+            num_to_change = len(table) // 2
+            if num_to_change <1:
+                num_to_change= 1
             indices_to_change = random.sample(range(len(column_list)), num_to_change)
+            #print(indices_to_change)
             for index in indices_to_change:
-                column_list[index] = ""
+                #column_list[index] = ""
+                del column_list[index]
             table.iloc[0, col_index] = pd.Series(column_list).rename(table.columns[col_index])
     elif op == 'sample_cells_TFIDF':
         table = table.copy()

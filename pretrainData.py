@@ -224,7 +224,7 @@ class PretrainTableDataset(data.Dataset):
             table = tfidfRowSample(table, tfidfDict, max_tokens)
         for index, column in enumerate(table.columns):
             column_values = table.iloc[:, index] if self.isCombine is False \
-                else pd.Series(split(table.iloc[:, index][0])).rename(column)
+                else pd.Series(split(str(table.iloc[:, index][0]))).rename(column)
             tokens = preprocess(column_values, tfidfDict, max_tokens, self.sample_meth)  # from preprocessor.py
             string_token = ' '.join(tokens[:max_tokens])
             col_text = self.tokenizer.cls_token + " "

@@ -529,7 +529,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
 
 
 def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None,
-                     tables_gt: Optional[dict] = None, graph = None):
+                     tables_gt: Optional[dict] = None): #, graph = None
     clusters_label = {}
     table_label_index = []
     false_ones = []
@@ -584,13 +584,14 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
                         if tables_gt is not None and folder is not None:
                             current_ones.append([table, index, "True", tables_gt[table], gtclusters[table]])
         lowest_gt = [i[3] for i in current_ones]
-        consistency_score = consistency_of_cluster(graph, lowest_gt)
-        ave_consistency += consistency_score
+        #consistency_score = consistency_of_cluster(graph, lowest_gt)
+        #ave_consistency += consistency_score
         if tables_gt is not None and folder is not None:
             falses = [i for i in current_ones if i[2] == "False"]
             purity_index = 1 - len(falses) / len(tables_list)
             overall_clustering.extend(current_ones)
-            overall_info.append([index, cluster_label, purity_index, consistency_score, len(tables_list)])
+            #overall_info.append([index, cluster_label, purity_index, consistency_score, len(tables_list)])
+            overall_info.append([index, cluster_label, purity_index,  len(tables_list)])
 
 
 
@@ -605,8 +606,8 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     if tables_gt is not None and folder is not None:
         df = pd.DataFrame(overall_clustering,
                           columns=['tableName', 'cluster id', 'table type', 'lowest type', 'top level type'])
-        df2 = pd.DataFrame(overall_info, columns=['Cluster id', 'Corresponding top level type', 'cCluster purity',
-                                                  'Consistency of cluster', 'Size'])
+        df2 = pd.DataFrame(overall_info, columns=['Cluster id', 'Corresponding top level type', 'cCluster purity', 'Size']) 
+        # 'Consistency of cluster', 'Size'])
         df.to_csv(os.path.join(folder, 'overall_clustering.csv'), encoding='utf-8', index=False)
         df2.to_csv(os.path.join(folder, 'purityCluster.csv'), encoding='utf-8', index=False)
         del df, df2
@@ -621,7 +622,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     return Z, T"""
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, graph = None):
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None): #, graph = None
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
     gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
     del ground_t0, gt_cluster_dict0
@@ -663,7 +664,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
     fig.write_html("output_plot2.html")"""
     # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
-    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, gt_clusters0,graph = graph)
+    metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, gt_clusters0) #,graph = graph
     return cluster_dict, metrics_value
 
 

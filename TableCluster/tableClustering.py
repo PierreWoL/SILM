@@ -20,12 +20,11 @@ def silm_clustering(hp: Namespace):
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
 
     # Read the groung truth hierarchy
-    F_graph = open(os.path.join(os.getcwd(),
-                                "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
-    graph_gt = pickle.load(F_graph)
+    # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
+    # graph_gt = pickle.load(F_graph)
 
     files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and hp.embed in fn]  # pkl  and 'cell' in fn and 'subCol' in fn
+             '.pkl' in fn and hp.embed in fn and 'subCol' in fn]  # pkl  and 'cell' in fn and 'subCol' in fn
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -78,13 +77,12 @@ def silm_clustering(hp: Namespace):
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
-                metric_value_df = pd.DataFrame(columns=["Random Index", "Purity",
-                                                        "Average cluster consistency score"])  # "ARI", "MI", "NMI", "AMI"
+                metric_value_df = pd.DataFrame(columns=["Random Index", "Purity"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
                 for i in range(0, 1):
                     new_path = os.path.join(store_path, file[:-4])
                     mkdir(new_path)
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,
-                                                                   folderName=new_path, graph=graph_gt)
+                                                                   folderName=new_path)#, graph=graph_gt
                     # print(cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
@@ -166,8 +164,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
             future.result()"""
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
         ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
-        break
-    print("All parallel tasks completed.")
+    #print("All parallel tasks completed.")
 
 
 def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters, gt_cluster_dict):
