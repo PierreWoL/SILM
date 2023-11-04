@@ -26,7 +26,7 @@ if __name__ == '__main__':
     parser.add_argument("--pretrain", dest="pretrain", action="store_true")
     parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
-    parser.add_argument("--augment_op", type=str, default='shuffle_col,replace_high_cells,highlight_cells,sample_row') #
+    parser.add_argument("--augment_op", type=str, default='sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF') #
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # column header-only mode without table context
@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument("--pos_pair", type=int, default=0)
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
+    parser.add_argument("--column", dest="column", action="store_true")
     # subject-column mode without table context
     parser.add_argument("--subject_column", dest="subject_column", action="store_true")
     parser.add_argument("--check_subject_Column", type=str, default='subjectheader')  # subjectheader
@@ -65,11 +66,12 @@ if __name__ == '__main__':
     path = 'datasets/%s/Test' % hp.dataset
 
     trainset = PretrainTableDataset.from_hp(path, hp)
+    trainset[100]
     output_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
     if hp.pretrain:
         trainset.encodings(output_path,setting=hp.NoContext)
-    else:
+    #else:
        
-        train(trainset, hp)
-        table_features(hp)
+        #train(trainset, hp)
+        #table_features(hp)
 #--pretrain --subject_column

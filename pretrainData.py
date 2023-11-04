@@ -33,6 +33,7 @@ class PretrainTableDataset(data.Dataset):
                  max_len=256,
                  size=None,
                  lm='roberta',
+                 column=False,
                  single_column=False,
                  subject_column=False,
                  header=False,
@@ -78,12 +79,17 @@ class PretrainTableDataset(data.Dataset):
         if "TabFact" in self.path:
             self.subjectColumn_path = False
             self.isCombine = True
+
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        self.columns = []
         # only keep the first n tables
         if size is not None:
             self.tables = self.tables[:size]
 
         self.table_cache = {}
+
+        self.column_cache = {}
+
         self.check_subject_Column = check_subject_Column
         # augmentation operators
         self.augment_op = augment_op
@@ -99,6 +105,9 @@ class PretrainTableDataset(data.Dataset):
         # subject-column mode
         self.subject_column = subject_column
 
+        # Column mode
+        self.column = column
+
         # header-only  mode
         self.header = header
 
@@ -107,6 +116,14 @@ class PretrainTableDataset(data.Dataset):
 
         # tokenizer cache
         self.tokenizer_cache = {}
+
+        if self.column is True:
+            for fn in self.tables:
+                fn_table = os.path.join(self.path, fn)
+                columns = pd.read_csv(fn_table).columns
+                for col in columns:
+                    self.columns.append(f"{fn}|{col}")
+                del columns
 
     @staticmethod
     def from_hp(path: str, hp: Namespace):
@@ -126,6 +143,7 @@ class PretrainTableDataset(data.Dataset):
                                     size=hp.size,
                                     single_column=hp.single_column,
                                     subject_column=hp.subject_column,
+                                    column=hp.column,
                                     sample_meth=hp.sample_meth,
                                     table_order=hp.table_order,
                                     header=hp.header,
@@ -139,12 +157,27 @@ class PretrainTableDataset(data.Dataset):
         else:
             fn = os.path.join(self.path, self.tables[table_id])
             table = pd.read_csv(fn)  # encoding="latin-1",
-           
+
             """if self.isCombine:
                 table = table.iloc[:, 1:]  # encoding="latin-1","""
 
             self.table_cache[table_id] = table
         return table
+
+    def _read_column(self, column_id):
+        """Read a column from the cache"""
+        if column_id in self.column_cache:
+            column = self.column_cache[column_id]
+        else:
+            combination = self.columns[column_id].split("|")
+            table, column = combination[0], combination[1]
+            fn = os.path.join(self.path, table)
+            column = pd.read_csv(fn)[column]  # encoding="latin-1",
+            column = pd.DataFrame(column)
+            """if self.isCombine:
+                table = table.iloc[:, 1:]  # encoding="latin-1","""
+            self.column_cache[column_id] = column
+        return column
 
     def _tokenize(self, table: pd.DataFrame):  # -> List[int]
         """Tokenize a DataFrame table
@@ -163,6 +196,7 @@ class PretrainTableDataset(data.Dataset):
                                  isCombine=self.isCombine) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         # a map from column names to special token indices
         column_mp = {}
+
         Sub_cols_header = subjectCol(table, self.isCombine)
         # column-ordered preprocessing
         if self.table_order == 'column':
@@ -216,6 +250,7 @@ class PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
+        print(column_mp, res)
         return res, column_mp
 
     def _column_stratgy(self, Sub_cols_header, table, tfidfDict, max_tokens, NoToken=False):
@@ -355,8 +390,6 @@ class PretrainTableDataset(data.Dataset):
         """Return the size of the dataset."""
         return len(self.tables)
 
-    
-     
     def __getitem__(self, idx):
         """
         Return a tokenized item of the dataset.
@@ -368,9 +401,7 @@ class PretrainTableDataset(data.Dataset):
             List of int: token ID's of the first view
             List of int: token ID's of the second view
         """
-        
-        table_ori = self._read_table(idx)
-
+        table_ori = self._read_table(idx) if self.column is False else self._read_column(idx)
         if "row" in self.table_order:
             tfidfDict = computeTfIdf(table_ori)
             table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
@@ -390,12 +421,11 @@ class PretrainTableDataset(data.Dataset):
 
         tables = [table_ori]
         for aug in augs:
-            tables.append(augment(tables[-1], aug, isTabFact= self.isCombine))
+            tables.append(augment(tables[-1], aug, isTabFact=self.isCombine))
         if self.pos_pair < 2:
             tables = tables[:2]
         else:
             tables = tables[1:]
-         
 
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
@@ -413,9 +443,8 @@ class PretrainTableDataset(data.Dataset):
             if all(col in mp for mp in mp_values):
                 cls_indices.append(tuple(mp[col] for mp in mp_values))
 
-        return *x_values, cls_indices 
-        
-        
+        return *x_values, cls_indices
+
     """Merge a list of dataset items into a training batch
 
         Args:
@@ -426,28 +455,28 @@ class PretrainTableDataset(data.Dataset):
             LongTensor: x_aug of shape (batch_size, seq_len)
             tuple of List: the cls indices
     """
-   
-    def pad(self, batch):
-        
-        # Dynamically determine the number of sequences
-         num_sequences = len(batch[0])
-         sequences = list(zip(*batch))
-         x_seqs = sequences[:-1]
-         
-         cls_indices = sequences[-1]
-         #print(cls_indices)
-         # Determine maximum length across all sequences
-         maxlen = max([max([len(x) for x in seq]) for seq in x_seqs])
-         
-         # Pad the sequences
-         x_new_seqs = []
-         for seq in x_seqs:
-                  x_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in seq]
-                  x_new_seqs.append(torch.LongTensor(x_new))
 
-         # Decompose the column alignment
- 
-         """
+    def pad(self, batch):
+
+        # Dynamically determine the number of sequences
+        num_sequences = len(batch[0])
+        sequences = list(zip(*batch))
+        x_seqs = sequences[:-1]
+
+        cls_indices = sequences[-1]
+        # print(cls_indices)
+        # Determine maximum length across all sequences
+        maxlen = max([max([len(x) for x in seq]) for seq in x_seqs])
+
+        # Pad the sequences
+        x_new_seqs = []
+        for seq in x_seqs:
+            x_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in seq]
+            x_new_seqs.append(torch.LongTensor(x_new))
+
+        # Decompose the column alignment
+
+        """
          cls_lists = tuple([[] for _ in range(len(cls_indices[0][0]))])
          for table_batch in cls_indices:
            table_batch_indices = [[] for _ in range(len(cls_indices[0][0]))]
@@ -456,10 +485,10 @@ class PretrainTableDataset(data.Dataset):
                    table_batch_indices[i].append(idx)
            for i,item in enumerate(table_batch_indices):
              cls_lists[i].append(item)"""
-         if len(cls_indices[0])==0:
+        if len(cls_indices[0]) == 0:
             per_cls_indices = [[] for _ in range(len(cls_indices))]
-            cls_lists = per_cls_indices,per_cls_indices
-         else:
+            cls_lists = per_cls_indices, per_cls_indices
+        else:
             cls_lists = tuple([[] for _ in range(len(cls_indices[0][0]))])
             for table_batch in cls_indices:
                 table_batch_indices = [[] for _ in range(len(cls_indices[0][0]))]
@@ -467,172 +496,5 @@ class PretrainTableDataset(data.Dataset):
                     for i, idx in enumerate(item):
                         table_batch_indices[i].append(idx)
                 for i, item in enumerate(table_batch_indices):
-                      cls_lists[i].append(item)
-         return *x_new_seqs, cls_lists
-    
-     
-    """
-    def __getitem__(self, idx):
-        
-        table_ori = self._read_table(idx)
-        # single-column mode: only keep one random column
-        if "row" in self.table_order:
-            tfidfDict = computeTfIdf(table_ori)
-            table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
-
-        if self.single_column:
-            col = random.choice(table_ori.columns)
-            table_ori = table_ori[[col]]
-        if self.subject_column:
-            cols = subjectCol(table_ori, self.isCombine)
-            if len(cols) > 0:
-                table_ori = table_ori[cols]
-                
-        
-            #if os.path.exists(self.subjectColumn_path):
-                #subcol_files = [fn for fn in os.listdir(self.path[:-4] + "SubjectColumn") if
-                  #  '.csv' in fn]
-               # if self.tables[idx] in subcol_files:
-                   # Sub_cols = pd.read_csv(self.path[:-4] + "SubjectColumn/" + self.tables[idx])
-                   # cols = [col for col in Sub_cols.columns if col in table_ori.columns]
-           
-            
-
-        # apply the augmentation operator
-        table_aug  = table_ori
-        table_aug2 = table_ori
-        table_aug3 = table_ori
-        if ',' in self.augment_op:
-            augs = self.augment_op.split(',')
-
-            self.pos_pair=len(augs)
-            if self.pos_pair>=2:
-                table_tmp = table_ori
-                table_ori = augment(table_tmp, augs[0])
-                table_aug = augment(table_tmp, augs[1])
-                if self.pos_pair ==3:
-                    table_aug2 = augment(table_tmp, augs[2])
-                if self.pos_pair >3:
-                    table_aug3 = augment(table_tmp, augs[3])
-        else:
-            table_aug = augment(table_ori, self.augment_op)
-            if self.isCombine:
-                table_aug = aug(table_ori)
-        if "pure" in self.table_order and 'header' in self.check_subject_Column:
-            header = table_ori.columns.tolist()
-            table_ori = pd.DataFrame([header] + table_ori.values.tolist(), columns=header)
-            table_aug = pd.DataFrame([header] + table_aug.values.tolist(), columns=header)
-            if self.pos_pair == 3:
-                table_aug2 = pd.DataFrame([header] + table_aug2.values.tolist(), columns=header)
-            if self.pos_pair > 3:
-                table_aug3 = pd.DataFrame([header] + table_aug3.values.tolist(), columns=header)
-        x_ori, mp_ori = self._tokenize(table_ori)
-        x_aug, mp_aug = self._tokenize(table_aug)
-        if self.pos_pair <=2:
-            cls_indices = []
-            for col in mp_ori:
-                if col in mp_aug:
-                    cls_indices.append((mp_ori[col], mp_aug[col]))
-            return x_ori, x_aug, cls_indices
-
-        elif self.pos_pair ==3:
-            x_aug2, mp_aug2 = self._tokenize(table_aug2)
-            cls_indices = []
-            for col in mp_ori:
-                if col in mp_aug:
-                    if col in mp_aug2:
-
-                        cls_indices.append((mp_ori[col], mp_aug[col],mp_aug2[col]))
-
-            return x_ori, x_aug,x_aug2, cls_indices
-
-        elif self.pos_pair >3:
-            x_aug2, mp_aug2 = self._tokenize(table_aug2)
-            x_aug3, mp_aug3 = self._tokenize(table_aug3)
-            cls_indices = []
-            for col in mp_ori:
-                if col in mp_aug and col in mp_aug2 and mp_aug3:
-
-                    cls_indices.append((mp_ori[col], mp_aug[col],mp_aug2[col],mp_aug3[col]))
-
-            return x_ori, x_aug,x_aug2,x_aug3, cls_indices
-    """
-    """
-    def pad(self, batch):
-      
-        if self.pos_pair  <=2:
-
-            x_ori, x_aug, cls_indices = zip(*batch)
-            print(cls_indices)
-            max_len_ori = max([len(x) for x in x_ori])
-            max_len_aug = max([len(x) for x in x_aug])
-            maxlen = max(max_len_ori, max_len_aug)
-            x_ori_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_ori]
-            x_aug_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_aug]
-
-            # decompose the column alignment
-            cls_ori = []
-            cls_aug = []
-            for item in cls_indices:
-                cls_ori.append([])
-                cls_aug.append([])
-
-                for idx1, idx2 in item:
-                    cls_ori[-1].append(idx1)
-                    cls_aug[-1].append(idx2)
-
-            return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new), (cls_ori, cls_aug)
-        elif self.pos_pair >=3:
-
-            x_ori, x_aug, x_aug2, cls_indices = zip(*batch)
-            max_len_ori = max([len(x) for x in x_ori])
-            max_len_aug = max([len(x) for x in x_aug])
-            max_len_aug2 = max([len(x) for x in x_aug2])
-            maxlen = max(max_len_ori, max_len_aug,max_len_aug2)
-            x_ori_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_ori]
-            x_aug_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_aug]
-            x_aug2_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_aug2]
-
-            # decompose the column alignment
-            cls_ori = []
-            cls_aug = []
-            cls_aug2 = []
-            for item in cls_indices:
-                cls_ori.append([])
-                cls_aug.append([])
-                cls_aug2.append([])
-                for idx1, idx2, idx3 in item:
-                    cls_ori[-1].append(idx1)
-                    cls_aug[-1].append(idx2)
-                    cls_aug2[-1].append(idx3)
-
-            return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new),  torch.LongTensor(x_aug2_new),(cls_ori, cls_aug,cls_aug2 )
-        elif self.pos_pair > 3:
-            x_ori, x_aug, x_aug2,x_aug3, cls_indices = zip(*batch)
-            max_len_ori = max([len(x) for x in x_ori])
-            max_len_aug = max([len(x) for x in x_aug])
-            max_len_aug2 = max([len(x) for x in x_aug2])
-            max_len_aug3 = max([len(x) for x in x_aug3])
-            maxlen = max(max_len_ori, max_len_aug, max_len_aug2,max_len_aug3)
-            x_ori_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_ori]
-            x_aug_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_aug]
-            x_aug2_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_aug2]
-            x_aug3_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in x_aug3]
-
-            # decompose the column alignment
-            cls_ori = []
-            cls_aug = []
-            cls_aug2 = []
-            cls_aug3 = []
-            for item in cls_indices:
-                cls_ori.append([])
-                cls_aug.append([])
-                cls_aug2.append([])
-                cls_aug3.append([])
-                for idx1, idx2, idx3,idx4 in item:
-                    cls_ori[-1].append(idx1)
-                    cls_aug[-1].append(idx2)
-                    cls_aug2[-1].append(idx3)
-                    cls_aug3[-1].append(idx4)
-            return torch.LongTensor(x_ori_new), torch.LongTensor(x_aug_new), torch.LongTensor(x_aug2_new),  \
-                   torch.LongTensor(x_aug3_new),(cls_ori, cls_aug, cls_aug2,cls_aug3)  """
+                    cls_lists[i].append(item)
+        return *x_new_seqs, cls_lists
