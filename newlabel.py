@@ -344,21 +344,21 @@ for index, row in ground_truth_csv.iterrows(): #.iloc[200:1000]
     # nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
     # plt.show()
 
-previous_values = len(G.nodes)
-graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
-plt.figure(figsize=(23, 23))
-nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-plt.show()
-target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+#previous_values = len(G.nodes)
+#graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
+#plt.figure(figsize=(23, 23))
+#nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+#plt.show()
 
-with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
+target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "wb") as file:
   pickle.dump(G, file)
 """
-unimportant = ['Thing', 'Boolean', 'Text', '2000/01/rdf-schema#Class', 'Date', 'DateTime', 'False', 'Number',
+"""unimportant = ['Thing', 'Boolean', 'Text', '2000/01/rdf-schema#Class', 'Date', 'DateTime', 'False', 'Number',
                'Time', 'True', 'DataType', 'Float', 'Integer', 'URL', 'XPathType',
                'PronounceableText', 'CssSelectorType', 'StupidType']
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "rb") as file:
     G = pickle.load(file)
 
 dataSchema = pd.read_csv("schemaorg-all-http-types.csv")
@@ -377,11 +377,15 @@ def add_nodes_schema(tree, topNodes):
                 if "," in parent_type:
                     list_parent = parent_type.split(", ")
                     for i in list_parent:
-                        print(node, i)
-                        tree.add_edge(i, node)
+
+                        if i != 'PhysicalActivity':
+                            print(node, i)
+                            tree.add_edge(i, node)
                 else:
-                    print(node, parent_type)
-                    tree.add_edge(parent_type, node)
+
+                    if node !='PhysicalActivity':
+                        print(node, parent_type)
+                        tree.add_edge(parent_type, node)
     return tree
 
 
@@ -392,9 +396,9 @@ while len(G.nodes()) > current_len:
     print(top_nodes, len(top_nodes))
     G = add_nodes_schema(G, top_nodes)
 
-# with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
-#    pickle.dump(G, file)
-
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
+    pickle.dump(G, file)
+"""
 
 # exc = df.iloc[exception_list]
 # exc.to_csv('datasets/TabFact/selected_rows.csv', index=False)  # 保存为CSV文件
@@ -461,6 +465,10 @@ with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
 #
 
 """  # Process the DataFrames as needed
+
+
+
+
 ground_label_name1 = "01SourceTables.csv"
 data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
 ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
@@ -468,7 +476,7 @@ ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
 
 # Below needs reconstruct and important
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "rb") as file:
     G = pickle.load(file)
 labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
 for index, row in ground_truth_csv.iterrows():
@@ -483,7 +491,7 @@ for index, row in ground_truth_csv.iterrows():
                 parent_top_per = [item for item in nx.ancestors(G, type_low) if
                                   G.in_degree(item) == 0]
                 parent_top_pers.extend(parent_top_per)
-        lowest = lowest_type_unqi
+        lowest = list(lowest_type_unqi)
 
     else:
         if row["class"] != " ":
@@ -492,11 +500,15 @@ for index, row in ground_truth_csv.iterrows():
                 parent_top_per = [item for item in nx.ancestors(G, type_low) if
                                   G.in_degree(item) == 0]
                 parent_top_pers.extend(parent_top_per)
-            lowest = type_low
+            lowest = list([type_low])
     ground_truth_csv.iloc[index, 4] = lowest
     ground_truth_csv.iloc[index, 5] = list(set(parent_top_pers))
 
 ground_truth_csv.to_csv(os.path.join(os.getcwd(), "datasets/TabFact/Try.csv"))
+
+
+
+
 
 """
 multi.dropna(subset=['TopClass'], inplace=True)
