@@ -248,7 +248,6 @@ def prune_graph(tree, top_list, similar_list):
     return tree
 
 
-"""
 lists = []
 
 exception_list = []
@@ -286,10 +285,15 @@ for index, row in ground_truth_csv.iterrows(): #.iloc[200:1000]
                                 G_cur.add_edge(parent_type, child_type)
 
             G_cur = prune_graph(G_cur, top, similarity_dict.values())
+            #if 'sports season of a sports club' in G_cur.nodes():
+               # print(nx.ancestors(G_cur, 'sports season of a sports club'))
+
             G.add_nodes_from(G_cur.nodes())
             G.add_edges_from(G_cur.edges())
+            if 'sports season' in G_cur.nodes():
+                print(nx.ancestors(G, 'sports season'))
             if G.has_node("event"):
-                    print(row["fileName"],df_cells_list)
+                    #print(row["fileName"],df_cells_list)
                     break
         else:
 
@@ -351,10 +355,10 @@ for index, row in ground_truth_csv.iterrows(): #.iloc[200:1000]
 #plt.show()
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "wb") as file:
-  pickle.dump(G, file)
-"""
-"""unimportant = ['Thing', 'Boolean', 'Text', '2000/01/rdf-schema#Class', 'Date', 'DateTime', 'False', 'Number',
+#with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "wb") as file:
+ # pickle.dump(G, file)
+
+unimportant = ['Thing', 'Boolean', 'Text', '2000/01/rdf-schema#Class', 'Date', 'DateTime', 'False', 'Number',
                'Time', 'True', 'DataType', 'Float', 'Integer', 'URL', 'XPathType',
                'PronounceableText', 'CssSelectorType', 'StupidType']
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
@@ -396,9 +400,16 @@ while len(G.nodes()) > current_len:
     print(top_nodes, len(top_nodes))
     G = add_nodes_schema(G, top_nodes)
 
-with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
-    pickle.dump(G, file)
-"""
+
+graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
+plt.figure(figsize=(23, 23))
+nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+plt.show()
+
+top_nodes = [node for node in G.nodes() if G.in_degree(node) == 0]
+print(top_nodes, len(top_nodes))
+
+
 
 # exc = df.iloc[exception_list]
 # exc.to_csv('datasets/TabFact/selected_rows.csv', index=False)  # 保存为CSV文件
@@ -468,7 +479,7 @@ with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
 
 
 
-
+"""
 ground_label_name1 = "01SourceTables.csv"
 data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
 ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
@@ -506,7 +517,7 @@ for index, row in ground_truth_csv.iterrows():
 
 ground_truth_csv.to_csv(os.path.join(os.getcwd(), "datasets/TabFact/Try.csv"))
 
-
+"""
 
 
 
