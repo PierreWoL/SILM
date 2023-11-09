@@ -11,7 +11,11 @@ import matplotlib.pyplot as plt
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-
+def check_bottom_type(tree:nx.DiGraph(), node):
+    childTyps = [i for i in nx.descendants(tree,node)  ]
+    bottom = [i for i in childTyps if tree.out_degree(i) ==0]
+    print(node,bottom )
+    return bottom
 def query_wikidata_api(wiki_url):
     # Wikidata SPARQL endpoint URL
     endpoint_url = "https://query.wikidata.org/sparql"
@@ -91,29 +95,52 @@ def parallel_crawling(gt_csv: dict):
         dataframes_list = query_wikidata_parallel(result_diction)
 
 
-abstract = ['PhysicalActivity', 'object', 'result', 'temporal entity', 'inconsistency', 'noun', 'noun phrase',
-            'remains', 'use', 'independent continuant', 'observable entity', 'artificial entity',
-            'natural physical object',
-            'occurrence', 'relation', 'group of physical objects', 'economic entity', 'group of works',
-            'concrete object', 'three-dimensional object', 'part', 'geographic entity', 'artificial geographic entity',
-            'source', 'group or class of physical objects', 'role', 'phenomenon', 'physical entity', 'means',
-            'spatio-temporal entity', 'spatial entity', 'one-dimensional space', 'physical object',
-            'continuant', 'collective entity', 'space object', 'type', 'information', 'anatomical entity',
-            'output', 'abstract object', 'class', 'non-physical entity', 'integral', 'quantity', 'former entity',
-            'occurrent', 'cause', 'idiom', 'lect', 'modification', 'alteration', 'control', 'consensus',
-            'social relation', 'process', 'rivalry', 'mental process', 'condition', 'military activity',
-            'human aerial activity', 'EntryPoint',
-            'social phenomenon', 'manifestation', 'work', 'source of information', 'knowledge type', 'action',
-            'time interval', 'interaction', 'record', 'language variety', 'intentional human activity',
-            'status', 'group of living things', 'agent', 'sign', 'content', 'converter', 'resource', 'metaclass',
-            'unit', 'human activity', 'effect', 'archives', 'sub-fonds', 'evaluation',
-            'interface', 'contributing factor', 'undesirable characteristic', 'structure', 'method', 'matter', 'change',
-            'physical phenomenon', 'binary relation', 'building work', 'power', 'management', 'long, thin object',
-            'definite integral', 'physical property', 'multi-organism process', 'data', 'multiset', 'line',
-            'proper noun', 'physicochemical process', 'group', 'collection', 'historical source',
-            'interaction', 'information resource', 'list', 'plan', 'scale', 'memory', 'social structure',
-            'source text', 'open content', 'written work', 'strategy', 'group of humans', 'system', 'deformation',
-            'representation', 'multicellular organismal process', 'operator', 'social system']
+abstract = ['PhysicalActivity', 'object', 'result', 'temporal entity', 'inconsistency', 'noun', 'noun phrase','release','park','idea','repopulation',
+            'network','evolutionary process', 'animal locomotion',   'rare disease','group dynamics', 'disease', 'locomotion','draft',
+            'biological phenomenon','colonization', 'theory','biological process involved in intraspecies interaction between organisms',
+            'function','point in time', 'regular space', 'depiction', 'similarity', 'custom', 'morality','motor skill', 'analytic space','historiography',
+            'remains', 'use', 'independent continuant', 'observable entity', 'artificial entity', 'motion','gross motor skill', 'exertion',
+            'natural physical object', 'inconsistency', 'physical activity', 'physical process', 'natural process','scientific method', 'performance',
+            'occurrence', 'relation', 'group of physical objects', 'economic entity', 'group of works', 'custom','differentiable manifold','list',
+            'ideology','completely regular space', 'concrete object', 'three-dimensional object', 'part','taxon','community', 'animal behaviour',
+            'geographic entity', 'artificial geographic entity',   'marine water body','athletic culture','large number','sine wave', 'assignment',
+            'source', 'group or class of physical objects', 'role', 'phenomenon', 'physical entity', 'means','unit of measurement', 'comparison',
+            'spatio-temporal entity', 'spatial entity', 'one-dimensional space', 'physical object', 'social procedure','political ideology',
+            'continuant', 'collective entity', 'space object', 'type', 'information', 'anatomical entity', 'statistic','natural phenomenon',
+            'economic activity','animal motion',  'developmental stage theories', 'physiological condition','zero-dimensional space','chronicle',
+            'output', 'abstract object', 'class', 'non-physical entity', 'integral', 'quantity', 'former entity','biological process',
+            'occurrent', 'cause', 'idiom', 'lect', 'modification', 'alteration', 'control', 'consensus', 'tradition','Formula One race', 'artificial physical object',
+            'social relation', 'process', 'mental process', 'condition', 'military activity', 'knowledge system','information exchange',
+            'travel', 'equestrianism','world view','phylum', 'physical substance', 'physical interface', 'moral quality','unit of speech',
+            'conceptual system', 'specialty', 'periodic process', 'nonbuilding structure', 'equestrian sport','electoral result',
+            'human aerial activity', 'EntryPoint', 'property', 'series', 'aspect', 'point of view','motorcycle racing', 'surface',
+            'mental representation', 'linguistic unit', 'census',   'interval scale','quantity', 'miniature object','geometric shape', 'superellipse',
+            'social phenomenon', 'manifestation', 'work', 'source of information', 'knowledge type', 'action', 'belief',
+            'time interval', 'interaction', 'record', 'language variety', 'intentional human activity', 'cross section','anthroponym',
+            'status', 'group of living things', 'agent', 'sign', 'content', 'converter', 'resource', 'metaclass','geometric shape',
+            'unit', 'human activity', 'effect', 'archives', 'sub-fonds', 'evaluation', 'physical location','ranked list',
+            'interface', 'contributing factor', 'undesirable characteristic', 'structure', 'method', 'matter', 'change','social behavior',
+            'physical phenomenon', 'binary relation', 'building work', 'power', 'management', 'long, thin object','social interaction',
+            'military aviation', 'animal motion','naval activity', 'physiological condition',  'ranking','shape', 'subset','aspect of sound',
+            'definite integral', 'physical property', 'multi-organism process', 'data', 'multiset', 'line', 'aviation',
+            'proper noun', 'physicochemical process', 'group', 'collection', 'historical source', 'linear construction','cartesian oval', 'analytic manifold',
+            'interaction', 'information resource', 'list', 'plan', 'scale', 'memory', 'social structure','subclass',
+            'source text', 'open content', 'written work', 'strategy', 'group of humans', 'system', 'deformation', 'virtue',
+            'representation', 'multicellular organismal process', 'operator', 'social system', 'region in space','rose',
+            'affine transformation', 'measurement scale', 'light source', 'physical structure', 'biological structure',
+            'macromolecular conformation', 'lawn', 'historical fact', 'building complex', 'behavior', 'point', 'measured quantity', 'world ranking list',
+            'human-readable medium', 'locomotor skill', 'physical exercise', 'terrestrial locomotion', 'release', 'requirement',
+            'geographical feature', 'Wikidata instance class', 'artificial physical structure', 'physical location', 'obsolete system of measurement',
+            'ecconomic activity', 'adademic discipline', 'semantic unit', 'mathematical object','result','hypotrochoid',
+            'core based statistical area',   'human settlement','type',  'technique', 'track and field', 'dilation', 'plane figure',
+            'transport', 'movement', 'statistical territorial entity', 'political territorial entity', 'type','phase boundary',
+            'belief system', 'religion or world view', 'former geographical object','temporal entity','facility', 'genre', 'set',
+            'positive real number', 'quantity', 'result','social system', 'symbol', 'system of units','temporal entity','Enumeration',
+            'list', 'bionym', 'living organism class', 'evolution', 'measure', 'method', 'territorial change','ellipse', 'curve of constant width', 'Ribaucour curve',
+            'languoid', 'finding', 'class or metaclass of Wikidata ontology','group or class of chemical substances',
+            'algebraic curve', 'n-sphere', 'Lissajous curve', 'plane curve', 'quadratic curve','sinusoidal spiral', 'hypersphere',
+            'non-degenerate conic section','formalization', 'n-ellipse', 'geographic entity', 'colonisation', 'punishment',' ',
+            'final','social process', 'sharing', 'mythical entity','classification system','mythical entity', 'measurable function','sharing' ]
 
 ground_label_name1 = "01SourceTables.csv"
 data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
@@ -157,39 +184,6 @@ print(similarity_dict)
 node_length = 0
 G = nx.DiGraph()
 previous_values = 0
-
-"""
-def prune_graph(G, top_list, similar_list):
-    def prune_from_node(source):
-        targets = list(G.successors(source))
-        if not targets:
-            return False
-        for target in targets:
-            if target in top_list:
-                G.remove_node(source)
-                return True
-            elif target in similar_list:
-                G.remove_node(source)
-                return True
-            else:
-                if prune_from_node(target):
-                    G.remove_node(source)
-                    return True
-        return False
-    top_nodes = [node for node, degree in G.in_degree() if degree == 0]
-    for top_node in top_nodes:
-        prune_from_node(top_node)
-    return G
-"""
-
-"""def prune_graph_around_node(G, node):
-
-    descendants_of_node = nx.descendants(G, node)
-    valid_nodes = descendants_of_node | {node}
-    nodes_to_remove = set(G.nodes()) - valid_nodes
-    G.remove_nodes_from(nodes_to_remove)
-
-    return G"""
 
 
 def prune_graph_around_nodes(tree, nodes):
@@ -247,88 +241,162 @@ def prune_graph(tree, top_list, similar_list):
         return tree
     return tree
 
-
 lists = []
-
+"""
 exception_list = []
-for index, row in ground_truth_csv.iterrows(): #.iloc[200:1000]
+
+for index, row in ground_truth_csv[:].iterrows():  # .iloc[200:1000]
     if row["fileName"] in labels:
 
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
         df = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3:9]
+
         df_cells_list = df.values.flatten().tolist()
         G_cur = nx.DiGraph()
         intersection1 = list(set(df_cells_list) & set(similarity_dict.keys()))
-        intersection2 = list(set(df_cells_list) & set(top))
-        if len(intersection1) != 0 or len(intersection2) != 0:
+
+        if len(intersection1) != 0:  # or len(intersection2) != 0
             for _, row2 in df.iterrows():
                 labels_table = row2.dropna().tolist()
                 for i in range(len(labels_table) - 1):
-                    if labels_table[i + 1] != labels_table[i]:
+                    if labels_table[i + 1] != labels_table[i] and  labels_table[i] not in abstract:
+
                         # if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
 
                         child_type = labels_table[i]
                         if child_type in similarity_dict.keys():
                             child_type = similarity_dict[child_type]
+                        if child_type == 'events in a specific year or time period':
+                            G_cur.add_edge('recurring event', child_type)
+                            break
+                        if child_type == 'group of awards':
+                            G_cur.add_edge('award', child_type)
+                            break
+                        if child_type == 'publication' and labels_table[i + 1] == 'release':
+                            break
+                        if child_type == 'georgraphy' and labels_table[i + 1] == 'research object':
+                            break
+                        if labels_table[i + 1] == 'physiological condition':
+                            break
+                        if labels_table[i + 1] == 'intangible good':
+                            break
+                        if child_type == 'operation' and labels_table[i + 1] == 'goods':
+                            break
+                        if child_type == 'newspaper' and labels_table[i + 1] == 'paper':
+                            break
+                        if child_type == 'currency' and labels_table[i + 1] == 'money':
+                            break
+
                         parent_type = labels_table[i + 1]
                         if parent_type in similarity_dict.keys():
                             parent_type = similarity_dict[parent_type]
 
                         if parent_type in G_cur.nodes():
                             if labels_table[i] not in nx.ancestors(G_cur, parent_type):
-                                if parent_type != child_type:
+                                if parent_type != child_type and parent_type not in abstract:
                                     G_cur.add_edge(parent_type, child_type)
+                                    start = i + 2 if i + 2 < len(labels_table) else i + 1
+                                    if parent_type in similarity_dict.values() \
+                                            and len(
+                                        list(set(labels_table[start:]) & set(list(similarity_dict.values())))) == 0:
+                                        break
+                                    start = i + 1
+                                    if child_type in similarity_dict.values() \
+                                            and len(
+                                        list(set(labels_table[start:]) & set(list(similarity_dict.values())))) == 0:
+                                        break
                         else:
-                            if parent_type in similarity_dict.keys():
-                                parent_type = similarity_dict[parent_type]
-                            if parent_type != child_type:
+                            if parent_type != child_type and parent_type not in abstract:
                                 G_cur.add_edge(parent_type, child_type)
+                                start = i + 1
+                                if child_type in similarity_dict.values() \
+                                        and len(
+                                    list(set(labels_table[start:]) & set(list(similarity_dict.values())))) == 0:
+                                    break
+                                start = i + 2 if i + 2 < len(labels_table) else i + 1
+                                if parent_type in similarity_dict.values() \
+                                        and len(
+                                    list(set(labels_table[start:]) & set(list(similarity_dict.values())))) == 0:
+                                    break
+
 
             G_cur = prune_graph(G_cur, top, similarity_dict.values())
-            #if 'sports season of a sports club' in G_cur.nodes():
-               # print(nx.ancestors(G_cur, 'sports season of a sports club'))
 
-            G.add_nodes_from(G_cur.nodes())
-            G.add_edges_from(G_cur.edges())
-            if 'sports season' in G_cur.nodes():
-                print(nx.ancestors(G, 'sports season'))
-            if G.has_node("event"):
-                    #print(row["fileName"],df_cells_list)
-                    break
+            # if list(intersection1) not in lists and len(intersection1) > 0:
+            # graph_layout = nx.drawing.nx_agraph.graphviz_layout(G_cur, prog="dot", args="-Grankdir=TB")
+            # plt.figure(figsize=(12, 12))
+            #  nx.draw(G_cur, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+            #  plt.show()
+            # lists.append(intersection1)
         else:
-
-            exception_list.append(index)
             for _, row2 in df.iterrows():
                 labels_table = row2.dropna().tolist()
+
                 for i in range(len(labels_table) - 1):
-                    if labels_table[i + 1] != labels_table[i]:
+                    if labels_table[i + 1] != labels_table[i] and  labels_table[i] not in abstract:
                         # if labels_table[i + 1] not in abstract and labels_table[i] not in abstract:
                         child_type = labels_table[i]
-                        if labels_table[i+1] not in abstract and child_type not in top:
-                            if labels_table[i + 1] in G.nodes():
+                        if child_type == 'astrology':
+                            G_cur.add_edge('Intangible', child_type)
+                            break
+                        if child_type == 'building':
+                            G_cur.add_edge('LandmarksOrHistoricalBuildings', child_type)
+                            break
+                        if child_type == 'building':
+                            G_cur.add_edge('LandmarksOrHistoricalBuildings', child_type)
+                            break
+                        if child_type == 'noble title':
+                            G_cur.add_edge('title', child_type)
+                            G_cur.add_edge('Person', 'title')
+                            break
+                        if child_type == 'designation for an administrative territorial entity of a single country':
+                            G_cur.add_edge('designation for an administrative territorial entity', child_type)
+                            G_cur.add_edge('Country', 'designation for an administrative territorial entity')
+                            break
+                        if child_type == 'engine family':
+                            G_cur.add_edge('engine', child_type)
+                            G_cur.add_edge('Product', 'engine')
+                            break
+                        if child_type == 'human rights by country or territory':
+                            G_cur.add_edge('aspect in a geographic region', child_type)
+                            break
+                        if child_type == 'apportionment of seats':
+                            G_cur.add_edge('Seat', child_type)
+                            break
+
+                        if child_type not in top:
+                            if labels_table[i + 1] in G.nodes() and labels_table[i + 1] not in abstract :
                                 if labels_table[i] not in nx.ancestors(G, labels_table[i + 1]):
                                     if labels_table[i + 1] != child_type:
-                                        G.add_edge(labels_table[i + 1], child_type)
+                                        if labels_table[i + 1] == 'type of sport':
+                                            G_cur.add_edge('sport',labels_table[i + 1])
+                                        if labels_table[i + 1] == 'track sport':
+                                            G_cur.add_edge('sport',labels_table[i + 1])
+                                        G_cur.add_edge(labels_table[i + 1], child_type)
                                         continue
 
                             else:
-                                if labels_table[i + 1] != child_type:
-                                    G.add_edge(labels_table[i + 1], child_type)
+                                if labels_table[i + 1] != child_type and labels_table[i + 1] not in abstract :
+                                    if labels_table[i + 1] == 'type of sport':
+                                        G_cur.add_edge( 'sport',labels_table[i + 1])
+                                    if labels_table[i + 1] == 'track sport':
+                                        G_cur.add_edge(  'sport', labels_table[i + 1])
+                                    G_cur.add_edge(labels_table[i + 1], child_type)
                                     continue
-        #if list(intersection) not in lists and len(intersection)>0:
-            #graph_layout = nx.drawing.nx_agraph.graphviz_layout(G_cur, prog="dot", args="-Grankdir=TB")
-            #plt.figure(figsize=(12, 12))
-            #nx.draw(G_cur, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-            #plt.show()
 
-            
 
-            #previous_values = len(G_cur.nodes)
-            #graph_layout = nx.drawing.nx_agraph.graphviz_layout(G_cur, prog="dot", args="-Grankdir=TB")
-            #plt.figure(figsize=(12, 12))
-            #nx.draw(G_cur, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-            #plt.show()
-            #lists.append(list(intersection))
+        G.add_nodes_from(G_cur.nodes())
+        G.add_edges_from(G_cur.edges())
+
+        if G.has_node("event"):
+            # print(row["fileName"],df_cells_list)
+            break
+            # previous_values = len(G_cur.nodes)
+            # graph_layout = nx.drawing.nx_agraph.graphviz_layout(G_cur, prog="dot", args="-Grankdir=TB")
+            # plt.figure(figsize=(12, 12))
+            # nx.draw(G_cur, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+            # plt.show()
+            # lists.append(list(intersection))
 
     else:
         child_type = row["class"]
@@ -339,36 +407,42 @@ for index, row in ground_truth_csv.iterrows(): #.iloc[200:1000]
             parent_type = similarity_dict[parent_type]
 
         if row["class"] != "" or row["class"] != " ":
-            G.add_edge(parent_type,child_type)
+            G.add_edge(parent_type, child_type)
 
-    # if previous_values<len(G.nodes):
-    # previous_values = len(G.nodes)
-    # graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
-    # plt.figure(figsize=(23, 23))
-    # nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-    # plt.show()
 
-#previous_values = len(G.nodes)
-#graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
-#plt.figure(figsize=(23, 23))
-#nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-#plt.show()
+    #if previous_values < len(G.nodes):
+        #previous_values = len(G.nodes)
+        #graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
+        #plt.figure(figsize=(23, 23))
+       # nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+        #plt.show()
 
+# previous_values = len(G.nodes)
+# graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
+# plt.figure(figsize=(23, 23))
+# nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+# plt.show()
+top_nodes = [node for node in G.nodes() if G.in_degree(node) == 0]
+print(top_nodes)
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-#with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "wb") as file:
- # pickle.dump(G, file)
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
+  pickle.dump(G, file)
+
 
 unimportant = ['Thing', 'Boolean', 'Text', '2000/01/rdf-schema#Class', 'Date', 'DateTime', 'False', 'Number',
                'Time', 'True', 'DataType', 'Float', 'Integer', 'URL', 'XPathType',
                'PronounceableText', 'CssSelectorType', 'StupidType']
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "rb") as file:
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
     G = pickle.load(file)
 
 dataSchema = pd.read_csv("schemaorg-all-http-types.csv")
 prefix = "http://schema.org/"
-
-
+node_all = G.nodes()
+G.remove_nodes_from(abstract)
+mapping={'sport competition ':'sport competition', 'zoo':'Zoo', 'newspaper':'Newspaper', 'sea':'SeaBodyOfWater'}
+G = nx.relabel_nodes(G, mapping)
+G.add_edge('MusicRecording','musical work/composition')
 def add_nodes_schema(tree, topNodes):
     print("\n")
     for node in topNodes:
@@ -381,39 +455,35 @@ def add_nodes_schema(tree, topNodes):
                 if "," in parent_type:
                     list_parent = parent_type.split(", ")
                     for i in list_parent:
-
-                        if i != 'PhysicalActivity':
-                            print(node, i)
                             tree.add_edge(i, node)
                 else:
-
-                    if node !='PhysicalActivity':
-                        print(node, parent_type)
                         tree.add_edge(parent_type, node)
     return tree
+adjust = pd.read_csv("datasets/TabFact/adjustment.csv",encoding='latin-1')
+for index, row in adjust.iterrows():
+    G.add_edge(row['Key'],row['Value'] )
 
 
 current_len = 0
 while len(G.nodes()) > current_len:
     current_len = len(G.nodes())
-    top_nodes = [node for node in G.nodes() if G.in_degree(node) == 0]
-    print(top_nodes, len(top_nodes))
+    top_nodes = [node for node in G.nodes() ] #if G.in_degree(node) == 0
+
     G = add_nodes_schema(G, top_nodes)
-
-
-graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
-plt.figure(figsize=(23, 23))
-nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-plt.show()
+#graph_layout = nx.drawing.nx_agraph.graphviz_layout(G, prog="dot", args="-Grankdir=TB")
+#plt.figure(figsize=(23, 23))
+#nx.draw(G, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+#plt.show()
 
 top_nodes = [node for node in G.nodes() if G.in_degree(node) == 0]
+
 print(top_nodes, len(top_nodes))
-
-
-
-# exc = df.iloc[exception_list]
-# exc.to_csv('datasets/TabFact/selected_rows.csv', index=False)  # 保存为CSV文件
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as file:
+   pickle.dump(G, file)
 """
+
+""" 
+# The following is the original one for building hierarchy
 node_length = 0
 G = nx.DiGraph()
 previous_values =0
@@ -456,10 +526,8 @@ for index, row in ground_truth_csv.iterrows():
         #plt.show()
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 
+"""
 
-
-with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
-    pickle.dump(G, file)"""
 
 # Setting graph attributes for top-to-bottom layout
 """
@@ -476,10 +544,11 @@ with open(os.path.join(target_path, "graphGroundTruth3.pkl"), "wb") as file:
 #
 
 """  # Process the DataFrames as needed
-
-
-
-"""
+target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+    G = pickle.load(file)
+print(nx.ancestors(G,'SportsActivityLocation'))
+print(nx.ancestors(G,'association football club'))
 ground_label_name1 = "01SourceTables.csv"
 data_path = os.path.join(os.getcwd(), "datasets/TabFact/", ground_label_name1)
 ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
@@ -487,37 +556,54 @@ ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
 
 # Below needs reconstruct and important
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth1106.pkl"), "rb") as file:
-    G = pickle.load(file)
 labels = os.listdir(os.path.join(os.getcwd(), "datasets/TabFact/Label"))
+print("all nodes",G.nodes())
+
+
+
 for index, row in ground_truth_csv.iterrows():
     parent_top_pers = []
     lowest = None
     if row["fileName"] in labels:
         label_path = os.path.join(os.getcwd(), "datasets/TabFact/Label")
         lowest_type = pd.read_csv(os.path.join(label_path, row["fileName"]), encoding='UTF-8').iloc[:, 3]
-        lowest_type_unqi = lowest_type.unique()
+        lowest_type_unqi = []
+        for type_low in  lowest_type.unique():
+
+            if type_low in similarity_dict.keys():
+                type_low = similarity_dict[type_low]
+            if type_low in G.nodes():
+                lowest_type_unqi.append(type_low)
+
         for type_low in lowest_type_unqi:
-            if type_low in G.nodes:
-                parent_top_per = [item for item in nx.ancestors(G, type_low) if
+            parent_top_per = [item for item in nx.ancestors(G, type_low) if
                                   G.in_degree(item) == 0]
-                parent_top_pers.extend(parent_top_per)
+            parent_top_pers.extend(parent_top_per)
         lowest = list(lowest_type_unqi)
+        if len(list(set(parent_top_pers))) == 0 and len(lowest_type.unique())!=0:
+            print(row["fileName"], "in files",lowest,lowest_type.unique(),parent_top_pers)
 
     else:
         if row["class"] != " ":
             type_low = row["class"]
+            if type_low in similarity_dict.keys():
+                type_low = similarity_dict[type_low]
             if type_low in G.nodes():
                 parent_top_per = [item for item in nx.ancestors(G, type_low) if
                                   G.in_degree(item) == 0]
                 parent_top_pers.extend(parent_top_per)
-            lowest = list([type_low])
+                lowest = list([type_low])
+            if len(list(set(parent_top_pers))) == 0 and lowest != None:
+                print(row["fileName"],"exceptions", lowest)
     ground_truth_csv.iloc[index, 4] = lowest
     ground_truth_csv.iloc[index, 5] = list(set(parent_top_pers))
 
-ground_truth_csv.to_csv(os.path.join(os.getcwd(), "datasets/TabFact/Try.csv"))
 
-"""
+    if len(parent_top_pers) ==0:
+        ground_truth_csv.iloc[index, 5] =lowest
+    else:
+        ground_truth_csv.iloc[index, 5] = list(set(parent_top_pers))
+ground_truth_csv.to_csv(os.path.join(os.getcwd(), "datasets/TabFact/Try.csv"))
 
 
 
