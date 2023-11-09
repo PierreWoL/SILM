@@ -66,12 +66,12 @@ if __name__ == '__main__':
     path = 'datasets/%s/Test' % hp.dataset
 
     trainset = PretrainTableDataset.from_hp(path, hp)
-    trainset[100]
+
     output_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
     if hp.pretrain:
         trainset.encodings(output_path,setting=hp.NoContext)
-    #else:
+    else:
        
-        #train(trainset, hp)
-        #table_features(hp)
+        train(trainset, hp)
+        table_features(hp)
 #--pretrain --subject_column

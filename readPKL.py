@@ -95,17 +95,14 @@ on ground truth hierarchy
 
 def hierarchy_tree(tree: nx.DiGraph(), target_folder=None):
     # Define the layout for the tree structure with top-down direction
-
     # Draw the tree structure
 
+    graph_layout = nx.drawing.nx_agraph.graphviz_layout(tree, prog="dot", args="-Grankdir=TB")
+    plt.figure(figsize=(25, 25))
+    nx.draw(tree, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
+    plt.savefig(target_folder)
+    plt.show()
 
-    if os.path.exists(target_folder) is False:
-        graph_layout = nx.drawing.nx_agraph.graphviz_layout(tree, prog="dot", args="-Grankdir=TB")
-        plt.figure(figsize=(25, 25))
-        nx.draw(tree, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-        plt.show()
-        #plt.savefig(target_folder)
-        return tree
     return tree
 
 
@@ -133,6 +130,7 @@ def plot_tree(linkage_matrix, folder=None, node_labels=None):
         plt.xlabel('Distance')
         plt.ylabel('Nouns')
         plt.title('Noun Dendrogram')
+        plt.xticks(rotation=20)
         # Display the plot
         plt.savefig(target_path)
         plt.show()

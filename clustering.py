@@ -632,7 +632,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     if clusteringName == "GMM":
         parameters = gaussian_m_param_search(input_data, len(gt_cluster_dict))
     if clusteringName == "Agglomerative":
-        parameters = AgglomerativeClustering_param_search(input_data, len(gt_cluster_dict))
+        parameters = AgglomerativeClustering_param_search(input_data, int(len(gt_cluster_dict)//3))
     if clusteringName == "OPTICS":
         parameters = OPTICS_param_search(input_data)
     if clusteringName == "KMeans":

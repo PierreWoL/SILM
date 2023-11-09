@@ -15,7 +15,7 @@ import TableAnnotation as TA
 
 
 def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_id, check_subject_Column,
-                   singleCol=False, SubCol=False, header=False, isCombing = False):
+                   singleCol=False, SubCol=False, header=False, column= False,  isCombing = False):
     ''' Get model inference on tables
     Args:
         dfs (list of DataFrames): tables to get model inference on
@@ -42,6 +42,10 @@ def extractVectors(dfs, method, dataset, augment, lm, sample, table_order, run_i
     elif header:
         model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s_header.pt" % (
             method, dataset, op_augment_new, lm, sample, table_order, run_id, check_subject_Column)
+    elif column:
+        model_path = "model/%s/%s/model_%s_lm_%s_%s_%s_%d_%s_column.pt" % (
+            method, dataset, op_augment_new, lm, sample, table_order, run_id, check_subject_Column)
+            
     print(model_path)
     ckpt = torch.load(model_path, map_location=torch.device('cuda'))
     # load_checkpoint from sdd/pretain
@@ -68,9 +72,29 @@ def get_df(dataFolder):
     return dataDFs
 
 
+def get_df_columns(dataFolder):
+    ''' Get the columns of each table in a folder
+        Args:
+            dataFolder: filepath to the folder with all tables
+        Return:
+            columnDfs (dict): key is the filename|columnName, value is the column of that table
+        '''
+    dataFiles = glob.glob(dataFolder + "/*.csv")
+    # print(dataFiles)
+    columnDfs = {}
+    for file in dataFiles:
+        df = pd.read_csv(file)  # , lineterminator='\n'
+        for col in df.columns:
+            # print(df.transpose())
+            filename = file.split("/")[-1]
+            columnDfs[f"{filename[0:-4]}.{col}"] = pd.DataFrame(df[col])
+    return columnDfs
+
+
+
 def table_features(hp: Namespace):
     DATAFOLDER = "datasets/%s/Test/" % hp.dataset
-    tables = get_df(DATAFOLDER)
+    tables = get_df(DATAFOLDER) if hp.column is False else get_df_columns(DATAFOLDER) 
     print("num dfs:", len(tables))
 
     dataEmbeds = []
@@ -83,7 +107,7 @@ def table_features(hp: Namespace):
         isCombine = False
     cl_features = extractVectors(list(tables.values()), hp.method, hp.dataset, hp.augment_op, hp.lm, hp.sample_meth,
                                  hp.table_order, hp.run_id, hp.check_subject_Column, singleCol=hp.single_column,
-                                 SubCol=hp.subject_column, header=hp.header,isCombing=isCombine)
+                                 SubCol=hp.subject_column, header=hp.header, column=hp.column,isCombing=isCombine)
     output_path = "result/embedding/%s/vectors/%s/" % (hp.method, hp.dataset)
     op_augment_new = simplify_string(str(hp.augment_op))
     mkdir(output_path)
@@ -110,7 +134,9 @@ def table_features(hp: Namespace):
     if hp.header:
         output_file = "cl_%s_lm_%s_%s_%s_%d_%s_header.pkl" % (op_augment_new, hp.lm, hp.sample_meth,
                                                               hp.table_order, hp.run_id, hp.check_subject_Column)
-
+    if hp.column:
+        output_file = "cl_%s_lm_%s_%s_%s_%d_%s_column.pkl" % (op_augment_new, hp.lm, hp.sample_meth,
+                                                              hp.table_order, hp.run_id, hp.check_subject_Column)
 
     output_path += output_file
     if hp.save_model:

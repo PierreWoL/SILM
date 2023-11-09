@@ -250,7 +250,7 @@ class PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
-        print(column_mp, res)
+        
         return res, column_mp
 
     def _column_stratgy(self, Sub_cols_header, table, tfidfDict, max_tokens, NoToken=False):

@@ -264,6 +264,12 @@ def train(trainset, hp):
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_header.pt")
+            elif hp.column:
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                         op_augment_new + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_column.pt")
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
             torch.save(ckpt, ckpt_path)

@@ -45,9 +45,10 @@ def labels_most_fre(datas: dict):
 
 
 def ground_truth_labels(filename, top=False, inter=False,dataset="TabFact"):
-    ground_label_name1 ="GroundTruth.csv" #
+    ground_label_name1 ="groundTruth.csv" #
     data_path = os.path.join(os.getcwd(), "datasets/"+dataset, ground_label_name1)
     ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
+    
     target_path = os.path.join(os.getcwd(), "datasets/"+dataset)
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
@@ -99,8 +100,10 @@ def ground_truth_labels(filename, top=False, inter=False,dataset="TabFact"):
 
 def label_dict(tables: list, is_Parent=True,dataset = "TabFact"):
     dict_table_labels = {}
+   
     for table in tables:
         dict_table_labels[table] = ground_truth_labels(table + ".csv", top=is_Parent,dataset=dataset)
+         
     return dict_table_labels
 
 
@@ -124,7 +127,6 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
             start_time = time.time()
             parent_nodes = PKL.slice_tree(orginal_tree, clusters, table_names)  #
             end_time = time.time()
-            # print(f'parent_nodes {parent_nodes}')
             simple_tree = PKL.simplify_graph(orginal_tree, parent_nodes)
 
         start_time = time.time()
@@ -137,6 +139,7 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
         layer_num = len(threCluster_dict) - 1
         start_time_label = time.time()
         for cluster, (closest_parent, mutual_parent_nodes) in parent_nodes.items():
+            
             simple_tree.nodes[closest_parent]['data'] = list(cluster)
             if index == layer_num:
                 simple_tree.nodes[closest_parent]['type'] = 'data cluster node parent layer'
@@ -144,14 +147,12 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, 
             else:
                 simple_tree.nodes[closest_parent]['type'] = 'data cluster node'
             label_dict_cluster = label_dict(list(cluster), is_Parent=False,dataset=dataset)  # True
+          
             labels, freq = labels_most_fre(label_dict_cluster)
+        
             simple_tree.nodes[closest_parent]['label'] = labels
-            """if len(cluster) > 1:
-                    print(f' node {closest_parent} is {label_dict_cluster}',
-                          simple_tree.nodes[closest_parent]['label'])"""
-
             wrong_labels = {}
-            # print(simple_tree.nodes[closest_parent]['label'])
+         
             for i in cluster:
                 if no_intersection(label_dict_cluster[i], simple_tree.nodes[closest_parent]['label']) is True:
                     # this have problems
@@ -212,7 +213,7 @@ def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=True, dataset = 
                                             freq_final = find_frequent_labels(ancestors, G)[0]
                                         for la in freq_final:
                                             topmost_parent.append(la)
-                                        print(F'topmost_parent label of {label_per} is {topmost_parent}')
+                                        #print(F'topmost_parent label of {label_per} is {topmost_parent}')
 
                                         for superLabel in topmost_parent:
                                             if superLabel in superLabels:
@@ -261,16 +262,23 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
         # print(table1, table2, score)
         return score
 
-    result_folder = os.path.join("result/Valerie/", dataset, Naming, cluster_name)
+    result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
     file_path = os.path.join(result_folder, embedding_file)
     mkdir(file_path)
+    mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")
+
+
     linkage_matrix = sch.linkage(encodings, method='complete', metric=custom_metric)  # 'euclidean'
 
     mkdir(result_folder)
     table_ids = [i for i in range(0, len(tables))]
+    #plt.figure(figsize=(10, 7))
     dendrogra = sch.dendrogram(linkage_matrix, labels=tables)
+    #plt.xticks(rotation=30)
+    #plt.savefig(f"result/SILM/{dataset}/{Naming}/{cluster_name}/dendrogram.png")
+
     # dendrogra = PKL.plot_tree(linkage_matrix, file_path, node_labels=tables)
-    tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables ) #target_path= "results/Valerie/WDC/a.png"
+    tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables ) #target_path= "results/SILM/WDC/a.png"
 
     start_time = time.time()
     layers = 4
@@ -288,13 +296,13 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     simple_tree, layer_info_dict, Parent_nodes_h = \
         simple_tree_with_cluster_label(threCluster_dict, tree_test, tables, timing,dataset)
 
-    print("label now!", "\n\n", Parent_nodes_h, simple_tree)  # "\n\n" ,Parent_nodes_h
+    print("label now!", "\n", Parent_nodes_h)  # "\n\n" ,Parent_nodes_h
 
 
     """ """
            # tree_without_tables.remove_node(node)
 
-    #PKL.hierarchy_tree(simple_tree, target_folder="results/Valerie/WDC/simple.png")
+    #PKL.hierarchy_tree(simple_tree, target_folder=f"result/SILM/{dataset}/{Naming}/{cluster_name}/simple.png")
     """for node in simple_tree.nodes():
         print(node, simple_tree.nodes[node]['type'])"""
 
@@ -335,7 +343,7 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
     data_path = os.getcwd() + "/datasets/%s/Test/" %hp.dataset
     # Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
 
-    target_path = os.getcwd() + "/result/Valerie/Column/" + \
+    target_path = os.getcwd() + "/result/SILM/Column/" + \
                   hp.dataset + "/_gt_cluster.pickle"
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
@@ -345,7 +353,7 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
     tables = Ground_t[str(KEYS[index_cols])]
-    score_path = os.getcwd() + "/result/Valerie/" + hp.dataset + "/" + embedding_file + "/"
+    score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
     #print(score_path)
     mkdir(score_path)
     if len(tables) > 1:
@@ -360,15 +368,17 @@ def hierarchicalColCluster(clustering, filename,embedding_file, Ground_t,hp: Nam
 
         if str(index_cols)+clustering not in df.index:
             new_data = {'Top Level Entity': KEYS[index_cols], 'Tree Consistency Score': TCS, "#Paths":ALL_path,'ClusteringAlgorithm':clustering}
-            print(new_data)
+            # print(new_data)
             new_row = pd.DataFrame([new_data], index=[str(index_cols)+clustering])
             # Concatenate the new DataFrame with the original DataFrame
             df = pd.concat([df, new_row])
+            #print(df)
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
         else:
             df.loc[str(index_cols)+clustering,'Top Level Entity'] = KEYS[index_cols]
             df.loc[str(index_cols)+clustering, 'Tree Consistency Score'] =TCS
             df.loc[str(index_cols)+clustering, '#Paths'] =ALL_path
             df.loc[str(index_cols)+clustering, 'ClusteringAlgorithm'] = clustering
+            #print(df)
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
 
