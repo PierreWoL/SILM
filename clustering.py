@@ -294,8 +294,8 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     input_data = np.array(input_data, dtype=np.float32)
     score = -1
     best_model = AgglomerativeClustering()
-    at_least = math.ceil(cluster_num//3 )
-    for n_clusters in range(at_least,2 * cluster_num ):
+    at_least = math.ceil(cluster_num // 3)
+    for n_clusters in range(at_least, cluster_num+2*at_least):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -392,6 +392,14 @@ def most_frequent(list1, isFirst=True):
         most_common_elements_list = [element for element, frequency in most_common_elements if
                                      frequency == max_frequency]
         return most_common_elements_list
+
+
+def most_frequent_list(nested_list):
+    tuples_list = [tuple(sublist) for sublist in nested_list]
+    count = Counter(tuples_list)
+    most_common_tuple = count.most_common(1)[0][0]
+    most_common_list = list(most_common_tuple)
+    return most_common_list
 
 
 """
@@ -572,17 +580,26 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             if table in gtclusters.keys():
                 tables.append(table)
                 label = gtclusters[table]
-                if type(label) is list:
+                """if type(label) is list:
                     for item_label in label:
                         labels.append(item_label)
                     gt_table_label.append(label)
                 else:
                     gt_table_label.append(gtclusters_dict[label])
+                    labels.append(label)"""
+                if type(label) is list:
                     labels.append(label)
+                    gt_table_label.append(label)
+                else:
+
+                    labels.append([label])
+                    gt_table_label.append(gtclusters_dict[label])
+
         if len(labels) == 0:
             continue
         else:
-            cluster_label = most_frequent(labels, isFirst=False)
+            cluster_label = most_frequent_list(labels)
+            #print(cluster_label)
 
         clusters_label[index] = cluster_label
         current_ones = []
@@ -598,7 +615,6 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
                     else:
                         if tables_gt is not None and folder is not None:
                             current_ones.append([table, index, "True", tables_gt[table], gtclusters[table]])
-
                 else:
                     table_label_index.append(gtclusters_dict[cluster_label])
                     if gtclusters[table] != cluster_label:
@@ -622,9 +638,10 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
         metric_dict = metric_Spee(gt_table_label, table_label_index)
     else:
         metric_dict = {"Random Index": rand_Index_custom(gt_table_label, table_label_index)}
+
     # cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["Purity"] = 1 - len(false_ones) / len(gtclusters)
-    metric_dict["Average cluster consistency score"] = ave_consistency / len(clusterDict)
+    #metric_dict["Average cluster consistency score"] = ave_consistency / len(clusterDict)
 
     if tables_gt is not None and folder is not None:
         df = pd.DataFrame(overall_clustering,
@@ -635,6 +652,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
         df.to_csv(os.path.join(folder, 'overall_clustering.csv'), encoding='utf-8', index=False)
         df2.to_csv(os.path.join(folder, 'purityCluster.csv'), encoding='utf-8', index=False)
         del df, df2
+    print()
     return metric_dict
 
 
@@ -655,13 +673,13 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
-        parameters = gaussian_m_param_search(input_data,number_estimate)
+        parameters = gaussian_m_param_search(input_data, number_estimate)
     if clusteringName == "Agglomerative":
         parameters = AgglomerativeClustering_param_search(input_data, number_estimate)
     if clusteringName == "OPTICS":
         parameters = OPTICS_param_search(input_data)
     if clusteringName == "KMeans":
-        parameters = KMeans_param_search(input_data,number_estimate)
+        parameters = KMeans_param_search(input_data, number_estimate)
     if clusteringName == "BIRCH":
         parameters = BIRCH_param_search(input_data, number_estimate)
     clusters = cluster_discovery(parameters, tables)
@@ -722,19 +740,19 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
 def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     parameters = []
-    number_estimate = len(gt_cluster_dict) //3
+    number_estimate = len(gt_cluster_dict) // 3
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
-        parameters = gaussian_m_param_search(input_data,number_estimate)
+        parameters = gaussian_m_param_search(input_data, number_estimate)
     if clusteringName == "Agglomerative":
-        parameters = AgglomerativeClustering_param_search(input_data,number_estimate)
+        parameters = AgglomerativeClustering_param_search(input_data, number_estimate)
     if clusteringName == "OPTICS":
         parameters = OPTICS_param_search(input_data)
     if clusteringName == "KMeans":
-        parameters = KMeans_param_search(input_data,number_estimate)
+        parameters = KMeans_param_search(input_data, number_estimate)
     if clusteringName == "BIRCH":
-        parameters = BIRCH_param_search(input_data,number_estimate)
+        parameters = BIRCH_param_search(input_data, number_estimate)
     clusters = cluster_discovery(parameters, columns)
     cluster_dict = cluster_Dict(clusters)
     table_dict = None

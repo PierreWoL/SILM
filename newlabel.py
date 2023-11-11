@@ -545,7 +545,7 @@ target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 
 """  # Process the DataFrames as needed
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+with open(os.path.join(target_path, "graphGroundTruth01.pkl"), "rb") as file:
     G = pickle.load(file)
 print(nx.ancestors(G,'SportsActivityLocation'))
 print(nx.ancestors(G,'association football club'))

@@ -4,6 +4,7 @@ augment(df,"replace_high_cells")"""
 import os
 
 import pandas as pd
+import pickle
 from plotly.figure_factory._dendrogram import sch
 
 """G = nx.DiGraph()
@@ -133,7 +134,7 @@ plt.savefig("dendrogramExample.png")
 plt.show()
 """
 
-from scipy.cluster.hierarchy import dendrogram, linkage
+"""from scipy.cluster.hierarchy import dendrogram, linkage
 from matplotlib import pyplot as plt
 X = [[i] for i in [2, 8, 4, 1, 9, 9,12,11,3.7,6,7.7,8,5.6,17,5,7]]
 print(len(X))
@@ -144,4 +145,22 @@ dn = dendrogram(Z)
 Z = linkage(X, 'single')
 fig = plt.figure(figsize=(5, 5))
 dn = dendrogram(Z)
-plt.show()
+plt.show()"""
+target_path = os.path.join(os.getcwd(), "datasets/TabFact" )
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+    G = pickle.load(file)
+
+nodes = [i for i in G.nodes() if G.in_degree(i) == 0]
+print(nodes)
+subEventNodes = [i for i in G.successors('Event')]
+subCreativeworkNodes = [i for i in G.successors('CreativeWork')]
+print(subEventNodes)
+print(subCreativeworkNodes)
+
+G.remove_node("Event")
+G.remove_node("CreativeWork")
+Tops = [i for i in G.nodes() if G.in_degree(i)==0]
+print(len(Tops), Tops)
+
+with open(os.path.join(target_path, "graphGroundTruth01.pkl"), "wb") as file:
+  pickle.dump(G, file)
