@@ -10,7 +10,7 @@ from SubjectColumnDetection import ColumnDetection as detection
 from SubjectColumnDetection import ColumnType
 from d3l.indexing.feature_extraction.values.fd_transformer import FDTransformer
 from d3l.indexing.feature_extraction.values.glove_embedding_transformer import GloveTransformer
-from d3l.indexing.feature_extraction.values.fasttext_embedding_transformer import FasttextTransformer
+#from d3l.indexing.feature_extraction.values.fasttext_embedding_transformer import FasttextTransformer
 from d3l.indexing.feature_extraction.values.SBERT_transformer import SBERTTransformer
 from d3l.indexing.feature_extraction.values.token_transformer import TokenTransformer
 from d3l.indexing.lsh.lsh_index import LSHIndex
@@ -494,14 +494,14 @@ class EmbeddingIndex(SimilarityIndex):
         self.index_seed = index_seed
         self.index_cache_dir = index_cache_dir
         self.mode = mode
-        if self.mode == 0:
+        """if self.mode == 0:
             self.transformer = FasttextTransformer(
                 token_pattern=self.transformer_token_pattern,
                 max_df=self.transformer_max_df,
                 stop_words=self.transformer_stop_words,
                 embedding_model_lang=self.transformer_embedding_model_lang,
                 cache_dir=self.index_cache_dir
-            )
+            )"""
 
         if self.mode == 1:
             self.transformer = GloveTransformer(

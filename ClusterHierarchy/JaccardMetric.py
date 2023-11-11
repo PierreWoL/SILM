@@ -29,6 +29,21 @@ def matrix(table_list: list, table_path):
 
 
 def JaccardMatrix(col_clusters: dict, table_path):
+    """
+
+        Parameters
+        ----------
+        col_clusters : dict{cluster id: [T1.A1, T2.A2 , ..., TnAn]}
+            A collection of stopwords to ignore that defaults to NLTK's English stopwords.
+        table_path : str
+            The path that stores all the datasets
+
+        Return
+        ----------
+        clusters_tables: the dict contains the Jaccard matrix needed information
+        table_pairs:
+        jaccard_score:
+    """
     table_pairs = {}
     # initialize the matrix for random two tables m x n
     start_time = time.time()
@@ -59,12 +74,13 @@ def JaccardMatrix(col_clusters: dict, table_path):
                     continue
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print(f"Elapsed time: {elapsed_time:.4f} seconds for matrix")
+    #print(f"Elapsed time: {elapsed_time:.4f} seconds for matrix")
     # print(f"searching Complete! { table_pairs}")
     jaccard_score = {}
     for pairs in table_pairs.keys():
-        jaccard_score[pairs] = 1 - len(table_pairs[pairs]['MatchCol']) / \
+        jaccard_score[pairs] = 1 - table_pairs[pairs]['Matchscore']/ \
                                (len(table_pairs[pairs]['Distinct']) + table_pairs[pairs]['Matchscore'])
+        # len(table_pairs[pairs]['MatchCol']) /  (len(table_pairs[pairs]['Distinct']) + table_pairs[pairs]['Matchscore'])
     return clusters_tables, table_pairs,jaccard_score
 
 
@@ -74,7 +90,6 @@ def updateOperation(table_pairs, table_i, table_j, cols_i, cols_j):
     for col in all_matched:
         table_pairs[(table_i, table_j)]['MatchCol'].append(col)
     table_pairs[(table_i, table_j)]['Matchscore'] += 1
-
     table_pairs[(table_i, table_j)]['Distinct'] = [ele for ele in table_pairs[(table_i, table_j)]['Distinct']
                                                    if ele not in table_pairs[(table_i, table_j)]['MatchCol']]
     # print(f"Update finish! {(table_i, table_j)}. {table_pairs[(table_i, table_j)]['Matchscore']} ")
@@ -87,8 +102,7 @@ def InsertOperation(table_pairs, table_i, table_j, cols_i, cols_j, table_path):
     Distinct_cols_i = [table_i + "." + i for i in table_i_headers.columns.tolist()]
     Distinct_cols_j = [table_j + "." + i for i in table_j_headers.columns.tolist()]
     table_pairs[(table_i, table_j)] = {'MatchCol': all_matched, 'Matchscore': 1,
-                                       'Distinct': Distinct_cols_i + Distinct_cols_j
-                                       }
+                                       'Distinct': Distinct_cols_i + Distinct_cols_j}
 """
 
 embedding_file_path = "cl_drop_num_col_lm_roberta_head_column_0_subjectheader"

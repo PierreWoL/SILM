@@ -93,20 +93,13 @@ on ground truth hierarchy
 """
 
 
-def hierarchy_tree(tree: nx.DiGraph(), target_folder=None):
+def hierarchy_tree(tree: nx.DiGraph()):  # , target_folder=None
     # Define the layout for the tree structure with top-down direction
     # Draw the tree structure
-
     graph_layout = nx.drawing.nx_agraph.graphviz_layout(tree, prog="dot", args="-Grankdir=TB")
     plt.figure(figsize=(25, 25))
     nx.draw(tree, pos=graph_layout, with_labels=True, node_size=1500, node_color="skyblue", arrowsize=20)
-    plt.savefig(target_folder)
     plt.show()
-
-    return tree
-
-
-
 
 
 def present_children(tree, parent):
@@ -137,9 +130,10 @@ def plot_tree(linkage_matrix, folder=None, node_labels=None):
     return dendrogra
 
 
-def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels, target_path=None):
+def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels):
     # Create a new NetworkX tree object
     tree = nx.DiGraph()
+    # print(len(encodings))
     # Iterate over the linkage matrix
     for i, link in enumerate(linkage_matrix):
         child_1, child_2, distance, _ = link
@@ -149,8 +143,7 @@ def dendrogram_To_DirectedGraph(encodings, linkage_matrix, labels, target_path=N
         tree.add_edge(parent_node, int(child_2), length=distance)
     # Assign labels to the tree nodes
     tree = nx.relabel_nodes(tree, {i: label for i, label in enumerate(labels)})
-    if target_path != None:
-        return hierarchy_tree(tree, target_path)
+    # hierarchy_tree(tree)
     return tree
 
 
@@ -210,21 +203,18 @@ def sliced_clusters(linkage_m: sch.linkage, threshold: float, data, customMatrix
 
 
 def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
-                  estimate_num_cluster=0, customMatrix='euclidean'):  # , low=-1.0, t2=0
+                  customMatrix='euclidean', sliceInterval=10, delta=3):  # , low=-1.0, t2=0  estimate_num_cluster=0,
     clusters = []
     # Get the y-coordinates from 'dcoord'
     y_coords = dendrogram['dcoord']
     # Find the highest and lowest y-values
     highest_y = np.max(y_coords)
-    lowest_y = np.min(y_coords)
 
     silhouette = -1
     best_threshold = 0.0
     best_clustersR = None
-    gap = sys.maxsize
-    numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
 
-    # if low == -1:
+    numbers_with_boundaries = np.linspace(best_threshold, highest_y, sliceInterval)
     for threshold in numbers_with_boundaries[1:-1]:
         try:
             silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
@@ -237,30 +227,26 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
                 continue
         except:
             continue
-    print("best silhouette, ", silhouette, len(best_clustersR.keys()))
-    # return best_threshold, best_clusters
+    #print("best silhouette, ", silhouette, len(best_clustersR.keys()))
+
     clusters.append((best_threshold, best_clustersR))
-    numbers_with_boundaries = np.linspace(best_threshold, highest_y, 10)
-    # else:
-    # if low < highest_y:
-    #   silhouette, best_clusters = sliced_clusters(linkage_m, low, data)
-    #  print("best silhouette, ", silhouette, len(best_clusters.keys()))
-    # return best_threshold, best_clusters
-    # else:
-    if estimate_num_cluster != 0:
-        for threshold in numbers_with_boundaries[1:-1]:
-            try:
-                silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
-                # if len(custom_clusters)-low < gap and len(custom_clusters)-low > 0:
-                if threshold > best_threshold:
-                    """if abs(len(custom_clusters) - estimate_num_cluster) < gap \
-                            and 0.6 * estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):"""
-                    # if len(clusters) + 1 <= estimate_num_cluster and len(custom_clusters)< len(best_clusters)
-                    if len(best_clustersR) / estimate_num_cluster < len(custom_clusters) < len(clusters[-1][1]):
-                        clusters.append((threshold, custom_clusters))
-            except:
-                continue
-    print(f'the total layer number is {len(clusters)}')
+    range_lower = silhouette - delta if silhouette - delta > -1 else -1
+    range_upper = silhouette + delta if silhouette + delta < 1 else 1
+
+    numbers_with_boundaries = np.linspace(best_threshold, highest_y, sliceInterval)
+
+    # if estimate_num_cluster != 0:
+    for threshold in numbers_with_boundaries[1:-1]:
+        try:
+            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
+
+            if range_lower < silhouette_avg < range_upper:
+
+                if len(custom_clusters) < len(clusters[-1][1]):
+                    clusters.append((threshold, custom_clusters))
+        except:
+            continue
+    #print(f'the total layer number is {len(clusters)}')
     return clusters
 
 
@@ -272,15 +258,18 @@ def slice_tree(tree: nx.DiGraph(), custom_clusters, node_labels, is_Label=True):
     cluster_ancestors = {}
     for cluster_id, nodes_index in custom_clusters.items():
         nodes = [node_labels[i] for i in nodes_index]
-        # print(nodes)
-
         # Find common ancestors of nodes A, B, and D
         common_ancestors = set(tree.nodes)
         for node in nodes:
             common_ancestors = common_ancestors.intersection(nx.ancestors(tree, node))
+
         # Find the closest parent node
         closest_parent = None
         min_depth = float('inf')
+        if len(common_ancestors)==0:
+            #print(nodes)
+            closest_parent = nodes[0]
+            common_ancestors = nodes
         for ancestor in common_ancestors:
             depth_dict = nx.shortest_path_length(tree, ancestor)
             depth = min(depth_dict[node] for node in nodes)
@@ -293,32 +282,55 @@ def slice_tree(tree: nx.DiGraph(), custom_clusters, node_labels, is_Label=True):
             # cluster_closest_parent[closest_parent] = nodes
             # cluster_ancestors[tuple(common_ancestors)] = nodes
             cluster_closest_parent[tuple(nodes)] = closest_parent, common_ancestors
+            if closest_parent is None:
+                print(f"this has exceptions {nodes, common_ancestors}")
+                for i in nodes:
+                    print(nx.ancestors(tree, i))
+
         else:
             # cluster_ancestors[tuple(common_ancestors)] = nodes_index
             cluster_closest_parent[tuple(nodes_index)] = closest_parent, common_ancestors
     return cluster_closest_parent
 
 
-def simplify_graph(original_graph, cluster_results):
+def simplify_graph(original_graph, cur_cluster_results, lowerNode=None):
     # Create a new copy of the original graph to modify
     simplified_graph = original_graph.copy()
     leaf_nodes_by_cluster = {}
-    # Step 1: Iterate through each cluster and add direct edges between leaf nodes and closest parent nodes
-    for cluster, (closest_parent, mutual_parent_nodes) in cluster_results.items():
-        # Add direct edges between leaf nodes and closest parent node
-        for parent_node in mutual_parent_nodes:
-            leaf_nodes_by_cluster.setdefault(parent_node, set()).add(cluster)
-    # Step 2: Remove nodes and edges not part of the clusters or the path to the closest parent node
-    nodes_to_remove = set(original_graph.nodes()) - set(leaf_nodes_by_cluster)
-    simplified_graph.remove_nodes_from(nodes_to_remove)
-    for cluster, (closest_parent, mutual_parent_nodes) in cluster_results.items():
-        for leaf_node in cluster:
-            simplified_graph.add_edge(closest_parent, leaf_node)
-            simplified_graph.nodes[leaf_node]['type'] = 'data'
-            # print(simplified_graph.nodes[closest_parent]['type'],simplified_graph.nodes[leaf_node]['type'])
-
-    # print(simplified_graph)
-    return simplified_graph
+    delete_nodes = []
+    if lowerNode is None:
+        # Step 1: Iterate through each cluster and add direct edges between leaf nodes and closest parent nodes
+        for cluster, (closest_parent, mutual_parent_nodes) in cur_cluster_results.items():
+            # Add direct edges between leaf nodes and closest parent node
+            for parent_node in mutual_parent_nodes:
+                leaf_nodes_by_cluster.setdefault(parent_node, set()).add(cluster)
+        # Step 2: Remove nodes and edges not part of the clusters or the path to the closest parent node
+        nodes_to_remove = set(original_graph.nodes()) - set(leaf_nodes_by_cluster)
+        simplified_graph.remove_nodes_from(nodes_to_remove)
+        for cluster, (closest_parent, mutual_parent_nodes) in cur_cluster_results.items():
+            for leaf_node in cluster:
+                simplified_graph.add_edge(closest_parent, leaf_node)
+                simplified_graph.nodes[leaf_node]['type'] = 'data'
+        return simplified_graph
+    else:
+        for cluster, (closest_parent, mutual_parent_nodes) in cur_cluster_results.items():
+            children_close_parent = nx.descendants(simplified_graph, closest_parent)
+            children_close_parent = [i for i in children_close_parent if simplified_graph.out_degree(i) != 0]
+            all_children = set()
+            node_keep = [i for i in lowerNode if i in children_close_parent]
+            for i in node_keep:
+                all_children.update(nx.descendants(simplified_graph, i))
+            intermediate_nodes = [i for i in children_close_parent if i not in node_keep and i not in all_children]
+            if len(intermediate_nodes) > 0:
+                delete_nodes.extend(intermediate_nodes)
+                for node in node_keep:
+                    simplified_graph.add_edge(closest_parent, node)
+                    simplified_graph.remove_nodes_from(intermediate_nodes)
+                    print(node, intermediate_nodes)
+        has_intersection = any(item in delete_nodes for item in simplified_graph.nodes())
+        if has_intersection is True:
+            print(delete_nodes, list(set(delete_nodes).intersection(simplified_graph.nodes())))
+        return simplified_graph
 
 
 def print_tree_p(digraph, root_nodes):
@@ -331,6 +343,94 @@ def print_tree_p(digraph, root_nodes):
         dfs_print(root_node, 0)
 
 
+def print_node(tree: nx.DiGraph(), node, printer=False):
+    node_dict = {'Node': node, 'Type': tree.nodes[node].get('type', 0),
+                 'cluster label': tree.nodes[node].get('label', 0),
+                 'Purity': tree.nodes[node].get('Purity', 0),
+                 'Data': tree.nodes[node].get('data', 0),
+                 'Wrong Labels': tree.nodes[node].get('Wrong_labels', 0)}
+    if printer is True:
+        print(f" Node: {node}", f" Type: {tree.nodes[node].get('type', 0)} \n",
+              f" cluster label: {tree.nodes[node].get('label', 0)} \n",
+              f" Purity: {tree.nodes[node].get('Purity', 0)} \n"
+              f" Data: {tree.nodes[node].get('data', 0)}")
+        if len(tree.nodes[node].get('Wrong_labels', 0)):
+            print(f" Wrong Labels: {tree.nodes[node].get('Wrong_labels', 0)}")
+    return node_dict
+
+
+def print_clusters_top_down(tree, layer_info, store_path=None):
+    list_tree_info = []
+    total_layer = len(layer_info.keys()) - 1
+    # print(f"Total layer is : {total_layer + 1}")
+    index_layer = total_layer
+    while index_layer >= 0:
+        # print(f"layer : {len(layer_info.keys()) - index_layer}",
+        # f"nodes number: {len(layer_info[index_layer].items())}")  # index_layer + 1
+        index_layer -= 1
+    # print("Layer information ...")
+    for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
+        list_tree_info.append(print_node(tree, closest_parent))
+        index = total_layer - 1
+        # print("its sub-types are: ")
+        while index >= 0:
+            # print(f"Layer is : {index}")
+            for cluster0, (closest_parent0, mutual_parent_nodes0) in layer_info[index].items():
+                if closest_parent in mutual_parent_nodes0:
+                    list_tree_info.append(print_node(tree, closest_parent0))
+            index -= 1
+    if store_path is not None:
+        list_tree = pd.DataFrame(list_tree_info)
+        list_tree.to_csv(store_path, index=False)
+
+
+def purity_per_layer(tree, layer_info):
+    purity_layers = {}
+    total_layer = len(layer_info.keys()) - 1
+    while total_layer >= 0:
+        purity_layers[len(layer_info.keys()) - total_layer] = []
+        for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
+            purity_layers[len(layer_info.keys()) - total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
+        total_layer -= 1
+    return purity_layers
+
+
+def print_path_label(tree, layer_info, Parent_nodes):
+    all_pathCompatibility = []
+    ind, ind_o = 0, 0
+    for cluster, (closest_parent, mutual_parent_nodes) in layer_info[0].items():
+        path = sorted(list(mutual_parent_nodes))
+        ind_o += 1
+        for indexp, (clusterP, closest_parentP) in enumerate(Parent_nodes.items()):
+            if closest_parentP in path:
+                path = path[0:path.index(closest_parentP)]
+                MatchedElementPath = len(path)
+                MatchedElementGT = 0
+                if len(path) > 0:
+                    ind += 1
+                    for i in path:
+                        label = tree.nodes[i].get('label', 0)
+                        if label != 0:
+                            print(f" Node: {i}", f" Type: {tree.nodes[i].get('type', 0)} \n",
+                                  f" cluster label: {label} \n",
+                                  f" Purity: {tree.nodes[i].get('Purity', 0)} \n"
+                                  f" Data: {tree.nodes[i].get('data', 0)} \n",
+                                  f" Wrong Labels: {tree.nodes[i].get('data', 0)} \n",
+                                  )
+                            superLabels = tree.nodes[closest_parentP].get('label', 0)
+
+                    print(ind_o, ind, indexp, path)
+                    if MatchedElementPath != 0:
+                        pathCompatibility = MatchedElementGT / MatchedElementPath
+                        all_pathCompatibility.append(pathCompatibility)
+
+    # print("mutual_parent_nodes", len(layer_info[0].keys()), len(all_pathCompatibility), all_pathCompatibility)
+    # tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
+    # print("the metric is ", tree_consistency_score, "all_path_number is ", len(all_pathCompatibility))
+    # return tree_consistency_score
+
+
+"""
 def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, ground_truth, table_names, data=None):
     layer_info_dict = {}
     Parent_nodes_h = {}
@@ -389,94 +489,6 @@ def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, ground_truth,
     return simple_tree, layer_info_dict, Parent_nodes_h
 
 
-def print_node(tree: nx.DiGraph(), node, printer=False):
-    node_dict = {'Node': node, 'Type': tree.nodes[node].get('type', 0),
-                 'cluster label': tree.nodes[node].get('label', 0),
-                 'Purity': tree.nodes[node].get('Purity', 0),
-                 'Data': tree.nodes[node].get('data', 0),
-                 'Wrong Labels': tree.nodes[node].get('Wrong_labels', 0)}
-    if printer is True:
-        print(f" Node: {node}", f" Type: {tree.nodes[node].get('type', 0)} \n",
-              f" cluster label: {tree.nodes[node].get('label', 0)} \n",
-              f" Purity: {tree.nodes[node].get('Purity', 0)} \n"
-              f" Data: {tree.nodes[node].get('data', 0)}")
-        if len(tree.nodes[node].get('Wrong_labels', 0)):
-            print(f" Wrong Labels: {tree.nodes[node].get('Wrong_labels', 0)}")
-    return node_dict
-
-
-def print_clusters_top_down(tree, layer_info, store_path=None):
-    list_tree_info = []
-    total_layer = len(layer_info.keys()) - 1
-    #print(f"Total layer is : {total_layer + 1}")
-    index_layer = total_layer
-    while index_layer >= 0:
-        #print(f"layer : {len(layer_info.keys()) - index_layer}",
-             # f"nodes number: {len(layer_info[index_layer].items())}")  # index_layer + 1
-        index_layer -= 1
-    # print("Layer information ...")
-    for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
-        list_tree_info.append(print_node(tree, closest_parent))
-        index = total_layer - 1
-        #print("its sub-types are: ")
-        while index >= 0:
-            #print(f"Layer is : {index}")
-            for cluster0, (closest_parent0, mutual_parent_nodes0) in layer_info[index].items():
-                if closest_parent in mutual_parent_nodes0:
-                    list_tree_info.append(print_node(tree, closest_parent0))
-            index -= 1
-    if store_path is not None:
-            list_tree = pd.DataFrame(list_tree_info)
-            list_tree.to_csv(store_path, index=False)
-
-
-def purity_per_layer(tree, layer_info):
-    purity_layers = {}
-    total_layer = len(layer_info.keys()) - 1
-    while total_layer >= 0:
-        purity_layers[len(layer_info.keys())-total_layer] = []
-        for cluster, (closest_parent, mutual_parent_nodes) in layer_info[total_layer].items():
-            purity_layers[len(layer_info.keys())-total_layer].append(tree.nodes[closest_parent].get('Purity', 0))
-        total_layer -= 1
-    return purity_layers
-
-
-def print_path_label(tree, layer_info, Parent_nodes, class_dict=None):
-    all_pathCompatibility = []
-    # print(Parent_nodes)
-    ind, ind_o = 0, 0
-    for cluster, (closest_parent, mutual_parent_nodes) in layer_info[0].items():
-        path = sorted(list(mutual_parent_nodes))
-        ind_o += 1
-        for indexp, (clusterP, closest_parentP) in enumerate(Parent_nodes.items()):
-            if closest_parentP in path:
-                path = path[0:path.index(closest_parentP)]
-                MatchedElementPath = len(path)
-                MatchedElementGT = 0
-                if len(path) > 0:
-                    ind += 1
-                    for i in path:
-                        label = tree.nodes[i].get('label', 0)
-                        if label != 0:
-                            print(f" Node: {i}", f" Type: {tree.nodes[i].get('type', 0)} \n",
-                                  f" cluster label: {label} \n",
-                                  f" Purity: {tree.nodes[i].get('Purity', 0)} \n"
-                                  f" Data: {tree.nodes[i].get('data', 0)} \n",
-                                  f" Wrong Labels: {tree.nodes[i].get('data', 0)} \n",
-                                  )
-                            superLabels = tree.nodes[closest_parentP].get('label', 0)
-
-                    print(ind_o, ind, indexp, path)
-                    if MatchedElementPath != 0:
-                        pathCompatibility = MatchedElementGT / MatchedElementPath
-                        all_pathCompatibility.append(pathCompatibility)
-
-    # print("mutual_parent_nodes", len(layer_info[0].keys()), len(all_pathCompatibility), all_pathCompatibility)
-    # tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
-    # print("the metric is ", tree_consistency_score, "all_path_number is ", len(all_pathCompatibility))
-    # return tree_consistency_score
-
-
 def test_tree_consistency_metric():
     embedding_file = np.array([[0.15264832, 0.67790326, 0.35618801],
                                [0.07687365, 0.21208948, 0.23942163],
@@ -514,8 +526,8 @@ def test_tree_consistency_metric():
     folder = "fig/Example"
     mkdir(folder)
     dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
-    tree_test = dendrogram_To_DirectedGraph(embedding_file, linkage_matrix, node_labels, target_path=folder)
-    threCluster_dict = best_clusters(dendrogra, linkage_matrix, embedding_file, estimate_num_cluster=3)
+    tree_test = dendrogram_To_DirectedGraph(embedding_file, linkage_matrix, node_labels)
+    threCluster_dict = best_clusters(dendrogra, linkage_matrix, embedding_file)
     simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
                                                                                   ground_truth, node_labels,
                                                                                   data=node_labels)
@@ -535,4 +547,4 @@ def test_tree_consistency_metric():
 def test():
     test_tree_consistency_metric()
 
-# test()
+# test()"""

@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pickle
 from argparse import Namespace
 import os
-from clustering import clustering_results, data_classes, clusteringColumnResults
+from clustering import clustering_results, data_classes, clusteringColumnResults, inputData
 from Utils import mkdir
 
 from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
@@ -16,7 +16,7 @@ import sys
 
 def silm_clustering(hp: Namespace):
     dicts = {}
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  #  /Subject attribute/None
+    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  # /Subject attribute/None
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
 
     # Read the groung truth hierarchy
@@ -77,12 +77,13 @@ def silm_clustering(hp: Namespace):
             methods_metrics = {}
             for method in clustering_method:
                 print(method)
-                metric_value_df = pd.DataFrame(columns=["Random Index", "Purity"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
+                metric_value_df = pd.DataFrame(
+                    columns=["Random Index", "Purity"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
                 for i in range(0, 1):
                     new_path = os.path.join(store_path, file[:-4])
                     mkdir(new_path)
                     cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,
-                                                                   folderName=new_path)#, graph=graph_gt
+                                                                   folderName=new_path)  # , graph=graph_gt
                     # print(cluster_dict)
                     metric_df = pd.DataFrame([metric_dict])
                     metric_value_df = pd.concat([metric_value_df, metric_df])
@@ -146,7 +147,6 @@ def baselineTypeClustering(hp: Namespace):
         print(e)
 
 
-
 def column_gts(dataset):
     """
      gt_clusters: tablename.colIndex:corresponding label dictionary.
@@ -202,16 +202,16 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
     clustering_method = ["Agglomerative"]  #
     with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = [executor.submit(colCluster, clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
+        futures = [executor.submit(colCluster, clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp,
+                                   embedding_file,
                                    gt_clusters, gt_cluster_dict) for index, clu in
                    enumerate(list(gt_cluster_dict.keys()))]
         # wait all parallel task to complete
         for future in futures:
             future.result()
-    #for index, clu in enumerate(list(gt_cluster_dict.keys())):
-       # ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
-    #print("All parallel tasks completed.")
-
+    # for index, clu in enumerate(list(gt_cluster_dict.keys())):
+    # ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+    # print("All parallel tasks completed.")
 
 
 def inferenceHierarchy(embedding_file: str, hp: Namespace):
@@ -230,7 +230,7 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
         if hp.phaseTest is True:
             clustering_method = ["groundTruth"]
             store_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
-                                "All/" + embedding_file[0:-4] + f"/column/")
+                                      "All/" + embedding_file[0:-4] + f"/column/")
             print(store_path)
             mkdir(store_path)
             path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -245,8 +245,8 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
         ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
 
 
-
-def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters, gt_cluster_dict):
+def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
+               gt_cluster_dict):
     clusters_result = {}
     tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
     Ts[clu] = []
@@ -272,7 +272,6 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
     store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
     mkdir(store_path)
-
 
     # if len(Zs[clu]) < 20000:  # 816 1328
     # print(clu, Ground_t[clu])
@@ -321,39 +320,39 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
 
 
 def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
-
     if hp.phaseTest is True:
         filename = str(index) + '_colcluster_dictGT.pickle'
     else:
         filename = str(index) + '_colcluster_dict.pickle'
     print(filename)
     for meth in clustering_method:
-        try:
-            hierarchicalColCluster(meth,filename , embedding_file[0:-4], Ground_t,
-                                   hp)
-        except:
-            continue
+        # try:
+        hierarchicalColCluster(meth, filename, embedding_file[0:-4], Ground_t,
+                               hp)
+
+    # except:
+    # continue
 
 
 def files_columns_running(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     # TODO this needs a little varified in the future, only test for one particular embedding method
-    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn] #if fn.endswith('_column.pkl') and hp.embed in fn]
+    files = [fn for fn in os.listdir(datafile_path) if
+             '.pkl' in fn and hp.embed in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
-    print(len(files),files)
+    print(len(files), files)
     for file in files:  # [hp.slice_start:hp.slice_stop]
         starmie_columnClustering(file, hp)
-
 
 
 def files_hierarchyInference(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")][5:]
-    
+
     print(files, len(files))
-    for file in files: #[hp.slice_start:hp.slice_stop]:
-        #try:
-            inferenceHierarchy(file, hp)
-        #except:
-          # continue
+    for file in files:  # [hp.slice_start:hp.slice_stop]:
+        # try:
+        inferenceHierarchy(file, hp)
+    # except:
+    # continue

@@ -80,8 +80,13 @@ fig.update_traces(marker=dict(size=12),
 fig.show()
 fig.write_html("output_plot1.html")
     
+    
+    
 """
-import numpy as np
+
+
+
+"""import numpy as np
 from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 
@@ -125,4 +130,18 @@ plt.ylabel('Distance', fontsize=15)
 plt.yticks(np.arange(0, 1.1, 0.1), fontsize=15)
 plt.savefig("dendrogramExample.pdf")
 plt.savefig("dendrogramExample.png")
+plt.show()
+"""
+
+from scipy.cluster.hierarchy import dendrogram, linkage
+from matplotlib import pyplot as plt
+X = [[i] for i in [2, 8, 4, 1, 9, 9,12,11,3.7,6,7.7,8,5.6,17,5,7]]
+print(len(X))
+Z = linkage(X, 'ward')
+print(Z)
+fig = plt.figure(figsize=(5, 5))
+dn = dendrogram(Z)
+Z = linkage(X, 'single')
+fig = plt.figure(figsize=(5, 5))
+dn = dendrogram(Z)
 plt.show()

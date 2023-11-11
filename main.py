@@ -24,6 +24,10 @@ if __name__ == '__main__':
     parser.add_argument("--step", type=int, default=1)
     parser.add_argument("--slice_start", type=int, default=1)
     parser.add_argument("--slice_stop", type=int, default=1)
+
+    parser.add_argument("--intervalSlice", type=int, default=10)
+    parser.add_argument("--delta", type=int, default=0.1)
+
     parser.add_argument("--column", dest="column", action="store_true", default=True)
     # single-column mode without table context
     parser.add_argument("--subjectCol", dest="subjectCol", action="store_true")
