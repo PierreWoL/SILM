@@ -389,7 +389,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
 
 def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+
 
     datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                  "All/" + embedding_file + "/column")
