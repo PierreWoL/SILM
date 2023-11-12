@@ -1,36 +1,40 @@
-from Step2_1 import box_plot,algo
-from Step1 import naming, colors
+from Step2_1 import box_plot, algo, get_n_colors
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
-
+from Step2_1 import reName
+colors = get_n_colors(6)
 def TreeConsistency():
-    box_colorsM = colors[:5] + colors[10:]
+    box_colorsM = colors
     for algorithm in algo:
         overall_tcs = {}
-        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/WDC")
-        folders = [fn for fn in os.listdir(data_path) if "." not in fn and "_" in fn and 'sub']
+        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/WDC/") #SILM
+        folders = [fn for fn in os.listdir(data_path) if "." not in fn and "_" in fn and '5' not in fn]
+        print(folders)
         for index, fold in enumerate(folders):
-            name_cols = naming(fold)
-            print(name_cols, fold)
+            print(index)
+            name_cols = reName(fold)
+
             table = pd.read_csv(os.path.join(data_path, fold, "TreeConsistencyScore.csv"), index_col=0)
+
             table = table[table['ClusteringAlgorithm'].str.contains(algorithm)]
             table = table.sort_index()
+
             if index == 0:
                 overall_tcs["label"] = table.iloc[:, 0]
-
             overall_tcs[name_cols] = table.iloc[:, 1]
 
         df2 = pd.DataFrame(overall_tcs)
         new_df = df2.set_index('label')
+        #print(df2)
         df2.to_csv(os.path.join(data_path, algorithm+"_overall_tcs.csv"))
 
         y_name = "Tree Consistency Score"
         title = "Tree Consistency Score of Embedding Methods of %s Clustering Algorithm" %algorithm
         fn = os.path.join(data_path, algorithm+"_overall_tcs.png")
-        box_plot(df2, box_colorsM, y_name, title, fn)
+        #box_plot(df2, box_colorsM, y_name, title, fn)
 
 
 TreeConsistency()
@@ -41,11 +45,11 @@ def Layer_Purity(i):
     print(i)
     datas = []
     methods = []
-    data_p = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact", str(i),
+    data_p = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/TabFact", str(i),
                           'Agglomerative')
     folders = [fn for fn in os.listdir(data_p) if "." not in fn]
     for fold in folders:
-        naming_embed = naming(fold)
+        naming_embed = reName(fold)
         if os.path.exists(os.path.join(data_p, fold, "layer_purity.csv")):
             methods.append(naming_embed)
             purity = pd.read_csv(os.path.join(data_p, fold, "layer_purity.csv"))
@@ -64,7 +68,7 @@ def Layer_Purity(i):
         return False
 
 
-file_n =  os.listdir(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),"result/Valerie/TabFact"))
+file_n =  os.listdir(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),"result/SILM/TabFact"))
 id_files = [i for i in file_n if "_" not in i]
 def metric_index():
     barWidth = 0.13
@@ -72,7 +76,7 @@ def metric_index():
     for i in Example_index:
         if Layer_Purity(i) is True:
             print("aHa")
-            data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/Valerie/TabFact", str(i),
+            data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/TabFact", str(i),
                                      'Agglomerative')
             csv_file = os.path.join(data_path, "all_purity.csv")
             data = pd.read_csv(csv_file)
