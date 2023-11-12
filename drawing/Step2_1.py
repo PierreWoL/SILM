@@ -3,27 +3,25 @@ import os
 import random
 import sys
 import pickle
-
 import matplotlib
 import pandas as pd
 from matplotlib import pyplot as plt
-
-
 import seaborn as sns
 def get_n_colors(n):
     return sns.color_palette("husl", n)
 
+dataset = "TabFact"
 
-target_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/result/Valerie/Column/WDC/_gt_cluster.pickle"
+target_path = os.path.abspath(os.path.dirname(os.getcwd())) + f"/result/SILM/Column/{dataset}/_gt_cluster.pickle"
 F_cluster = open(target_path, 'rb')
 KEYS = pickle.load(F_cluster)
-print(KEYS)
+print( len(KEYS),KEYS)
 RI = {'Agglomerative': {} }  # 'BIRCH': {},
 
 Purity = {'Agglomerative': {} }
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/WDC/All")
+data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), f"result/SILM/{dataset}/All")
 
 """EMBEDMETHODS = ['SBERT_Instance', 'RoBERTa_Instance',
                 'SBERT_SubAttr', 'RoBERTa_SubAttr',
@@ -36,13 +34,17 @@ def reName(fileName:str):
         Aug_op = fileName_split[0]
         txt = fileName_split[1]
         split_txt =  txt.split("_")
+
         is_SubCol = False
+        is_col = False
         if split_txt[-1] == "subCol":
             LM, metadata = split_txt[0], split_txt[-2]
             is_SubCol = True
+        elif split_txt[-1] == "column":
+            LM, metadata = split_txt[0], split_txt[-2]
+            is_col = True
         else:
             LM, metadata = split_txt[0], split_txt[-1]
-
         meta = ""
         if metadata == "none":
             meta = "I"
@@ -53,7 +55,9 @@ def reName(fileName:str):
         re_name = Aug_op + "_" + LM + "_" + meta
         if is_SubCol is True:
             re_name = Aug_op + "_" + LM + "_" + meta+"_"+"subAttr"
-    else:
+        if is_col is True:
+            re_name = Aug_op + "_" + LM + "_" + meta+"_"+"Column"
+    elif fileName.startswith("Pretrain_"):
         re_name+="Pre_"
         fileName = fileName.split("Pretrain_")[1].split("_")
         meta = ""
@@ -64,6 +68,9 @@ def reName(fileName:str):
         elif fileName[-2] =="subjectheader":
             meta = "SHI"
         re_name +=fileName[0]+"_"+meta
+    elif fileName.startswith("D3L"):
+        re_name += "D3L"
+    print(fileName,re_name)
     return re_name
 test = "cl_sample_cells_lm_sbert_head_column_0_subjectheader_subCol_metrics.csv".split("_metrics.csv")[0]
 
@@ -77,8 +84,10 @@ def dataframes(folds,clustering_algo):
         Purity[clustering_algo][method_name] = {}
         tar_folder = os.path.join(data_path, folder, "column") \
             if "column" in os.listdir(os.path.join(data_path, folder)) else os.path.join(data_path, folder)
+        print(tar_folder)
         stat_files = [fn for fn in os.listdir(tar_folder) if fn.endswith(".csv")]
         for stat_file in stat_files:
+            print(stat_file)
             statist_col = pd.read_csv(os.path.join(tar_folder, stat_file), index_col=0)
             if tar_folder.endswith("column"):
                 name_stat = KEYS[int(stat_file.split("_")[0])]
@@ -92,7 +101,7 @@ def dataframes(folds,clustering_algo):
 
 
 metric = ['Rand Index', 'ARI', 'Purity']
-algo = ['Agglomerative']  #
+algo = ['Agglomerative']  #'Agglomerative',
 
 
 def random_color():
@@ -153,7 +162,7 @@ def naming2(metric_index, algo_index, tar_path):
     return y_name, name, fn
 def drawing():
 
-    folds = [fn for fn in os.listdir(data_path) if "." not in fn]
+    folds = [fn for fn in os.listdir(data_path) if "." not in fn and "old" not in fn]
     folds.sort()
     colors = get_n_colors(len(folds))
     for algorithm in algo:

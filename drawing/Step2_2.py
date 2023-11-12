@@ -67,7 +67,7 @@ def Layer_Purity(i):
     else:
         return False
 
-
+"""
 file_n =  os.listdir(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),"result/SILM/TabFact"))
 id_files = [i for i in file_n if "_" not in i]
 def metric_index():
@@ -102,7 +102,7 @@ def metric_index():
             box_plot(data.iloc[:, 1:], colors, "Purity",
                      f"Layer Purity for CLUSTER {i} using Different Embedding Methods ", fn2)
             plt.show()
-
+"""
 
 
 

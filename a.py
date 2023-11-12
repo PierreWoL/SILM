@@ -146,7 +146,7 @@ Z = linkage(X, 'single')
 fig = plt.figure(figsize=(5, 5))
 dn = dendrogram(Z)
 plt.show()"""
-target_path = os.path.join(os.getcwd(), "datasets/TabFact" )
+"""target_path = os.path.join(os.getcwd(), "datasets/TabFact" )
 with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
     G = pickle.load(file)
 
@@ -163,4 +163,17 @@ Tops = [i for i in G.nodes() if G.in_degree(i)==0]
 print(len(Tops), Tops)
 
 with open(os.path.join(target_path, "graphGroundTruth01.pkl"), "wb") as file:
-  pickle.dump(G, file)
+  pickle.dump(G, file)"""
+# 读取CSV文件
+df = pd.read_csv('datasets/TabFact/groundTruth.csv')
+multi = pd.read_csv('datasets/TabFact/column_gt.csv',encoding='latin1')
+for index, row in df.iterrows():
+    tableName = row['fileName']
+    label = row['superclass']
+    lowLabel = row['class']
+
+    mask = multi['fileName'] == tableName
+    multi.loc[mask, 'LowestClass'] = lowLabel
+    multi.loc[mask, 'TopClass'] = label
+
+multi.to_csv('datasets/TabFact/column_gt.csv', index=False)
