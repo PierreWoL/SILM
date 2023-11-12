@@ -17,20 +17,21 @@ test = "cl_sample_cells_lm_sbert_head_column_0_subjectheader_subCol_metrics.csv"
 
 
 def data_summarize(path):
-    fn = {fn: reName(fn.split("_metrics.csv")[0]) for fn in os.listdir(path) if
-          fn.endswith(".csv") and reName(fn) is not None}
+    files = [i[:-12] for i in os.listdir(path) if i.endswith(".csv")]
+    print(files)
+    fn = {fn: reName(fn) for fn in files if reName(fn) is not None}
     Results = {'Rand Index': {}, 'Purity': {} , 'ACCS':{}}  # 'BIRCH': {},
 
     for key, v in fn.items():
-        result_method = pd.read_csv(os.path.join(path, key), index_col=0)
-
+        result_method = pd.read_csv(os.path.join(path, key+"_metrics.csv"), index_col=0)
+        print(result_method)
         Results['Rand Index'][v] = result_method.loc['Random Index', 'Agglomerative']
         Results['Purity'][v] = result_method.loc['Purity', 'Agglomerative']
-        Results['ACCS'][v] = result_method.loc['Average cluster consistency score', 'Agglomerative']
+        #Results['ACCS'][v] = result_method.loc['Average cluster consistency score', 'Agglomerative']
 
     RI = pd.DataFrame(list(Results['Rand Index'].items()), columns=['Embedding Methods', 'Rand Index'])
     purity = pd.DataFrame(list(Results['Purity'].items()), columns=['Embedding Methods', 'Purity'])
-    ACCS = pd.DataFrame(list(Results['ACCS'].items()), columns=['Embedding Methods', 'Average cluster consistency score'])
+    #ACCS = pd.DataFrame(list(Results['ACCS'].items()), columns=['Embedding Methods', 'Average cluster consistency score'])
 
     def to_xlsx(df1=None, df2=None, df3=None, file_path='', n1='Rand Index', n2='Purity' ,n3 = 'ACCS'):
         with pd.ExcelWriter(file_path) as writer:
@@ -41,7 +42,7 @@ def data_summarize(path):
             if df3 is not None:
                 df3.to_excel(writer, sheet_name=n3, index=False)
     target_file = os.path.join(path, "summarize.xlsx")
-    to_xlsx(RI, purity, ACCS, file_path=target_file)
+    to_xlsx(RI, purity,  file_path=target_file)#ACCS,
 
 
 # colors = get_n_colors(16)
@@ -74,11 +75,11 @@ def metric_ALL(tar_path, index, embeddingMethods: list, fileName, colors, title,
     plt.show()
 
 
-dataset = "WDC"  # TabFact
+dataset = "TabFact"  # TabFact
 Table_content = "All"  # Subject_Col All
 subCol_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                            os.path.join("result/starmie", dataset, Table_content))
-# print(subCol_path)
+print(subCol_path)
 data_summarize(subCol_path)
 
 SUMMARIZE = os.path.join(subCol_path, f"summarize_{Table_content}.xlsx")
