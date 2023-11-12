@@ -226,7 +226,7 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
             else:
                 continue
         except ValueError as e:
-            print(e)
+
             continue
     if silhouette!=-1:
         print("best silhouette, ", silhouette, len(best_clustersR.keys()))

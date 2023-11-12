@@ -216,7 +216,9 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
         colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
                    gt_cluster_dict)
         checkfile = f"{index}_colcluster_dict.pickle"
-        if os.path.isfile(checkfile):  # 816 1328
+        datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+                                     "All/" + embedding_file[:-4] + "/column")
+        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
 
 
@@ -234,7 +236,11 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
 
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
         checkfile = f"{index}_colcluster_dict.pickle" if hp.phaseTest is False else f"{index}_colcluster_dictGT.pickle"
-        if os.path.isfile(checkfile):  # 816 1328
+        datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+                                     "All/" + embedding_file[:-4] + "/column")
+        print(os.path.join(datafile_path, checkfile))
+        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+
             if hp.phaseTest is True:
                 clustering_method = ["groundTruth"]
                 store_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -246,7 +252,7 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
 
                 if os.path.exists(path) is False:
                     dict_groundTruth = {'groundTruth': ground_t[clu]}
-                    print(path)
+                    #print(path)
                     with open(path, 'wb') as handle:
                         pickle.dump(dict_groundTruth, handle, protocol=pickle.HIGHEST_PROTOCOL)
             ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
