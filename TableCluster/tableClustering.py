@@ -274,7 +274,7 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     embedding_file_path = embedding_file.split(".")[0]
     store_path += "All/" + embedding_file_path + "/column/"
     mkdir(store_path)
-    if len(Zs[clu]) < 5000:  # 816 1328
+    if len(Zs[clu]) > 20000:  # 816 1328 5000<len(Zs[clu]) <
         if os.path.isfile(store_path + str(index) + '_ColumnMetrics.csv'):
             print(f"exists! index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])} ")
         else:

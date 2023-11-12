@@ -354,8 +354,8 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     # table_ids = [i for i in range(0, len(tables))]
     # plt.figure(figsize=(10, 7))
     dendrogra = sch.dendrogram(linkage_matrix, labels=tables)
-    plt.xticks(rotation=30)
-    plt.show()
+    #plt.xticks(rotation=30)
+    #plt.show()
     # tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
     start_time = time.time()
     # layers = 4
