@@ -232,7 +232,8 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
     clustering_method = ["Agglomerative"]  #
 
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if 3000<len(Zs[clu])<20000:  # 816 1328
+        checkfile = f"{index}_colcluster_dict.pickle" if hp.phaseTest is False else f"{index}_colcluster_dictGT.pickle"
+        if os.path.isfile(checkfile):  # 816 1328
                 if hp.phaseTest is True:
                     clustering_method = ["groundTruth"]
                     store_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -270,7 +271,7 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
     store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
     mkdir(store_path)
-    if 3000<len(Zs[clu])<20000:  # 816 1328
+    if  3000<len(Zs[clu])<20000:  #3000<len(Zs[clu])<20000
         if os.path.isfile(store_path + str(index) + '_ColumnMetrics.csv'):
             print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])} exists")
         else:
