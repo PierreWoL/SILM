@@ -225,29 +225,32 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
                 best_threshold = threshold
             else:
                 continue
-        except:
+        except ValueError as e:
+            print(e)
             continue
-    #print("best silhouette, ", silhouette, len(best_clustersR.keys()))
+    if silhouette!=-1:
+        print("best silhouette, ", silhouette, len(best_clustersR.keys()))
 
-    clusters.append((best_threshold, best_clustersR))
-    range_lower = silhouette - delta if silhouette - delta > -1 else -1
-    range_upper = silhouette + delta if silhouette + delta < 1 else 1
+        clusters.append((best_threshold, best_clustersR))
+        range_lower = silhouette - delta if silhouette - delta > -1 else -1
+        range_upper = silhouette + delta if silhouette + delta < 1 else 1
 
-    numbers_with_boundaries = np.linspace(best_threshold, highest_y, sliceInterval)
+        numbers_with_boundaries = np.linspace(best_threshold, highest_y, sliceInterval)
 
-    # if estimate_num_cluster != 0:
-    for threshold in numbers_with_boundaries[1:-1]:
-        try:
-            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
+        # if estimate_num_cluster != 0:
+        for threshold in numbers_with_boundaries[1:-1]:
+            try:
+                silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
 
-            if range_lower < silhouette_avg < range_upper:
+                if range_lower < silhouette_avg < range_upper:
 
-                if len(custom_clusters) < len(clusters[-1][1]):
-                    clusters.append((threshold, custom_clusters))
-        except:
-            continue
+                    if len(custom_clusters) < len(clusters[-1][1]):
+                        clusters.append((threshold, custom_clusters))
+            except:
+                continue
     #print(f'the total layer number is {len(clusters)}')
     return clusters
+
 
 
 def slice_tree(tree: nx.DiGraph(), custom_clusters, node_labels, is_Label=True):

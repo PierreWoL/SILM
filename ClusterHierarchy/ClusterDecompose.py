@@ -342,7 +342,6 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
             score = JaccardMatrix[(table1, table2)]
         elif (table2, table1) in JaccardMatrix.keys():
             score = JaccardMatrix[(table2, table1)]
-        # print(table1, table2, score)
         return score
 
     result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
@@ -350,27 +349,27 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     mkdir(file_path)
     mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")
     linkage_matrix = sch.linkage(encodings, method='complete', metric=custom_metric)  # 'euclidean'
-    # print(linkage_matrix)
+
     mkdir(result_folder)
     # table_ids = [i for i in range(0, len(tables))]
     # plt.figure(figsize=(10, 7))
     dendrogra = sch.dendrogram(linkage_matrix, labels=tables)
-    # plt.xticks(rotation=30)
-    # plt.show()
+    plt.xticks(rotation=30)
+    plt.show()
     # tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
     start_time = time.time()
     # layers = 4
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
                                          customMatrix=custom_metric, sliceInterval=sliceInterval, delta=delta)
-    # print(threCluster_dict)
+    #print(threCluster_dict)
     end_time = time.time()
     # Calculate the elapsed time
     timing['Finding Layers'] = {'timing': end_time - start_time}
     # elapsed_time = end_time - start_time
     # print(f"Elapsed time: {elapsed_time:.4f} seconds for finding the best clusters")
-    if len(threCluster_dict) == 1 and threCluster_dict[0][1] is None:
+    if threCluster_dict ==[]:#len(threCluster_dict) == 1 and threCluster_dict[0][1] is None
         print("no hierarchy!")
-        return None
+        return  0,0
     simple_tree, lower_layer, top_layer = \
         simple_tree_with_cluster_label(threCluster_dict, tables, dataset)
     start_time = time.time()
@@ -407,12 +406,15 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
     print(KEYS[index_cols])
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
+
     tables = Ground_t[str(KEYS[index_cols])]
+    print(str(KEYS[index_cols]), tables )
     score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
     # print(score_path)
     mkdir(score_path)
     if len(tables) > 1:
         jaccard_score = JaccardMatrix(col_cluster[clustering], data_path)[2]
+        #print(jaccard_score)
         TCS, ALL_path = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file, hp.dataset,
                                                 str(index_cols), sliceInterval= hp.intervalSlice, delta=hp.delta)
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
