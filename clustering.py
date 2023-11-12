@@ -294,8 +294,8 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     input_data = np.array(input_data, dtype=np.float32)
     score = -1
     best_model = AgglomerativeClustering()
-    at_least = math.ceil(cluster_num // 3)
-    for n_clusters in range(at_least, cluster_num+2*at_least):
+    at_least = math.ceil(cluster_num //4 *3)
+    for n_clusters in range(at_least, 2*cluster_num, 5):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -740,7 +740,7 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
 def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     parameters = []
-    number_estimate = len(gt_cluster_dict) // 3
+    number_estimate = len(gt_cluster_dict) // 2
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
