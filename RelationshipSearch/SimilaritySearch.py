@@ -1,9 +1,12 @@
 import os
 import pickle
+import sys
 
 import numpy as np
 import pandas as pd
-
+sys.path.append('../')
+import TableAnnotation as TA
+from SubjectColumnDetection import ColumnType
 
 
 # Assuming that embeddings are stored in a dictionary in this format:
@@ -112,17 +115,15 @@ def check_similarity(cluster_1, cluster_2, embeddings: dict):
 
 datafile_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/result/embedding/starmie/vectors/WDC/"
 table_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/datasets/WDC/"
-
-file = "cl_sample_row_lm_sbert_head_column_0_none.pkl"
+similarity_dict = {}
+file = "Pretrain_sbert_head_column_header_False.pkl"
 F = open(datafile_path + file, 'rb')
 content = pickle.load(F)
 
-import TableAnnotation as TA
-from SubjectColumnDetection import ColumnType
 example_embedding = {i[0]:i[1] for i in content}
 subjectAttri_datasets = subjectAttri(table_path, example_embedding)
 df1_example = "SOTAB_125.csv",example_embedding["SOTAB_125.csv"]
 df2_example = "SOTAB_200.csv",example_embedding["SOTAB_200.csv"]
 
-relations = table_relationship(df1_example, df2_example, subjectAttri_datasets)
+relations = table_relationship(df1_example, df2_example,subjectAttri_datasets,similarity_dict)
 print(relations)

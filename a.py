@@ -1,6 +1,7 @@
 """df = pd.read_csv("datasets/WDC/Test/T2DV2_253.csv")
 augment(df,"highlight_cells")
 augment(df,"replace_high_cells")"""
+import concurrent
 import os
 
 import pandas as pd
@@ -48,7 +49,6 @@ for aug in augmentation:
         # print(table.transpose(),"\n", t2.transpose())
         break"""
 
-
 """
 import numpy as np
 from sklearn.manifold import TSNE
@@ -84,8 +84,6 @@ fig.write_html("output_plot1.html")
     
     
 """
-
-
 
 """import numpy as np
 from scipy.cluster.hierarchy import dendrogram, linkage
@@ -165,7 +163,7 @@ print(len(Tops), Tops)
 with open(os.path.join(target_path, "graphGroundTruth01.pkl"), "wb") as file:
   pickle.dump(G, file)"""
 # 读取CSV文件
-df = pd.read_csv('datasets/TabFact/groundTruth.csv')
+"""df = pd.read_csv('datasets/TabFact/groundTruth.csv')
 multi = pd.read_csv('datasets/TabFact/column_gt.csv',encoding='latin1')
 for index, row in df.iterrows():
     tableName = row['fileName']
@@ -176,4 +174,105 @@ for index, row in df.iterrows():
     multi.loc[mask, 'LowestClass'] = lowLabel
     multi.loc[mask, 'TopClass'] = label
 
-multi.to_csv('datasets/TabFact/column_gt.csv', index=False)
+multi.to_csv('datasets/TabFact/column_gt.csv', index=False)"""
+from d3l.utils.functions import pickle_python_object, unpickle_python_object
+
+"""all = pd.read_excel("D:/CurrentDataset/datasets/TabFact/relationships.xlsx", sheet_name="Sheet1")
+tables = all["TableName"].unique()
+lowest_type = all["LowType"].unique()
+column = all["ColumnLabel"].unique()"""
+
+from SPARQLWrapper import SPARQLWrapper, JSON
+
+all_dict = {}
+
+
+def get_wikidata_id_from_wikipedia_url(row):
+    url = row["url"]
+    table = row["fileName"]
+    # Extract the title from the Wikipedia URL
+    title = url.split('/')[-1].replace('_', ' ')
+
+    # Initialize the SPARQL query
+    sparql_query = f"""SELECT ?item WHERE {{
+  ?article schema:about ?item .
+  ?article schema:isPartOf <https://en.wikipedia.org/> .
+  ?article schema:name "{title}"@en .  
+}}"""
+
+    # Set up the SPARQL wrapper to query the Wikidata endpoint
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
+    sparql.setQuery(sparql_query)
+    sparql.setReturnFormat(JSON)
+
+    # Execute the query and return the results
+    results = sparql.query().convert()
+    for result in results["results"]["bindings"]:
+        all_dict[table] = result["item"]["value"].split("/")[-1]
+
+
+# Test the function with the given URL
+# url = "https://en.wikipedia.org/wiki/1963_World_Wrestling_Championships"
+# wikidata_id = get_wikidata_id_from_wikipedia_url(url)
+# print(wikidata_id)
+"""
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+    re = executor.map(get_wikidata_id_from_wikipedia_url, rows)"""
+# pickle_python_object(all_dict, "D:/CurrentDataset/datasets/TabFact/ids.pkl")
+
+
+from SPARQLWrapper import SPARQLWrapper, JSON
+
+
+def query_wikidata_relationship(dicts, entity1, entity2):
+    # SPARQL query to find the relationship between two entities
+    sparql_query = """
+    SELECT ?property ?propertyLabel WHERE {{
+      wd:{} ?property wd:{} .
+      SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
+    }}
+    """.format(entity1, entity2)
+
+    # Set up the SPARQL wrapper to query the Wikidata endpoint
+    sparql = SPARQLWrapper("https://query.wikidata.org/sparql")
+    sparql.setQuery(sparql_query)
+    sparql.setReturnFormat(JSON)
+
+    # Execute the query and return the results
+    results = sparql.query().convert()
+    relationships = []
+    for result in results["results"]["bindings"]:
+        relationships.append(result["propertyLabel"]["value"].split("/")[-1])
+    if len(relationships)>0:
+        dicts[(entity1,entity2)] = relationships
+
+ori = pd.read_csv("D:/CurrentDataset/datasets/TabFact/Try.csv", encoding="latin1")
+alls = unpickle_python_object("D:/CurrentDataset/datasets/TabFact/ids.pkl")
+ori = ori[ori["fileName"].isin(list(alls.keys()))]
+#print(alls, len(alls))
+# Forrest Gump (Q134773) and Tom Hanks (Q2263)
+#relationships = query_wikidata_relationship("Q134773", "Q2263")
+#print(relationships)
+
+tables = ori[ori["fileName"].isin(list(alls.keys()))]
+lowclass = list(tables["class"].unique())
+
+top_class = list(tables["superclass"].unique())
+# tables.to_csv("D:/CurrentDataset/datasets/TabFact/keeps.csv")
+filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season',
+                                                                                                        regex=True, case=False)]
+print(len(filtered_df_team))
+team_ids = {key: value for key, value in alls.items() if key in filtered_df_team["fileName"].unique()}
+filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)]
+season_ids = {key: value for key, value in alls.items() if key in filtered_df_season["fileName"].unique()}
+
+relationship_dict = {}
+from concurrent.futures import ThreadPoolExecutor
+with  ThreadPoolExecutor(max_workers=1000) as executor:
+    future_to_relationship = {executor.submit(query_wikidata_relationship,relationship_dict, team_id, season_id): (team_id, season_id)
+                              for team_table, team_id in team_ids.items()
+                              for season_table, season_id in season_ids.items()}
+
+print(relationship_dict)
+pickle_python_object(relationship_dict, "D:/CurrentDataset/datasets/TabFact/relationshipTeamSeason.pkl")
