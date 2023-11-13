@@ -22,9 +22,9 @@ successors_list = list(G.successors(node_A))
 te = nx.descendants(G, node_A)
 asn = nx.ancestors(G, node_A)
 as_root  = [item for item in asn if G.in_degree(item) == 0]
-print(f"{node_A} 的出节点列表：{successors_list}")
-print(f"{node_A} 祖先列表：{as_root}")
-print(f"{node_A} 不知道什么玩意：{te}")"""
+print(f"{node_A} out nodes：{successors_list}")
+print(f"{node_A} ancestors：{as_root}")
+print(f"{node_A} WTF：{te}")"""
 
 """from starmie.sdd.augment import augment
 table = pd.read_csv("datasets/WDC/Test/T2DV2_7.csv")
@@ -99,10 +99,9 @@ similarities = {
     'sim(3,4)': 0.75
 }
 
-# 将相似度转换为距离
+ 
 distances = {k: 1 - v for k, v in similarities.items()}
-
-# 创建一个距离矩阵
+ 
 dist_matrix = np.array([
     [0, distances['sim(1,2)'], distances['sim(1,3)'], distances['sim(1,4)']],
     [0, 0, distances['sim(2,3)'], distances['sim(2,4)']],
@@ -120,12 +119,12 @@ Z = linkage(dist_array, 'single')
 plt.figure(figsize=(6, 6))
 dendrogram(Z, labels=['t1', 't2', 't3', 't4'])
 
-# 设置标题和轴标签的字体大小
+ 
 
 plt.xlabel('Tables', fontsize=15)
 plt.ylabel('Distance', fontsize=15)
 
-# 设置y轴的刻度和字体大小
+ 
 plt.yticks(np.arange(0, 1.1, 0.1), fontsize=15)
 plt.savefig("dendrogramExample.pdf")
 plt.savefig("dendrogramExample.png")
@@ -162,7 +161,7 @@ print(len(Tops), Tops)
 
 with open(os.path.join(target_path, "graphGroundTruth01.pkl"), "wb") as file:
   pickle.dump(G, file)"""
-# 读取CSV文件
+
 """df = pd.read_csv('datasets/TabFact/groundTruth.csv')
 multi = pd.read_csv('datasets/TabFact/column_gt.csv',encoding='latin1')
 for index, row in df.iterrows():
@@ -261,10 +260,10 @@ lowclass = list(tables["class"].unique())
 top_class = list(tables["superclass"].unique())
 # tables.to_csv("D:/CurrentDataset/datasets/TabFact/keeps.csv")
 filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season',
-                                                                                                        regex=True, case=False)]
+                                                                                                        regex=True, case=False)][0:20]
 print(len(filtered_df_team))
 team_ids = {key: value for key, value in alls.items() if key in filtered_df_team["fileName"].unique()}
-filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)]
+filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)][0:50]
 season_ids = {key: value for key, value in alls.items() if key in filtered_df_season["fileName"].unique()}
 
 relationship_dict = {}
