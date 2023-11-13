@@ -174,7 +174,7 @@ for index, row in df.iterrows():
     multi.loc[mask, 'TopClass'] = label
 
 multi.to_csv('datasets/TabFact/column_gt.csv', index=False)"""
-from d3l.utils.functions import pickle_python_object, unpickle_python_object
+
 
 """all = pd.read_excel("D:/CurrentDataset/datasets/TabFact/relationships.xlsx", sheet_name="Sheet1")
 tables = all["TableName"].unique()
@@ -244,10 +244,11 @@ def query_wikidata_relationship(dicts, entity1, entity2):
     for result in results["results"]["bindings"]:
         relationships.append(result["propertyLabel"]["value"].split("/")[-1])
     if len(relationships)>0:
+        print((entity1,entity2),relationships )
         dicts[(entity1,entity2)] = relationships
-
-ori = pd.read_csv("D:/CurrentDataset/datasets/TabFact/Try.csv", encoding="latin1")
-alls = unpickle_python_object("D:/CurrentDataset/datasets/TabFact/ids.pkl")
+from d3l.utils.functions import pickle_python_object, unpickle_python_object
+ori = pd.read_csv("datasets/TabFact/Try.csv", encoding="latin1")
+alls = unpickle_python_object("datasets/TabFact/ids.pkl")
 ori = ori[ori["fileName"].isin(list(alls.keys()))]
 #print(alls, len(alls))
 # Forrest Gump (Q134773) and Tom Hanks (Q2263)
@@ -274,4 +275,4 @@ with  ThreadPoolExecutor(max_workers=1000) as executor:
                               for season_table, season_id in season_ids.items()}
 
 print(relationship_dict)
-pickle_python_object(relationship_dict, "D:/CurrentDataset/datasets/TabFact/relationshipTeamSeason.pkl")
+pickle_python_object(relationship_dict, "datasets/TabFact/relationshipTeamSeason.pkl")
