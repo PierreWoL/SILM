@@ -346,11 +346,11 @@ def files_columns_running(hp: Namespace):
 
 def files_hierarchyInference(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn]
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn and 'Pretrain' in fn and 'header' not in fn]
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]
 
     print(files, len(files))
-    for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]:
+    for file in files:  # [hp.slice_start:hp.slice_stop]:
         # try:
         inferenceHierarchy(file, hp)
     # except:

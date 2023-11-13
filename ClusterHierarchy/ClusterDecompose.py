@@ -68,9 +68,10 @@ def ground_truth_labels(filename, mode=0, dataset="TabFact"):
         # Return the intermedia type of this cluster
         all_anc = []
         for class_file in classX:
-            ancestors = [i for i in nx.ancestors(G, class_file)
+            if class_file in G.nodes():
+                ancestors = [i for i in nx.ancestors(G, class_file)
                          if i not in successors and i not in top_nodes and G.out_degree(i) != 0]
-            all_anc.extend(ancestors)
+                all_anc.extend(ancestors)
 
         if len(all_anc) == 0:
             all_anc = classX
@@ -81,8 +82,9 @@ def ground_truth_labels(filename, mode=0, dataset="TabFact"):
         # Return the top level type of this cluster
         all_anc = []
         for class_file in classX:
-            ancestors = [i for i in nx.ancestors(G, class_file) if i in successors]
-            all_anc.extend(ancestors)
+            if class_file in G.nodes():
+              ancestors = [i for i in nx.ancestors(G, class_file) if i in successors]
+              all_anc.extend(ancestors)
         if len(all_anc) == 0:
             all_anc = classX
 
