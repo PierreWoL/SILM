@@ -261,10 +261,10 @@ lowclass = list(tables["class"].unique())
 top_class = list(tables["superclass"].unique())
 # tables.to_csv("D:/CurrentDataset/datasets/TabFact/keeps.csv")
 filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season',
-                                                                                                        regex=True, case=False)][0:20]
+                                                                                                        regex=True, case=False)]
 print(len(filtered_df_team))
 team_ids = {key: value for key, value in alls.items() if key in filtered_df_team["fileName"].unique()}
-filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)][0:50]
+filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)]
 season_ids = {key: value for key, value in alls.items() if key in filtered_df_season["fileName"].unique()}
 
 relationship_dict = {}
