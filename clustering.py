@@ -1,6 +1,7 @@
 import ast
 import math
 import os
+import time
 from collections import Counter
 from typing import Optional
 from scipy.spatial.distance import cosine, euclidean
@@ -295,8 +296,7 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     score = -1
     best_model = AgglomerativeClustering()
     at_least = math.ceil(cluster_num //4 *3)+2
-    
-    for n_clusters in range(at_least,cluster_num*3 ): #range(90, 125, 2)
+    for n_clusters in range(at_least, 2*cluster_num, 1):
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -653,7 +653,6 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
         df.to_csv(os.path.join(folder, 'overall_clustering.csv'), encoding='utf-8', index=False)
         df2.to_csv(os.path.join(folder, 'purityCluster.csv'), encoding='utf-8', index=False)
         del df, df2
-    print()
     return metric_dict
 
 
@@ -666,6 +665,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
 
 def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None):  # , graph = None
+    star_time = time.time()
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
     gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
     del ground_t0, gt_cluster_dict0
@@ -708,8 +708,17 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
     fig.write_html("output_plot2.html")"""
     # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
+
+    end_time = time.time()
+    time_difference_run = end_time - star_time
+
+    star_time_eva = time.time()
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName,
                                      gt_clusters0)  # ,graph = graph
+    end_time_eva = time.time()
+    time_difference_eva = end_time_eva - star_time_eva
+    metrics_value["Clustering time"] = time_difference_run
+    metrics_value["Evaluation time"] = time_difference_eva
     return cluster_dict, metrics_value
 
 

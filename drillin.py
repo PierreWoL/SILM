@@ -47,13 +47,14 @@ for to in top[-5:-4]:
 
 subject_Col = ['Pretrain_sbert_head_column_none_False', 'Pretrain_sbert_head_column_header_False']
 
-all = ['cl_SC6_lm_sbert_head_column_0_header_subCol','cl_SC6_lm_sbert_head_column_0_none_subCol',
-       'cl_SCT6_lm_sbert_head_column_0_header_subCol','cl_SCT6_lm_sbert_head_column_0_none_subCol']
+all = ['cl_SC5_lm_sbert_head_column_0_header','cl_SC5_lm_sbert_head_column_0_none',
+       'cl_SCT5_lm_sbert_head_column_0_header','cl_SCT5_lm_sbert_head_column_0_none',
+       'Pretrain_sbert_head_column_none_False', 'Pretrain_roberta_head_column_header_False'] #_subCol
 
-mid = 'All'
+"""mid = 'All'
 for all_file in all:
     result_csv = pd.read_csv(
-        f"result/starmie/TabFact/{mid}/{all_file}/overall_clustering.csv")
+        f"result/starmie/TabFact/{mid}/OLD/{all_file}/overall_clustering.csv")
     gt = pd.read_csv("datasets/TabFact/groundTruth.csv")
     ids = result_csv["cluster id"].unique()
     cluster_dict = {i: [] for i in ids}
@@ -63,11 +64,14 @@ for all_file in all:
     # print(cluster_dict)
 
     metric_dict = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict,
-                                   f"result/starmie/TabFact/{mid}/{all_file}/",
+                                   f"result/starmie/TabFact/{mid}/OLD/{all_file}/",
                                    gt_clusters0)
     metric_df = pd.DataFrame([metric_dict])
-    metric_df.to_csv(f"result/starmie/TabFact/{mid}/{all_file}_metrics.csv")
-    print(metric_dict)
+    metric_df.to_csv(f"result/starmie/TabFact/{mid}/OLD/{all_file}_metrics.csv")
+    print(metric_dict)"""
+
+
+
 """
 for id in ids:
     appear_labels = []
@@ -96,3 +100,18 @@ df2 = pd.DataFrame(overall_info, columns=['Cluster id', 'top level type', 'most 
 #df2.to_csv("result/starmie/TabFact/Subject_Col/Pretrain_sbert_head_column_none_False/overall_clusteringNew.csv")
 # metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folder="result/starmie/TabFact/All/cl_SCT6_lm_sbert_head_column_0_header_subCol/",tables_gt=gt_clusters0)
 # print(metrics_value)
+
+"""
+column_based = ['cl_SC6_lm_sbert_head_column_0_header_column','cl_SC6_lm_sbert_head_column_0_none_column',
+       'cl_SCT6_lm_sbert_head_column_0_header_column','cl_SCT6_lm_sbert_head_column_0_none_column'] #_subCol
+for i in column_based:
+    print(i)
+    embedding_i = unpickle_python_object(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
+    print(embedding_i)
+    break
+    
+"""
+
+
+
+

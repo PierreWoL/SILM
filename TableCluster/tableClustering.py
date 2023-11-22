@@ -23,8 +23,8 @@ def silm_clustering(hp: Namespace):
     # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
     # graph_gt = pickle.load(F_graph)
 
-    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn and 'Pretrain' not in fn and "_column.pkl" not in fn][hp.slice_start:hp.slice_stop] # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
-    print(files)
+    files = [fn for fn in os.listdir(datafile_path) if
+             '.pkl' in fn and f"_{hp.embed}_" in fn and 'Pretrain' not in fn]  # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -73,12 +73,13 @@ def silm_clustering(hp: Namespace):
             print(vectors[0],vectors[1], np.isnan(vec_table).any(),vec_table)"""
         Z = np.array(Z)
         try:
+
             clustering_method = ["Agglomerative"]  # , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
-                print(method)
+                #print(method)
                 metric_value_df = pd.DataFrame(
-                    columns=["Random Index", "Purity"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
+                    columns=["Random Index", "Purity", "Clustering time", "Evaluation time"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
                 for i in range(0, 1):
                     new_path = os.path.join(store_path, file[:-4])
                     mkdir(new_path)
@@ -96,6 +97,10 @@ def silm_clustering(hp: Namespace):
             e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
             print(e_df)
             dicts[file] = dict_file
+
+
+
+
         except ValueError as e:
             print(e)
             continue

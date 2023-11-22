@@ -7,7 +7,7 @@ import pandas as pd
 
 # 数据
 
-"""
+
 
 # 折线
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
@@ -22,13 +22,19 @@ for metric in metrics:
     sample_cells_sbert = sum["Sample_cells_SBERT"]
     sample_cells_tfidf_roberta = sum["Sample_cells_TFIDF_RoBERTa"]
     sample_cells_roberta = sum["Sample_cells_RoBERTa"]
+    sample_cells_tfidf_bert = sum["Sample_cells_TFIDF_BERT"]
+    sample_cells_bert = sum["Sample_cells_BERT"]
 
     # 绘制
     plt.figure(figsize=(10, 6))
-    plt.plot(augmentation_times, sample_cells_tfidf_sbert, marker='o', label='Sample_cells_TFIDF_SBERT')
-    plt.plot(augmentation_times, sample_cells_sbert, marker='o', label='Sample_cells_SBERT')
+    #
+    #
     plt.plot(augmentation_times, sample_cells_tfidf_roberta, marker='o', label='Sample_cells_TFIDF_RoBERTa')
     plt.plot(augmentation_times, sample_cells_roberta, marker='o', label='Sample_cells_RoBERTa')
+    plt.plot(augmentation_times, sample_cells_tfidf_bert, marker='o', label='Sample_cells_TFIDF_BERT')
+    plt.plot(augmentation_times, sample_cells_bert, marker='o', label='Sample_cells_BERT')
+    plt.plot(augmentation_times, sample_cells_tfidf_sbert, marker='o', label='Sample_cells_TFIDF_SBERT')
+    plt.plot(augmentation_times, sample_cells_sbert, marker='o', label='Sample_cells_SBERT')
 
     # 标题和轴标签
 
@@ -46,17 +52,19 @@ for metric in metrics:
     plt.tight_layout()
 
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                           os.path.join("result/starmie/WDC/"), metric+".pdf"))
+                           os.path.join("result/starmie/WDC/"), metric+"LineChart.pdf"))
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                             os.path.join("result/starmie/WDC/"), metric + ".png"))
+                             os.path.join("result/starmie/WDC/"), metric + "LineChart.png"))
     plt.show()
-    """
+
+
+
 
 """
 # 条形-- Phase 1 -- 单条
 datasets = ["WDC", "TabFact"]
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                    os.path.join(f"result/starmie/WDC/Sum.xlsx"))
+                    os.path.join(f"C:/Users/1124a/Desktop/Sum.xlsx"))#result/starmie/WDC/Sum.xlsx
 metrics = ["Purity C", "Rand Index C"]
 for index, dataset in enumerate(datasets):
 
@@ -101,8 +109,8 @@ for index, dataset in enumerate(datasets):
         plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                  os.path.join(f"result/starmie/{dataset}/"),
                                  " ".join(metric.split(" ")[:-1])+   label + "BarChart.png"))
-
 """
+
 """
 metrics = ["Purity C", "Rand Index C"]
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
@@ -173,7 +181,7 @@ for metric in metrics:
 """
 #条形-- Phase 2 -- 单条
 
-dataset = "WDC"
+dataset = "TabFact"
 metrics = ["Purity C", "Rand Index C"]
 for metric in metrics:
     if metric == "Purity C":
@@ -273,18 +281,23 @@ for metric in metrics:
     # ax.set_title('Box Plot for Rand Index')
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                              # os.path.join("result/starmie/WDC/"), " ".join(metric.split(" ")[:-1]) +label+ ".pdf"))
-                             os.path.join("result/SILM/WDC/All"), " ".join(metric.split(" ")[:-1]) +label+ "AttributesBox.pdf"))
+                             os.path.join(f"result/SILM/{dataset}/All"), " ".join(metric.split(" ")[:-1]) +label+ "AttributesBox.pdf"))
 
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                              # os.path.join("result/starmie/WDC/"), " ".join(metric.split(" ")[:-1]) +label+ ".png"))
-                             os.path.join("result/SILM/WDC/All"), " ".join(metric.split(" ")[:-1])  +label+ "AttributesBox.png"))
+                             os.path.join(f"result/SILM/{dataset}/All"), " ".join(metric.split(" ")[:-1])  +label+ "AttributesBox.png"))
     plt.tight_layout()
+
+
+"""
 
 """
 
 
+dataset = "TabFact"
+
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                    os.path.join("result/SILM/WDC/Agglomerative_overall_tcs.csv"))
+                    os.path.join(f"result/SILM/{dataset}/Agglomerative_overall_tcs.csv"))
 df = pd.read_csv(path)
 df = df.iloc[:-1, 2:]
 plt.figure(figsize=(11, 10))
@@ -329,18 +342,18 @@ legend_patches = [plt.Line2D([0], [0], marker='o', color='w', label=label, marke
 # ax.set_title('Box Plot for Rand Index')
 plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                          # os.path.join("result/starmie/WDC/"), " ".join(metric.split(" ")[:-1]) +label+ ".pdf"))
-                         os.path.join("result/SILM/WDC/"), "TCS" + "_box.pdf"))
+                         os.path.join(f"result/SILM/{dataset}/"), f"TCS{dataset}_box.pdf"))
 
 plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                          # os.path.join("result/starmie/WDC/"), " ".join(metric.split(" ")[:-1]) +label+ ".png"))
-                         os.path.join("result/SILM/WDC/"), "TCS" + "_box.png"))
+                         os.path.join(f"result/SILM/{dataset}/"), f"TCS{dataset}_box.png"))
 plt.tight_layout()
 
 # SILM tree consistency metrics
 
 
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                    os.path.join(f"result/SILM/WDC/Sum.xlsx"))
+                    os.path.join(f"result/SILM/{dataset}/Sum.xlsx"))
 sum = pd.read_excel(path, sheet_name="Sheet1")
 labels = sum.columns
 
@@ -351,7 +364,8 @@ bars = ax.bar(labels, values, color='skyblue', label="WDC")
 
 ax.set_ylim(0, 1)
 plt.yticks([i / 10.0 for i in range(11)], fontsize=21)  # 设置y轴间隔为0.1
-
+#bars = ax.bar(labels, values, color='skyblue', label=label)  if index ==0 else \
+       #     ax.bar(labels, values, color='#FFEBB7', hatch='//',label=label)
 for bar in bars:
             height = bar.get_height()
             ax.annotate('{:.3f}'.format(height),
@@ -369,12 +383,13 @@ ax.set_xticklabels(labels, rotation=20)
 
 plt.tight_layout()
 plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                 os.path.join(f"result/SILM/WDC/"), "TCSbar.pdf"))
+                                 os.path.join(f"result/SILM/{dataset}/"), f"TCSbar_{dataset}.pdf"))
 plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                 os.path.join(f"result/SILM/WDC/"),"TCSbar.png"))
+                                 os.path.join(f"result/SILM/{dataset}/"),f"TCSbar_{dataset}.png"))
 plt.show()
 
 
 
 
 
+"""

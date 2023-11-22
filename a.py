@@ -4,9 +4,12 @@ augment(df,"replace_high_cells")"""
 import concurrent
 import os
 
+import numpy as np
 import pandas as pd
 import pickle
-#from plotly.figure_factory._dendrogram import sch
+from plotly.figure_factory._dendrogram import sch
+
+from d3l.utils.functions import unpickle_python_object
 
 """G = nx.DiGraph()
 G.add_edge("A", "B")
@@ -14,16 +17,17 @@ G.add_edge("A", "C")
 G.add_edge("B", "D")
 
 
-
+# 要检查的节点
 node_A = "D"
 
+# 获取节点 A 的所有出节点（直接后继节点）
 successors_list = list(G.successors(node_A))
 te = nx.descendants(G, node_A)
 asn = nx.ancestors(G, node_A)
 as_root  = [item for item in asn if G.in_degree(item) == 0]
-print(f"{node_A} out nodes successors_list}")
-print(f"{node_A} ancestors as_root}")
-print(f"{node_A}}")"""
+print(f"{node_A} out nodes：{successors_list}")
+print(f"{node_A} ancestors：{as_root}")
+print(f"{node_A} WTF：{te}")"""
 
 """from starmie.sdd.augment import augment
 table = pd.read_csv("datasets/WDC/Test/T2DV2_7.csv")
@@ -53,7 +57,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 import plotly.express as px
 
-
+# 数据
 data = np.array([
     [0,1,0,0],
     [0,1.1,0,0],
@@ -73,7 +77,7 @@ df = pd.DataFrame(transformed_data, columns=['Component 1', 'Component 2'])
 df['label'] = ["data_1", "data_2", "data_3", "data_4", "data_5", "data_6", "data_7", "data_8"]
 df['cluster'] = ['Cluster 1', 'Cluster 1', 'Cluster 1', 'Cluster 1', 'Cluster 1', 'Cluster 2', 'Cluster 2', 'Cluster 2']
 print(df)
-
+# 使用 plotly 进行绘图
 fig = px.scatter(df, x='Component 1', y='Component 2', text='label', hover_data=['label'], color='cluster')
 fig.update_traces(marker=dict(size=12),
                   selector=dict(mode='markers+text'))
@@ -88,6 +92,7 @@ fig.write_html("output_plot1.html")
 from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 
+# 你的相似度数据
 similarities = {
     'sim(1,2)': 0.75,
     'sim(1,3)': 0.2,
@@ -107,8 +112,13 @@ dist_matrix = np.array([
     [0, 0, 0, 0]
 ])
 
+# 转换成压缩向量形式
+dist_array = dist_matrix[np.triu_indices(4, k = 1)]
+
+# 进行层次聚类
 Z = linkage(dist_array, 'single')
 
+# 画出树状图
 plt.figure(figsize=(6, 6))
 dendrogram(Z, labels=['t1', 't2', 't3', 't4'])
 
@@ -168,13 +178,22 @@ for index, row in df.iterrows():
 
 multi.to_csv('datasets/TabFact/column_gt.csv', index=False)"""
 
+"""
 
-"""all = pd.read_excel("D:/CurrentDataset/datasets/TabFact/relationships.xlsx", sheet_name="Sheet1")
+all = pd.read_excel("D:/CurrentDataset/datasets/TabFact/relationships.xlsx", sheet_name="Sheet1")
 tables = all["TableName"].unique()
+print(tables)
 lowest_type = all["LowType"].unique()
-column = all["ColumnLabel"].unique()"""
+column = all["ColumnLabel"].unique()
+alls = unpickle_python_object("datasets/TabFact/ids.pkl")
+print(all[all["TableName"].isin(list(alls.keys()))]["TableName"].unique())
+
+print(len(all[all["TableName"].isin(list(alls.keys()))]["TableName"].unique()))
+
 
 from SPARQLWrapper import SPARQLWrapper, JSON
+
+"""
 
 all_dict = {}
 
@@ -236,9 +255,13 @@ def query_wikidata_relationship(dicts, entity1, entity2):
     relationships = []
     for result in results["results"]["bindings"]:
         relationships.append(result["propertyLabel"]["value"].split("/")[-1])
-    if len(relationships)>0:
-        print((entity1,entity2),relationships )
-        dicts[(entity1,entity2)] = relationships
+    if len(relationships) > 0:
+        print((entity1, entity2), relationships)
+        dicts[(entity1, entity2)] = relationships
+
+
+"""
+
 from d3l.utils.functions import pickle_python_object, unpickle_python_object
 ori = pd.read_csv("datasets/TabFact/Try.csv", encoding="latin1")
 alls = unpickle_python_object("datasets/TabFact/ids.pkl")
@@ -253,25 +276,107 @@ lowclass = list(tables["class"].unique())
 
 top_class = list(tables["superclass"].unique())
 # tables.to_csv("D:/CurrentDataset/datasets/TabFact/keeps.csv")
-
-
-#filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season', regex=True, case=False)]
-#print(len(filtered_df_team))
-filtered_df_team = tables[tables['superclass'].str.contains('Person', regex=True, case=False)]
+filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season',
+                                                                                                        regex=True, case=False)]
+print(len(filtered_df_team))
 team_ids = {key: value for key, value in alls.items() if key in filtered_df_team["fileName"].unique()}
-
 filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)]
 season_ids = {key: value for key, value in alls.items() if key in filtered_df_season["fileName"].unique()}
 
 relationship_dict = {}
 from concurrent.futures import ThreadPoolExecutor
-with  ThreadPoolExecutor(max_workers=5000) as executor:
+with  ThreadPoolExecutor(max_workers=1000) as executor:
     future_to_relationship = {executor.submit(query_wikidata_relationship,relationship_dict, team_id, season_id): (team_id, season_id)
                               for team_table, team_id in team_ids.items()
                               for season_table, season_id in season_ids.items()}
 
 print(relationship_dict)
-target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
-#pickle_python_object(relationship_dict, "datasets/TabFact/relationshipTeamSeason.pkl")
-with open(os.path.join(target_path, "relationshipPersonCompetition.pkl"), "wb") as file:
-   pickle.dump(G, file)
+pickle_python_object(relationship_dict, "datasets/TabFact/relationshipTeamSeason.pkl")
+    """
+
+"""
+target_path = os.path.join(os.getcwd(), "datasets/TabFact" )
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+    G = pickle.load(file)
+
+nodes = [i for i in G.nodes() if G.in_degree(i) == 0]
+print(nodes, len(nodes))"""
+"""df = pd.read_csv('datasets/TabFact/groundTruth.csv')
+print(len(df["superclass"].unique()))"""
+
+column_based = ['cl_SC6_lm_sbert_head_column_0_header_column', 'cl_SC6_lm_sbert_head_column_0_none_column',
+                'cl_SCT6_lm_sbert_head_column_0_header_column', 'cl_SCT6_lm_sbert_head_column_0_none_column']  # _subCol
+"""for i in column_based:
+    dataset_embedding = {}
+    print(i)
+    with open(f"result/embedding/starmie/vectors/TabFact/{i}.pkl", "rb") as file:
+        print(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
+        embedding_i = pickle.load(file)
+    for col_name,column_embedding in embedding_i:
+        tableName = col_name.split("html.")[0] +"html.csv"
+        if tableName not in dataset_embedding:
+            dataset_embedding[tableName] = [column_embedding[0]]
+        else:
+            dataset_embedding[tableName].append(column_embedding[0])
+    tuple_embedding = [(key, np.array(value)) for key, value in dataset_embedding.items()]
+    rename = i[:-7]
+    with open(os.path.join(f"result/embedding/starmie/vectors/TabFact/{rename}.pkl"), "wb") as file:
+        pickle.dump(tuple_embedding, file)
+"""
+all = ['cl_SC6_lm_sbert_head_column_0_header', 'cl_SC6_lm_sbert_head_column_0_none',
+       'cl_SCT6_lm_sbert_head_column_0_header', 'cl_SCT6_lm_sbert_head_column_0_none']  # _subCol
+subCol = ["Pretrain_sbert_head_column_header_False", "Pretrain_sbert_head_column_none_False"]
+"""
+i='cl_SCT5_lm_sbert_head_column_0_none_subCol'
+print(i)
+with open(f"result/embedding/starmie/vectors/TabFact/{i}.pkl", "rb") as file:
+    print(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
+    embedding_i = pickle.load(file)
+print(len(embedding_i),embedding_i[0])"""
+df_A = pd.read_csv('datasets/TabFact/groundTruth.csv',encoding='latin1')
+tables = df_A["fileName"].unique()
+
+"""for i in subCol:
+    df_B = pd.read_csv(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/Subject_Col/{i}/overall_clustering.csv") #_subCol
+    df_B['tableName'] = df_B['tableName'].astype(str) + '.csv'
+
+    df_B = df_B.merge(df_A[['fileName', 'tfname']], left_on='tableName', right_on='fileName')
+    print(df_B)
+    df_B.to_csv(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/Subject_Col/{i}/overall_clusteringNew.csv")
+"""
+path = 'result/embedding/starmie/vectors/WDC/'
+pre = ['Pretrain_bert_head_column_header_False', 'Pretrain_bert_head_column_none_False']
+lefts = []
+
+
+"""
+for i in pre:
+    with open(os.path.join(path, f"{i}.pkl"), "rb") as file:
+        embedding = pickle.load(file)
+
+    with open(os.path.join(path, f"{i}1.pkl"), "rb") as file:
+        embedding1 = pickle.load(file)
+    embedding_new = []
+    for embed in embedding1:
+        name = embed[0]
+        vector = np.array([vec.numpy() for vec in embed[1] ])
+        embedding_new.append((name, vector))
+    print(embedding_new[0])
+    embedding.extend(embedding_new)
+    print(len(embedding))
+
+
+    with open(os.path.join(path, f"{i}new.pkl"), "wb") as file:
+        pickle.dump(embedding, file)
+"""
+
+for i in pre:
+    with open(os.path.join(path, f"{i}.pkl"), "rb") as file:
+        embedding1 = pickle.load(file)
+    embedding_new = []
+    for embed in embedding1:
+        name = embed[0]
+        vector = np.array([vec.numpy() for vec in embed[1] ])
+        embedding_new.append((name, vector))
+    with open(os.path.join(path, f"{i}N.pkl"), "wb") as file:
+        pickle.dump(embedding_new, file)
