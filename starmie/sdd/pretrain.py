@@ -87,107 +87,7 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
 
         for loss in losses:
             del loss
-"""
- 
-def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
-    def loss_model_fp16(loss):
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
-    def loss_model(loss):
-        loss.backward()
-        optimizer.step()
 
-    for i, batch in enumerate(train_iter):
-        pos_pair = 0
-        if "," in hp.augment_op:
-            augs = hp.augment_op.split(',')
-            pos_pair = len(augs)
-        if pos_pair <= 2:
-            x_ori, x_aug, cls_indices = batch
-            print(f"cls_indices {cls_indices}")
-            optimizer.zero_grad()
-            if hp.fp16:
-                with torch.cuda.amp.autocast():
-                    loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-                    loss_model_fp16(loss)
-            else:
-                loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-                loss_model(loss)
-            scheduler.step()
-            if i % 10 == 0:  # monitoring
-                print(f"step: {i}, loss: {loss.item()}")
-            del loss
-        else:
-            if pos_pair == 3:
-                x_ori, x_aug, x_aug2, cls_indices = batch
-                print(f"{len(x_ori)} cls_indices {cls_indices}")
-                optimizer.zero_grad()
-
-                if hp.fp16:
-                    with torch.cuda.amp.autocast():
-                        loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
-                        loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
-                        loss3 = model(x_aug, x_aug2, cls_indices, mode='simclr')
-                        avg_loss = (loss1 + loss2 + loss3) / 3
-                        loss_model_fp16(avg_loss)
-                else:
-                    loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
-                    loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
-                    loss3 = model(x_aug, x_aug2, cls_indices, mode='simclr')
-                    avg_loss = (loss1 + loss2 + loss3) / 3
-                    loss_model(avg_loss)
-                scheduler.step()
-                if i % 10 == 0:  # monitoring
-                    print(f"step: {i}, loss: {loss1.item(), loss2.item(), loss3.item()}")
-                del loss1, loss2, loss3
-
-            else:
-                x_ori, x_aug, x_aug2, x_aug3, cls_indices = batch
-                optimizer.zero_grad()
-                if hp.fp16:
-                    with torch.cuda.amp.autocast():
-                        loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
-                        loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
-                        loss3 = model(x_ori, x_aug3, cls_indices, mode='simclr')
-                        loss4 = model(x_aug, x_aug2, cls_indices, mode='simclr')
-                        loss5 = model(x_aug, x_aug3, cls_indices, mode='simclr')
-                        loss6 = model(x_aug2, x_aug3, cls_indices, mode='simclr')
-                        avg_loss = (loss1 + loss2 + loss3 + loss4 + loss5 + loss6) / 6
-                        loss_model_fp16(avg_loss)
-                else:
-                    loss1 = model(x_ori, x_aug, cls_indices, mode='simclr')
-                    loss2 = model(x_ori, x_aug2, cls_indices, mode='simclr')
-                    loss3 = model(x_aug, x_aug2, cls_indices, mode='simclr')
-                    loss4 = model(x_aug, x_aug2, cls_indices, mode='simclr')
-                    loss5 = model(x_aug, x_aug3, cls_indices, mode='simclr')
-                    loss6 = model(x_aug2, x_aug3, cls_indices, mode='simclr')
-                    avg_loss = (loss1 + loss2 + loss3 + loss4 + loss5 + loss6) / 6
-                    loss_model(avg_loss)
-                scheduler.step()
-                if i % 10 == 0:  # monitoring
-                    print(
-                        f"step: {i}, loss: {loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item(), loss6.item()}")
-                del loss1, loss2, loss3, loss4, loss5, loss6
-    # This is the original 
-    #x_ori, x_aug, cls_indices = batch
-    #optimizer.zero_grad()
-
-        #if hp.fp16:
-            #with torch.cuda.amp.autocast():
-                #loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-                #scaler.scale(loss).backward()
-                #scaler.step(optimizer)
-                #scaler.update()
-        #else:
-            #loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-           # loss.backward()
-           # optimizer.step()
-
-        #scheduler.step()
-        #if i % 10 == 0:  # monitoring
-           # print(f"step: {i}, loss: {loss.item()}")
-        #del loss """
 
 
 def train(trainset, hp):
@@ -211,8 +111,7 @@ def train(trainset, hp):
 
     # initialize model, optimizer, and LR scheduler
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=len(trainset.tokenizer))
-
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=len(trainset.tokenizer)) #
     model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
     if hp.fp16:
@@ -364,11 +263,14 @@ def load_checkpoint(ckpt):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # print(device)
     # todo change the resize by passing a parameter
+    Resize = 30524
     if hp.lm == 'roberta':
         Resize = 50269
-    else:
+    elif hp.lm == 'bert':
+        Resize = 30524
+    elif hp.lm == 'sbert':
         Resize = 30529
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=Resize)  # 50269 30529
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm,resize=Resize)  # 50269 30529  
     model = model.to(device)
     model.load_state_dict(ckpt['model'])
     ds_path = os.path.join(os.getcwd(), 'datasets/%s/Test' % hp.dataset)

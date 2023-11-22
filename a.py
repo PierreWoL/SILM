@@ -6,7 +6,7 @@ import os
 
 import pandas as pd
 import pickle
-from plotly.figure_factory._dendrogram import sch
+#from plotly.figure_factory._dendrogram import sch
 
 """G = nx.DiGraph()
 G.add_edge("A", "B")
@@ -14,17 +14,16 @@ G.add_edge("A", "C")
 G.add_edge("B", "D")
 
 
-# 要检查的节点
+
 node_A = "D"
 
-# 获取节点 A 的所有出节点（直接后继节点）
 successors_list = list(G.successors(node_A))
 te = nx.descendants(G, node_A)
 asn = nx.ancestors(G, node_A)
 as_root  = [item for item in asn if G.in_degree(item) == 0]
-print(f"{node_A} out nodes：{successors_list}")
-print(f"{node_A} ancestors：{as_root}")
-print(f"{node_A} WTF：{te}")"""
+print(f"{node_A} out nodes successors_list}")
+print(f"{node_A} ancestors as_root}")
+print(f"{node_A}}")"""
 
 """from starmie.sdd.augment import augment
 table = pd.read_csv("datasets/WDC/Test/T2DV2_7.csv")
@@ -54,7 +53,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 import plotly.express as px
 
-# 数据
+
 data = np.array([
     [0,1,0,0],
     [0,1.1,0,0],
@@ -74,7 +73,7 @@ df = pd.DataFrame(transformed_data, columns=['Component 1', 'Component 2'])
 df['label'] = ["data_1", "data_2", "data_3", "data_4", "data_5", "data_6", "data_7", "data_8"]
 df['cluster'] = ['Cluster 1', 'Cluster 1', 'Cluster 1', 'Cluster 1', 'Cluster 1', 'Cluster 2', 'Cluster 2', 'Cluster 2']
 print(df)
-# 使用 plotly 进行绘图
+
 fig = px.scatter(df, x='Component 1', y='Component 2', text='label', hover_data=['label'], color='cluster')
 fig.update_traces(marker=dict(size=12),
                   selector=dict(mode='markers+text'))
@@ -89,7 +88,6 @@ fig.write_html("output_plot1.html")
 from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 
-# 你的相似度数据
 similarities = {
     'sim(1,2)': 0.75,
     'sim(1,3)': 0.2,
@@ -109,13 +107,8 @@ dist_matrix = np.array([
     [0, 0, 0, 0]
 ])
 
-# 转换成压缩向量形式
-dist_array = dist_matrix[np.triu_indices(4, k = 1)]
-
-# 进行层次聚类
 Z = linkage(dist_array, 'single')
 
-# 画出树状图
 plt.figure(figsize=(6, 6))
 dendrogram(Z, labels=['t1', 't2', 't3', 't4'])
 
@@ -260,19 +253,25 @@ lowclass = list(tables["class"].unique())
 
 top_class = list(tables["superclass"].unique())
 # tables.to_csv("D:/CurrentDataset/datasets/TabFact/keeps.csv")
-filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season',
-                                                                                                        regex=True, case=False)]
-print(len(filtered_df_team))
+
+
+#filtered_df_team = tables[tables['class'].str.contains('team|league|Team|club', regex=True, case=False) & ~tables['class'].str.contains('season', regex=True, case=False)]
+#print(len(filtered_df_team))
+filtered_df_team = tables[tables['superclass'].str.contains('Person', regex=True, case=False)]
 team_ids = {key: value for key, value in alls.items() if key in filtered_df_team["fileName"].unique()}
+
 filtered_df_season = tables[tables['superclass'].str.contains('competition', regex=True, case=False)]
 season_ids = {key: value for key, value in alls.items() if key in filtered_df_season["fileName"].unique()}
 
 relationship_dict = {}
 from concurrent.futures import ThreadPoolExecutor
-with  ThreadPoolExecutor(max_workers=1000) as executor:
+with  ThreadPoolExecutor(max_workers=5000) as executor:
     future_to_relationship = {executor.submit(query_wikidata_relationship,relationship_dict, team_id, season_id): (team_id, season_id)
                               for team_table, team_id in team_ids.items()
                               for season_table, season_id in season_ids.items()}
 
 print(relationship_dict)
-pickle_python_object(relationship_dict, "datasets/TabFact/relationshipTeamSeason.pkl")
+target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
+#pickle_python_object(relationship_dict, "datasets/TabFact/relationshipTeamSeason.pkl")
+with open(os.path.join(target_path, "relationshipPersonCompetition.pkl"), "wb") as file:
+   pickle.dump(G, file)

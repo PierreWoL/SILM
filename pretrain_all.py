@@ -3,6 +3,7 @@ import numpy as np
 import random
 import torch
 import mlflow
+import time
 from tqdm import tqdm
 from pretrainData import PretrainTableDataset
 from pureEncoding import Encoding
@@ -64,14 +65,35 @@ if __name__ == '__main__':
     # Change the data paths to where the benchmarks are stored
 
     path = 'datasets/%s/Test' % hp.dataset
-
+    
+    
+    start_time_preprocess = time.time()
     trainset = PretrainTableDataset.from_hp(path, hp)
+    end_time_preprocess = time.time()
+    time_difference_pre = end_time_preprocess - start_time_preprocess
+    print(f"Preprocess time: {end_time_preprocess}\n")
+    
 
     output_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
     if hp.pretrain:
+        start_time_pretrain = time.time()
         trainset.encodings(output_path,setting=hp.NoContext)
+        end_time_pretrain = time.time()
+        time_difference_pretrain = end_time_pretrain - start_time_pretrain
+        print(f"Encode time: {time_difference_pretrain}\n ")
     else:
        
+        
+        
+        start_time_train = time.time()
         train(trainset, hp)
+        end_time_train = time.time()
+        time_difference_train = end_time_train - start_time_train
+        print(f"Train time: {time_difference_train}\n")
+        
+        start_time_encode = time.time()
         table_features(hp)
+        end_time_encode = time.time()
+        time_difference_encode = end_time_encode - start_time_encode
+        print(f"Encode time: {time_difference_encode} \n ")
 #--pretrain --subject_column

@@ -61,7 +61,7 @@ class BarlowTwinsSimCLR(nn.Module):
     """Barlow Twins or SimCLR encoder for contrastive learning.
     """
 
-    def __init__(self, hp, device='cuda', lm='roberta',resize = -1):
+    def __init__(self, hp, device='cuda', lm='roberta',resize = -1): #
         super().__init__()
         self.hp = hp
         self.bert = AutoModel.from_pretrained(lm_mp[lm])
@@ -82,6 +82,8 @@ class BarlowTwinsSimCLR(nn.Module):
 
         # cls token id
         self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
+        
+        
         if resize >0:
             self.bert.resize_token_embeddings(resize)
 

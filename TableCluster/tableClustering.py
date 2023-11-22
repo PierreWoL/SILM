@@ -23,8 +23,8 @@ def silm_clustering(hp: Namespace):
     # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
     # graph_gt = pickle.load(F_graph)
 
-    files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and hp.embed in fn and 'subCol' in fn]  # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
+    files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and hp.embed in fn and 'Pretrain' not in fn and "_column.pkl" not in fn][hp.slice_start:hp.slice_stop] # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
+    print(files)
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -255,8 +255,10 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
                     #print(path)
                     with open(path, 'wb') as handle:
                         pickle.dump(dict_groundTruth, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
-
+            try:
+              ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+            except:
+              print("error",index, clu)
 
 def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
                gt_cluster_dict):
@@ -346,8 +348,8 @@ def files_columns_running(hp: Namespace):
 
 def files_hierarchyInference(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn and 'Pretrain' in fn and 'header' not in fn]
-    files = [fn for fn in files if not fn.endswith("subCol.pkl")]
+    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn] #and 'SCT6' in fn and 'header' not in fn
+    files = [fn for fn in files if not fn.endswith("subCol.pkl")][hp.slice_start:hp.slice_stop]
 
     print(files, len(files))
     for file in files:  # [hp.slice_start:hp.slice_stop]:

@@ -48,7 +48,7 @@ class PretrainTableDataset(data.Dataset):
         self.lm = lm
         self.model = None
 
-        if lm == 'roberta':
+        if lm == 'roberta' or lm == 'bert':
             special_tokens_dict = {
                 'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
             self.header_token = ('<header>', '</header>')
@@ -81,6 +81,7 @@ class PretrainTableDataset(data.Dataset):
             self.isCombine = True
 
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        
         self.columns = []
         # only keep the first n tables
         if size is not None:
@@ -318,7 +319,7 @@ class PretrainTableDataset(data.Dataset):
                         average = np.mean(embedding, axis=0)
                         embeddings.append(average)
 
-                elif self.lm == "roberta":
+                else: #elif self.lm == "roberta":
                     if Token is False:
                         tokens = self.tokenizer.encode_plus(col_text, add_special_tokens=True, max_length=512,
                                                             truncation=True, return_tensors="pt")
