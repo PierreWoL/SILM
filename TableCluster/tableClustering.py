@@ -133,8 +133,7 @@ def baselineTypeClustering(hp: Namespace):
             for i in range(0, 1):
                 new_path = os.path.join(store_path, "D3L")
                 mkdir(new_path)
-                cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method, nameFile,
-                                                               folderName=new_path)  # , graph=graph_gtv
+                cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method, nameFile)  # , graph=graph_gtv
                 # print(cluster_dict)
                 metric_df = pd.DataFrame([metric_dict])
                 metric_value_df = pd.concat([metric_value_df, metric_df])
