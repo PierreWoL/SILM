@@ -259,17 +259,17 @@ def load_checkpoint(ckpt):
         PretrainDataset: the dataset for pre-training the model
     """
     hp = ckpt['hp']
-
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # print(device)
     # todo change the resize by passing a parameter
-    Resize = 30524
+    Resize = -1
     if hp.lm == 'roberta':
         Resize = 50269
-    elif hp.lm == 'bert':
-        Resize = 30524
     elif hp.lm == 'sbert':
         Resize = 30529
+    elif hp.lm == 'bert':
+        Resize = 30526
+  
     model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm,resize=Resize)  # 50269 30529  
     model = model.to(device)
     model.load_state_dict(ckpt['model'])
