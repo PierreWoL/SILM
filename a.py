@@ -369,7 +369,7 @@ for i in pre:
     with open(os.path.join(path, f"{i}new.pkl"), "wb") as file:
         pickle.dump(embedding, file)
 """
-
+"""
 for i in pre:
     with open(os.path.join(path, f"{i}.pkl"), "rb") as file:
         embedding1 = pickle.load(file)
@@ -379,4 +379,4 @@ for i in pre:
         vector = np.array([vec.numpy() for vec in embed[1] ])
         embedding_new.append((name, vector))
     with open(os.path.join(path, f"{i}N.pkl"), "wb") as file:
-        pickle.dump(embedding_new, file)
+        pickle.dump(embedding_new, file)"""

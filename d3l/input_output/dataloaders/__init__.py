@@ -9,9 +9,19 @@ from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Tuple, Union, Dict, Any
 from d3l.input_output.dataloaders.typing import DBType
 
+import TableAnnotation as TA
+from enum import Enum
 import pandas as pd
 import sqlalchemy
 import os
+class ColumnType(Enum):
+    Invalid = -1
+    long_text = 0
+    named_entity = 1
+    number = 2
+    date_expression = 3
+    empty = 4
+    other = 5
 
 
 class DataLoader(ABC):
@@ -350,7 +360,7 @@ class PostgresDataLoader(DataLoader):
 
 
 class CSVDataLoader(DataLoader):
-    def __init__(self, root_path: str, **loading_kwargs: Any):
+    def __init__(self, root_path: str, subjectCol=False, **loading_kwargs: Any):
         """
         Create a new CSV file loader instance.
         Parameters
@@ -374,6 +384,7 @@ class CSVDataLoader(DataLoader):
         self.root_path = root_path
         if self.root_path[-1] != "/":
             self.root_path = self.root_path + "/"
+        self.subjectCol = subjectCol
         self.loading_kwargs = loading_kwargs
 
     def get_counts(
@@ -428,6 +439,10 @@ class CSVDataLoader(DataLoader):
         """
         file_path = self.root_path + table_name + ".csv"
         data_df = pd.read_csv(file_path, nrows=1, **self.loading_kwargs)
+        if self.subjectCol:
+            cols = subjectCol(data_df)
+            if len(cols) > 0:
+                data_df = data_df[cols]
         return data_df.columns.tolist()
 
     def get_tables(
@@ -488,8 +503,17 @@ class CSVDataLoader(DataLoader):
             file_path =  self.root_path + table_name
         else:
             file_path = self.root_path + table_name + ".csv"
+        table =  pd.read_csv(
+            file_path,
+            chunksize=chunk_size,
+            low_memory=False,
+            # error_bad_lines=False, # Deprecated in future versions
+            # warn_bad_lines=False, # Deprecated in future versions
+            **self.loading_kwargs
+        )
         if table_columns is not None:
-            return pd.read_csv(
+
+            table =  pd.read_csv(
                 file_path,
                 usecols=table_columns,
                 chunksize=chunk_size,
@@ -498,11 +522,18 @@ class CSVDataLoader(DataLoader):
                 # warn_bad_lines=False, # Deprecated in future versions
                 **self.loading_kwargs
             )
-        return pd.read_csv(
-            file_path,
-            chunksize=chunk_size,
-            low_memory=False,
-            # error_bad_lines=False, # Deprecated in future versions
-            # warn_bad_lines=False, # Deprecated in future versions
-            **self.loading_kwargs
-        )
+        if self.subjectCol:
+            cols = subjectCol(table)
+            if len(cols) > 0:
+                table = table[cols]
+        return table
+
+def subjectCol(self, table: pd.DataFrame, combine=False):
+    sub_cols_header = []
+    anno = TA.TableColumnAnnotation(table, isCombine=combine)
+    types = anno.annotation
+    for key, type in types.items():
+        if type == ColumnType.named_entity:
+            sub_cols_header = [table.columns[key]]
+            break
+    return sub_cols_header

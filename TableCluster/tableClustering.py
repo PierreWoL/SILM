@@ -24,7 +24,7 @@ def silm_clustering(hp: Namespace):
     # graph_gt = pickle.load(F_graph)
 
     files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and f"_{hp.embed}_" in fn and 'Pretrain' not in fn]  # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
+             '.pkl' in fn and f"_{hp.embed}_" in fn and 'sample' in fn]  # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -77,9 +77,10 @@ def silm_clustering(hp: Namespace):
             clustering_method = ["Agglomerative"]  # , "BIRCH"
             methods_metrics = {}
             for method in clustering_method:
-                #print(method)
+                # print(method)
                 metric_value_df = pd.DataFrame(
-                    columns=["Random Index", "Purity", "Clustering time", "Evaluation time"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
+                    columns=["Random Index", "Purity", "Clustering time",
+                             "Evaluation time"])  # "ARI", "MI", "NMI", "AMI" "Average cluster consistency score"
                 for i in range(0, 1):
                     new_path = os.path.join(store_path, file[:-4])
                     mkdir(new_path)
@@ -121,7 +122,8 @@ def baselineTypeClustering(hp: Namespace):
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     dict_file = {}
     nameFile = os.getcwd() + "/datasets/" + hp.dataset + "/naming.csv"
-    Z, T = inputData(data_path, 0.6, 5, isTabFact=isTabFact, subjectCol=subCol)
+    Z, T = inputData(data_path, 0.6, 5, hp.embed,  subjectCol=subCol)
+    print(Z,T)
     try:
 
         clustering_method = ["Agglomerative"]  # , "BIRCH"
@@ -133,7 +135,8 @@ def baselineTypeClustering(hp: Namespace):
             for i in range(0, 1):
                 new_path = os.path.join(store_path, "D3L")
                 mkdir(new_path)
-                cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method, nameFile)  # , graph=graph_gtv
+                cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,
+                                                               nameFile)  # , graph=graph_gtv
                 # print(cluster_dict)
                 metric_df = pd.DataFrame([metric_dict])
                 metric_value_df = pd.concat([metric_value_df, metric_df])
@@ -190,7 +193,7 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
 
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
+    target_path = os.getcwd() + "/result/SILM/Column/" + hp.dataset + "/"
     mkdir(target_path)
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table, Nochange=True)
@@ -222,8 +225,8 @@ def starmie_columnClustering(embedding_file: str, hp: Namespace):
         checkfile = f"{index}_colcluster_dict.pickle"
         datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                      "All/" + embedding_file[:-4] + "/column")
-        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
-            ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+        #if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+           # ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
 
 
 def inferenceHierarchy(embedding_file: str, hp: Namespace):
@@ -256,13 +259,14 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
 
                 if os.path.exists(path) is False:
                     dict_groundTruth = {'groundTruth': ground_t[clu]}
-                    #print(path)
+                    # print(path)
                     with open(path, 'wb') as handle:
                         pickle.dump(dict_groundTruth, handle, protocol=pickle.HIGHEST_PROTOCOL)
             try:
-              ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+                ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
             except:
-              print("error",index, clu)
+                print("error", index, clu)
+
 
 def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
                gt_cluster_dict):
@@ -286,42 +290,42 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     embedding_file_path = embedding_file.split(".")[0]
     store_path += "All/" + embedding_file_path + "/column/"
     mkdir(store_path)
-    if len(Zs[clu]) > 20000:  # 816 1328 5000<len(Zs[clu]) <
-        if os.path.isfile(store_path + str(index) + '_ColumnMetrics.csv'):
-            print(f"exists! index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])} ")
-        else:
-            print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
-                  f" \n ground truth class {clu} {Zs[clu].dtype}")
+    # if len(Zs[clu]) > 20000:  # 816 1328 5000<len(Zs[clu]) <
+    if os.path.isfile(store_path + str(index) + '_ColumnMetrics.csv'):
+        print(f"exists! index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])} ")
+    else:
+        print(f"index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])}"
+              f" \n ground truth class {clu} {Zs[clu].dtype}")
 
-            methods_metrics = {}
+        methods_metrics = {}
 
-            col_example_path = os.path.join(store_path, "example", embedding_file_path)
+        col_example_path = os.path.join(store_path, "example", embedding_file_path)
 
-            pickle_name = store_path + str(index) + '_colcluster_dict.pickle'
+        pickle_name = store_path + str(index) + '_colcluster_dict.pickle'
 
-            mkdir(col_example_path)
-            for method in clustering_method:
-                metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random score", "ARI", "FMI", "purity"])
-                for i in range(0, 1):
-                    # TODO: add the naming part and ground truth of attribute name part
-                    cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
-                                                                        gt_cluster_dict[clu], method,
-                                                                        folderName=col_example_path,
-                                                                        filename=f"{str(index)}.{method}")
-                    # print(cluster_dict)
-                    if i == 0:
-                        clusters_result[method] = cluster_dict
-                    metric_df = pd.DataFrame([metric_dict])
-                    metric_value_df = pd.concat([metric_value_df, metric_df])
-                mean_metric = metric_value_df.mean()
-                methods_metrics[method] = mean_metric
-            print("methods_metrics is", methods_metrics)
-            e_df = pd.DataFrame()
-            for i, v in methods_metrics.items():
-                e_df = pd.concat([e_df, v.rename(i)], axis=1)
-            e_df.to_csv(store_path + str(index) + '_ColumnMetrics.csv', encoding='utf-8')
-            with open(pickle_name, 'wb') as handle:
-                pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        mkdir(col_example_path)
+        for method in clustering_method:
+            metric_value_df = pd.DataFrame(columns=["MI", "NMI", "AMI", "random Index", "ARI", "FMI", "purity", "Clustering time", "Evaluation time"])
+            for i in range(0, 1):
+                # TODO: add the naming part and ground truth of attribute name part
+                cluster_dict, metric_dict = clusteringColumnResults(Zs[clu], Ts[clu], gt_clusters[clu],
+                                                                    gt_cluster_dict[clu], method,
+                                                                    folderName=col_example_path,
+                                                                    filename=f"{str(index)}.{method}")
+                # print(cluster_dict)
+                if i == 0:
+                    clusters_result[method] = cluster_dict
+                metric_df = pd.DataFrame([metric_dict])
+                metric_value_df = pd.concat([metric_value_df, metric_df])
+            mean_metric = metric_value_df.mean()
+            methods_metrics[method] = mean_metric
+        print("methods_metrics is", methods_metrics)
+        e_df = pd.DataFrame()
+        for i, v in methods_metrics.items():
+            e_df = pd.concat([e_df, v.rename(i)], axis=1)
+        e_df.to_csv(store_path + str(index) + '_ColumnMetrics.csv', encoding='utf-8')
+        with open(pickle_name, 'wb') as handle:
+            pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
@@ -344,7 +348,7 @@ def files_columns_running(hp: Namespace):
     # TODO this needs a little varified in the future, only test for one particular embedding method
     files = [fn for fn in os.listdir(datafile_path) if
              '.pkl' in fn and hp.embed in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn]
-    files = [fn for fn in files if not fn.endswith("subCol.pkl")]
+    files = [fn for fn in files if not fn.endswith("subCol.pkl")  and  'column' in fn]
     print(len(files), files)
     for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]
         starmie_columnClustering(file, hp)
@@ -352,7 +356,8 @@ def files_columns_running(hp: Namespace):
 
 def files_hierarchyInference(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pkl') and hp.embed in fn] #and 'SCT6' in fn and 'header' not in fn
+    files = [fn for fn in os.listdir(datafile_path) if
+             fn.endswith('.pkl') and hp.embed in fn]  # and 'SCT6' in fn and 'header' not in fn
     files = [fn for fn in files if not fn.endswith("subCol.pkl")][hp.slice_start:hp.slice_stop]
 
     print(files, len(files))

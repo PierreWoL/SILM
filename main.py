@@ -1,5 +1,5 @@
 import argparse
-from TableCluster.tableClustering import silm_clustering, files_columns_running, files_hierarchyInference
+from TableCluster.tableClustering import silm_clustering, files_columns_running, files_hierarchyInference,baselineTypeClustering
 from RelationshipSearch.SearchRelationship import  relationshipDiscovery
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -19,6 +19,7 @@ if __name__ == '__main__':
     parser.add_argument("--embed", type=str, default='bert')
 
     parser.add_argument("--embedMethod", type=str, default='')
+    parser.add_argument("--baseline", dest="baseline", action="store_true")
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     parser.add_argument("--step", type=int, default=1)
@@ -40,7 +41,7 @@ if __name__ == '__main__':
 
     hp = parser.parse_args()
     if hp.step == 1:
-        silm_clustering(hp)
+        silm_clustering(hp) if hp.baseline is False else baselineTypeClustering(hp)
     if hp.step == 2:
         files_columns_running(hp)
     if hp.step ==3:

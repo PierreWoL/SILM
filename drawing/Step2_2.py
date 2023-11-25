@@ -10,7 +10,7 @@ def TreeConsistency():
     box_colorsM = colors
     for algorithm in algo:
         overall_tcs = {}
-        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/TabFact/") #SILM WDC
+        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/WDC/") #SILM WDC
         folders = [fn for fn in os.listdir(data_path) if "." not in fn and "_" in fn and '5' not in fn]
         print(folders)
         for index, fold in enumerate(folders):

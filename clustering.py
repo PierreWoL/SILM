@@ -69,25 +69,23 @@ def rand_Index_custom(predicted_labels, ground_truth_labels):
     return RI
 
 
-def create_or_find_indexes(data_path, threshold, embedding_mode=1, isTabFact=False, subjectCol=False):
+def create_or_find_indexes(data_path, threshold, LM, subjectCol=False):
     #  collection of tables
 
     dataloader = CSVDataLoader(
         root_path=data_path,
-        # sep=",",
         subjectCol=subjectCol,
-        isTabFact=isTabFact,
-        encoding='latin-1'
+        encoding='latin1'
 
     )
 
     # NameIndex
-    name_lsh = os.path.join(data_path, './name.lsh') if subjectCol is False \
-        else os.path.join(data_path, './name_SubCol.lsh')
+    name_lsh = os.path.join(data_path, f'./name_{str(LM)}.lsh') if subjectCol is False \
+        else os.path.join(data_path, f'./name_SubCol_{str(LM) }.lsh')
     if os.path.isfile(name_lsh):
         name_index = unpickle_python_object(name_lsh)
     else:
-        name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold)
+        name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold,model=LM)
         pickle_python_object(name_index, name_lsh)
 
     # FormatIndex
@@ -118,15 +116,15 @@ def create_or_find_indexes(data_path, threshold, embedding_mode=1, isTabFact=Fal
         pickle_python_object(distribution_index, distribution_lsh)
 
     # EmbeddingIndex
-    embed_name = './embedding' + str(embedding_mode) + '.lsh' if subjectCol is False \
-        else './embedding' + str(embedding_mode) + '_SubCol.lsh'
+    embed_name = './embedding_' + str(LM) + '.lsh' if subjectCol is False \
+        else './embedding_' + str(LM) + '_SubCol.lsh'
     embedding_lsh = os.path.join(data_path, embed_name) if subjectCol is False \
         else os.path.join(data_path, embed_name)
 
     if os.path.isfile(embedding_lsh):
         embeddingIndex = unpickle_python_object(embedding_lsh)
     else:
-        embeddingIndex = EmbeddingIndex(dataloader=dataloader, mode=embedding_mode,
+        embeddingIndex = EmbeddingIndex(dataloader=dataloader, model=LM,
                                         index_similarity_threshold=threshold)
         pickle_python_object(embeddingIndex, embedding_lsh)
 
@@ -175,14 +173,14 @@ def distance_matrix(data_path, index, k):
     return Z_df, T
 
 
-def inputData(data_path, threshold, k, embedding_mode=2, isTabFact=False, subjectCol=False):
+def inputData(data_path, threshold, k, LM,  subjectCol=False):
     # print("embed mode is ", embedding_mode)
-    ZT_Files = os.path.join(data_path, "D3L.pkl") if subjectCol is False else os.path.join(data_path, "D3L_subCol.pkl")
+    ZT_Files = os.path.join(data_path, f"D3L_{LM}.pkl") if subjectCol is False else os.path.join(data_path, f"D3L_subCol_{LM}.pkl")
     if os.path.isfile(ZT_Files):
         Z, T = unpickle_python_object(ZT_Files)
     else:
-        indexes = create_or_find_indexes(data_path, threshold, embedding_mode=embedding_mode,
-                                         isTabFact=isTabFact, subjectCol=subjectCol)
+        indexes = create_or_find_indexes(data_path, threshold, LM=LM,
+                                         subjectCol=subjectCol)
         Z, T = distance_matrix(data_path, indexes, k)
         print("Z,T is ", Z, T)
         file = (Z, T)
@@ -295,14 +293,15 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     input_data = np.array(input_data, dtype=np.float32)
     score = -1
     best_model = AgglomerativeClustering()
-    at_least = math.ceil(cluster_num //4 *3)+2
-    for n_clusters in range(at_least, 2*cluster_num, 1):
+    at_least = math.ceil(cluster_num // 4 * 3) + 2
+    for n_clusters in range(at_least,20, 1): #2* cluster_num
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
         if score <= silhouette_score(input_data, labels):
             score = silhouette_score(input_data, labels)
             best_model = agg_clustering
+    print( best_model.n_clusters,score)
     return best_model, best_model.labels_
 
 
@@ -600,7 +599,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
             continue
         else:
             cluster_label = most_frequent_list(labels)
-            #print(cluster_label)
+            # print(cluster_label)
 
         clusters_label[index] = cluster_label
         current_ones = []
@@ -642,7 +641,7 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
 
     # cb_pairs = wrong_pairs(gt_table_label, table_label_index, tables, tables_gt)
     metric_dict["Purity"] = 1 - len(false_ones) / len(gtclusters)
-    #metric_dict["Average cluster consistency score"] = ave_consistency / len(clusterDict)
+    # metric_dict["Average cluster consistency score"] = ave_consistency / len(clusterDict)
 
     if tables_gt is not None and folder is not None:
         df = pd.DataFrame(overall_clustering,
@@ -671,6 +670,7 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     del ground_t0, gt_cluster_dict0
     parameters = []
     number_estimate = len(gt_cluster_dict)
+    print(number_estimate)
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -722,6 +722,41 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     return cluster_dict, metrics_value
 
 
+def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
+                            filename=None):
+    star_time = time.time()
+    parameters = []
+    number_estimate = len(gt_cluster_dict) // 2
+    if clusteringName == "DBSCAN":
+        parameters = dbscan_param_search(input_data)
+    if clusteringName == "GMM":
+        parameters = gaussian_m_param_search(input_data, number_estimate)
+    if clusteringName == "Agglomerative":
+        parameters = AgglomerativeClustering_param_search(input_data, number_estimate)
+    if clusteringName == "OPTICS":
+        parameters = OPTICS_param_search(input_data)
+    if clusteringName == "KMeans":
+        parameters = KMeans_param_search(input_data, number_estimate)
+    if clusteringName == "BIRCH":
+        parameters = BIRCH_param_search(input_data, number_estimate)
+    clusters = cluster_discovery(parameters, columns)
+    cluster_dict = cluster_Dict(clusters)
+    end_time = time.time()
+    time_difference_run = end_time - star_time
+
+
+    table_dict = None
+    table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}
+    star_time_eva = time.time()
+    metrics_value = evaluate_col_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)
+    end_time_eva = time.time()
+    time_difference_eva = end_time_eva - star_time_eva
+    metrics_value["Clustering time"] = time_difference_run
+    metrics_value["Evaluation time"] = time_difference_eva
+    return cluster_dict, metrics_value
+
+
+"""
 def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     parameters = []
@@ -745,32 +780,7 @@ def clustering_hier_results(input_data, tables, gt_clusters, gt_cluster_dict, cl
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)  # , table_dict
     # print(metrics_value)
     return cluster_dict, metrics_value
-
-
-def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
-                            filename=None):
-    parameters = []
-    number_estimate = len(gt_cluster_dict) // 2
-    if clusteringName == "DBSCAN":
-        parameters = dbscan_param_search(input_data)
-    if clusteringName == "GMM":
-        parameters = gaussian_m_param_search(input_data, number_estimate)
-    if clusteringName == "Agglomerative":
-        parameters = AgglomerativeClustering_param_search(input_data, number_estimate)
-    if clusteringName == "OPTICS":
-        parameters = OPTICS_param_search(input_data)
-    if clusteringName == "KMeans":
-        parameters = KMeans_param_search(input_data, number_estimate)
-    if clusteringName == "BIRCH":
-        parameters = BIRCH_param_search(input_data, number_estimate)
-    clusters = cluster_discovery(parameters, columns)
-    cluster_dict = cluster_Dict(clusters)
-    table_dict = None
-    table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}
-    metrics_value = evaluate_col_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)
-    return cluster_dict, metrics_value
-
-
+"""
 # print(clusters)
 # print(len(cluster_dict), cluster_dict)
 """

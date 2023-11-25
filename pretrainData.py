@@ -7,9 +7,8 @@ import pandas as pd
 import os
 from sentence_transformers import SentenceTransformer
 from Utils import subjectCol
-import TableAnnotation as TA
 from torch.utils import data
-from transformers import AutoTokenizer, AutoModel, AutoConfig
+from transformers import AutoTokenizer, AutoModel
 from starmie.sdd.augment import augment
 from typing import List
 from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
@@ -328,7 +327,7 @@ class PretrainTableDataset(data.Dataset):
                             outputs = self.model(**tokens)
                         # Extract the last hidden state (embedding) from the outputs
                         last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
-                        embeddings.append(last_hidden_state)
+                        embeddings.append(np.array(last_hidden_state))
                     else:
                         embeddings_per_col = []
                         for text in col_text:
@@ -340,7 +339,7 @@ class PretrainTableDataset(data.Dataset):
                             embeddings_per_col.append(last_hidden_state)
                         stacked_embeddings = torch.stack(embeddings_per_col)
                         average_encoding = torch.mean(stacked_embeddings, dim=0)
-                        embeddings.append(average_encoding)
+                        embeddings.append(np.array(average_encoding))
         return embeddings
 
     def encodings(self, output_path, setting=False):

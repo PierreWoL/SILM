@@ -10,7 +10,7 @@ import seaborn as sns
 def get_n_colors(n):
     return sns.color_palette("husl", n)
 
-dataset = "TabFact"
+dataset = "WDC"
 
 target_path = os.path.abspath(os.path.dirname(os.getcwd())) + f"/result/SILM/Column/{dataset}/_gt_cluster.pickle"
 F_cluster = open(target_path, 'rb')

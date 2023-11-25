@@ -410,7 +410,7 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
     col_cluster = pickle.load(F_cluster)
 
     tables = Ground_t[str(KEYS[index_cols])]
-    print(str(KEYS[index_cols]), tables )
+    #print(str(KEYS[index_cols]), tables )
     score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
     # print(score_path)
     mkdir(score_path)
