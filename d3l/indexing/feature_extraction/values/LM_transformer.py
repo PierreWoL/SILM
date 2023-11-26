@@ -147,7 +147,8 @@ class LM_Transformer:
                 outputs = self._embedding_model(**tokens)
             # Extract the last hidden state (embedding) from the outputs
             vector = outputs.last_hidden_state.mean(dim=1)[0]
-        return vector
+
+        return np.array(vector)
 
 
     # todo: modify here
