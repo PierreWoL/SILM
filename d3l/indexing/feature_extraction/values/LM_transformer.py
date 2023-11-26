@@ -55,7 +55,7 @@ class LM_Transformer:
         self._stop_words = stop_words
         self._tokenizer = self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[model_name],
                                                                         selectable_pos=1)
-        self._model_name = lm_mp[model_name]
+        self._model_name = model_name
         if cache_dir is not None:
             folder = os.path.exists(cache_dir)
             if not folder:
@@ -64,7 +64,7 @@ class LM_Transformer:
             cache_dir if cache_dir is not None and os.path.isdir(cache_dir) else None
         )
 
-        self._embedding_model = self.get_embedding_model(
+        self._embedding_model = self.get_embedding_model(model_name
         )
 
         self._embedding_dimension = self.get_embedding_dimension()
@@ -76,7 +76,7 @@ class LM_Transformer:
 
     def __setstate__(self, state):
         self.__dict__ = state
-        self._embedding_model = self.get_embedding_model()
+        self._embedding_model = self.get_embedding_model(self._model_name)
 
     @property
     def cache_dir(self) -> Optional[str]:
@@ -114,8 +114,8 @@ class LM_Transformer:
         int
             The dimensions of each embedding
         """
-        dimension = self._embedding_model.config.hidden_size  if not self._model_name == "sbert" \
-            else self._embedding_model.config.hidden_size
+        dimension = self._embedding_model.config.hidden_size if not self._model_name == "sbert" \
+            else self._embedding_model._first_module().auto_model.config.hidden_size
         return dimension
 
     def get_vector(self, word: str) -> np.ndarray:
@@ -138,9 +138,11 @@ class LM_Transformer:
             )
 
         else:
-            tokens = self.tokenizer.encode_plus(  ' '.join(tokenize(word)), add_special_tokens=True,
+            #print(' '.join(tokenize(word)))
+            tokens = self.tokenizer.encode_plus(' '.join(tokenize(word)), add_special_tokens=True,
                                                 truncation=True, return_tensors="pt")
             # Perform the encoding using the model
+            #print(tokens)
             with torch.no_grad():
                 outputs = self._embedding_model(**tokens)
             # Extract the last hidden state (embedding) from the outputs

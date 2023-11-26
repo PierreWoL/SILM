@@ -81,11 +81,11 @@ def create_or_find_indexes(data_path, threshold, LM, subjectCol=False):
 
     # NameIndex
     name_lsh = os.path.join(data_path, f'./name_{str(LM)}.lsh') if subjectCol is False \
-        else os.path.join(data_path, f'./name_SubCol_{str(LM) }.lsh')
+        else os.path.join(data_path, f'./name_SubCol_{str(LM)}.lsh')
     if os.path.isfile(name_lsh):
         name_index = unpickle_python_object(name_lsh)
     else:
-        name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold,model=LM)
+        name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold, model=LM)
         pickle_python_object(name_index, name_lsh)
 
     # FormatIndex
@@ -131,58 +131,88 @@ def create_or_find_indexes(data_path, threshold, LM, subjectCol=False):
     return [distribution_index, format_index, value_index, name_index, embeddingIndex]  #
 
 
-def initialise_distance_matrix(dim, L, dataloader, data_path, indexes, k):
+def initialise_distance_matrix(dataloader, data_path, indexes, k, column=False):
     # print(L)
-    D = np.ones((dim, dim))
     T = ed.get_files(data_path)
-    # Things are the same as themselves
-    for i in range(dim):
-        D[i, i] = 0
-    for t in T:
-        # qe = QueryEngine(name_index, format_index, value_index, distribution_index)
-        qe = QueryEngine(*indexes)
+    columns = []
+    if column is True:
+        for t in T:
+            table = dataloader.read_table(table_name=t)
+            column_t = table.columns
+            for col in column_t:
+                columns.append((f"{t}.{col}", table[col]))
+        dim = len(columns)
+        D = np.ones((dim, dim))
+        np.fill_diagonal(D, 0)
+        L = {tuple[0]: index for index, tuple in enumerate(columns)}
+        for col_tuple in columns:
+            col_name, column = col_tuple
+            qe = QueryEngine(*indexes)
+            Neighbours = qe.column_query(col_tuple[1], aggregator=None, k=k)
+            for n in Neighbours:
+                (name, similarities) = n
+                #print(name, similarities)
+                if name in L and col_name != name:
+                    # print(L[t], L[name])
+                    # print(L[name], L[t])
 
-        Neighbours = qe.table_query(table=dataloader.read_table(table_name=t),
-                                    aggregator=None, k=k)
-        # print(Neighbours,len(Neighbours))
-        for n in Neighbours:  # index
-            (name, similarities) = n  # 'car', [1.0, 0.4, 0.4, 0.0]
-            if name in L and t != name:
-                # print(L[t], L[name])
-                # print(L[name], L[t])
-                D[L[t], L[name]] = 1 - statistics.mean(similarities)
-                D[L[name], L[t]] = 1 - statistics.mean(similarities)
+                    D[L[col_name], L[name]] = 1 - statistics.mean([float(sim) for sim in similarities])
+                    D[L[name], L[col_name]] = 1 - statistics.mean([float(sim) for sim in similarities])
+                    #print(L[col_name], L[name],similarities, D[L[col_name], L[name]] )
 
-    return D
+        cols = [i[0] for i in columns]
+        #for row in D:
+            #print(row)
+        return D, cols
+
+    else:
+        dim = len(T)
+        D = np.ones((dim, dim))
+        np.fill_diagonal(D, 0)
+        L = {t: i for i, t in enumerate(T)}
+        #  Neighbours = qe.column_query(column=,aggregator=None, k=k)
+        for t in T:
+            qe = QueryEngine(*indexes)
+            Neighbours = qe.table_query(table=dataloader.read_table(table_name=t),
+                                        aggregator=None, k=k)
+            for n in Neighbours:
+                (name, similarities) = n
+                if name in L and t != name:
+                    # print(L[t], L[name])
+                    # print(L[name], L[t])
+                    D[L[t], L[name]] = 1 - statistics.mean(similarities)
+                    D[L[name], L[t]] = 1 - statistics.mean(similarities)
+
+        return D, T
 
 
-def distance_matrix(data_path, index, k):
+def distance_matrix(data_path, index, k, column=False):
     print(index)
-    dataloader = CSVDataLoader(root_path=(data_path), encoding='latin-1')
-    T = ed.get_files(data_path)
-    print(T)
-    L = {}
-    for i, t in enumerate(T):
-        L[t] = i
+    dataloader = CSVDataLoader(root_path=(data_path), encoding='latin1')
     # before_distance_matrix = time()
-    D = initialise_distance_matrix(len(T), L, dataloader, data_path, index, k)
+    D, T = initialise_distance_matrix(dataloader, data_path, index, k, column=column)
     # after_distance_matrix = time()
     # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
     Z_df = pd.DataFrame(D)
-    # print(Z)
     return Z_df, T
 
 
-def inputData(data_path, threshold, k, LM,  subjectCol=False):
+def inputData(data_path, threshold, k, LM, subjectCol=False, column=False):
     # print("embed mode is ", embedding_mode)
-    ZT_Files = os.path.join(data_path, f"D3L_{LM}.pkl") if subjectCol is False else os.path.join(data_path, f"D3L_subCol_{LM}.pkl")
+    if subjectCol is False:
+        if column is True:
+            ZT_Files = os.path.join(data_path, f"D3L_{LM}_column.pkl")
+        else:
+            ZT_Files = os.path.join(data_path, f"D3L_{LM}.pkl")
+    else:
+        ZT_Files = os.path.join(data_path, f"D3L_subCol_{LM}.pkl")
     if os.path.isfile(ZT_Files):
         Z, T = unpickle_python_object(ZT_Files)
     else:
         indexes = create_or_find_indexes(data_path, threshold, LM=LM,
                                          subjectCol=subjectCol)
-        Z, T = distance_matrix(data_path, indexes, k)
-        print("Z,T is ", Z, T)
+        Z, T = distance_matrix(data_path, indexes, k, column=column)
+        #print("Z,T is ", Z, T)
         file = (Z, T)
         pickle_python_object(file, ZT_Files)
     return Z, T
@@ -294,14 +324,14 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     score = -1
     best_model = AgglomerativeClustering()
     at_least = math.ceil(cluster_num // 4 * 3) + 2
-    for n_clusters in range(at_least,20, 1): #2* cluster_num
+    for n_clusters in range(at_least, 2* cluster_num, 1):  # 2* cluster_num
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
         if score <= silhouette_score(input_data, labels):
             score = silhouette_score(input_data, labels)
             best_model = agg_clustering
-    print( best_model.n_clusters,score)
+    print(best_model.n_clusters, score)
     return best_model, best_model.labels_
 
 
@@ -743,7 +773,6 @@ def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, c
     cluster_dict = cluster_Dict(clusters)
     end_time = time.time()
     time_difference_run = end_time - star_time
-
 
     table_dict = None
     table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}

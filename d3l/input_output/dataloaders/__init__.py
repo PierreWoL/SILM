@@ -14,6 +14,8 @@ from enum import Enum
 import pandas as pd
 import sqlalchemy
 import os
+
+
 class ColumnType(Enum):
     Invalid = -1
     long_text = 0
@@ -27,9 +29,9 @@ class ColumnType(Enum):
 class DataLoader(ABC):
     @abstractmethod
     def get_counts(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
     ) -> Dict[str, Tuple[int, int]]:
         """
         Reads the non-null and distinct cardinality of each column of a table.
@@ -51,9 +53,9 @@ class DataLoader(ABC):
 
     @abstractmethod
     def get_columns(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
     ) -> List[str]:
         """
         Retrieve the column names of the given table.
@@ -75,8 +77,8 @@ class DataLoader(ABC):
 
     @abstractmethod
     def get_tables(
-        self,
-        schema_name: Optional[str] = None,
+            self,
+            schema_name: Optional[str] = None,
     ) -> List[str]:
         """
         Retrieve all the table names existing under the given root.
@@ -95,11 +97,11 @@ class DataLoader(ABC):
 
     @abstractmethod
     def read_table(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
-        table_columns: Optional[List[str]] = None,
-        chunk_size: Optional[int] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
+            table_columns: Optional[List[str]] = None,
+            chunk_size: Optional[int] = None,
     ) -> Union[pd.DataFrame, Iterator[pd.DataFrame]]:
         """
         Read the table data into a pandas DataFrame.
@@ -127,12 +129,12 @@ class DataLoader(ABC):
 
 class PostgresDataLoader(DataLoader):
     def __init__(
-        self,
-        db_name: str,
-        db_host: Optional[str] = None,
-        db_port: Optional[int] = None,
-        db_username: Optional[str] = None,
-        db_password: Optional[str] = None,
+            self,
+            db_name: str,
+            db_host: Optional[str] = None,
+            db_port: Optional[int] = None,
+            db_username: Optional[str] = None,
+            db_password: Optional[str] = None,
     ):
         """
         The main data reading object.
@@ -180,7 +182,7 @@ class PostgresDataLoader(DataLoader):
         )
 
     def get_counts(
-        self, table_name: str, schema_name: Optional[str] = None
+            self, table_name: str, schema_name: Optional[str] = None
     ) -> Dict[str, Tuple[int, int]]:
         """
         Reads the non-null and distinct cardinality of each column of a table.
@@ -200,7 +202,7 @@ class PostgresDataLoader(DataLoader):
         """
 
         assert (
-            schema_name is not None
+                schema_name is not None
         ), "The schema name must be provided for postgres databases!"
 
         db_engine = self.get_db_engine()
@@ -234,9 +236,9 @@ class PostgresDataLoader(DataLoader):
         return column_counts
 
     def get_columns(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
     ) -> List[str]:
         """
         Retrieve the column names of the given table.
@@ -255,7 +257,7 @@ class PostgresDataLoader(DataLoader):
 
         """
         assert (
-            schema_name is not None
+                schema_name is not None
         ), "The schema name must be provided for postgres databases!"
 
         db_engine = self.get_db_engine()
@@ -268,8 +270,8 @@ class PostgresDataLoader(DataLoader):
         return column_names
 
     def get_tables(
-        self,
-        schema_name: Optional[str] = None,
+            self,
+            schema_name: Optional[str] = None,
     ) -> List[str]:
         """
         Retrieve all the table names existing under the given root.
@@ -287,7 +289,7 @@ class PostgresDataLoader(DataLoader):
         """
 
         assert (
-            schema_name is not None
+                schema_name is not None
         ), "The schema name must be provided for postgres databases!"
 
         db_engine = self.get_db_engine()
@@ -308,11 +310,11 @@ class PostgresDataLoader(DataLoader):
         return results_of_tables
 
     def read_table(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
-        table_columns: Optional[List[str]] = None,
-        chunk_size: Optional[int] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
+            table_columns: Optional[List[str]] = None,
+            chunk_size: Optional[int] = None,
     ) -> Union[pd.DataFrame, Iterator[pd.DataFrame]]:
         """
         Read the table data into a pandas DataFrame.
@@ -337,7 +339,7 @@ class PostgresDataLoader(DataLoader):
         """
 
         assert (
-            schema_name is not None
+                schema_name is not None
         ), "The schema name must be provided for postgres databases!"
 
         db_engine = self.get_db_engine()
@@ -388,7 +390,7 @@ class CSVDataLoader(DataLoader):
         self.loading_kwargs = loading_kwargs
 
     def get_counts(
-        self, table_name: str, schema_name: Optional[str] = None
+            self, table_name: str, schema_name: Optional[str] = None
     ) -> Dict[str, Tuple[int, int]]:
         """
         Reads the non-null and distinct cardinality of each column of a table.
@@ -417,9 +419,9 @@ class CSVDataLoader(DataLoader):
         return column_counts
 
     def get_columns(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
     ) -> List[str]:
         """
         Retrieve the column names of the given table.
@@ -446,8 +448,8 @@ class CSVDataLoader(DataLoader):
         return data_df.columns.tolist()
 
     def get_tables(
-        self,
-        schema_name: Optional[str] = None,
+            self,
+            schema_name: Optional[str] = None,
     ) -> List[str]:
         """
         Retrieve all the table names existing under the given root.
@@ -471,11 +473,11 @@ class CSVDataLoader(DataLoader):
         return result_of_tables
 
     def read_table(
-        self,
-        table_name: str,
-        schema_name: Optional[str] = None,
-        table_columns: Optional[List[str]] = None,
-        chunk_size: Optional[int] = None,
+            self,
+            table_name: str,
+            schema_name: Optional[str] = None,
+            table_columns: Optional[List[str]] = None,
+            chunk_size: Optional[int] = None,
     ) -> Union[pd.DataFrame, Iterator[pd.DataFrame]]:
         """
         Read the table data into a pandas DataFrame.
@@ -500,10 +502,10 @@ class CSVDataLoader(DataLoader):
         """
         file_path = ''
         if table_name.endswith(".csv"):
-            file_path =  self.root_path + table_name
+            file_path = self.root_path + table_name
         else:
             file_path = self.root_path + table_name + ".csv"
-        table =  pd.read_csv(
+        table = pd.read_csv(
             file_path,
             chunksize=chunk_size,
             low_memory=False,
@@ -512,8 +514,7 @@ class CSVDataLoader(DataLoader):
             **self.loading_kwargs
         )
         if table_columns is not None:
-
-            table =  pd.read_csv(
+            table = pd.read_csv(
                 file_path,
                 usecols=table_columns,
                 chunksize=chunk_size,
@@ -528,7 +529,8 @@ class CSVDataLoader(DataLoader):
                 table = table[cols]
         return table
 
-def subjectCol(self, table: pd.DataFrame, combine=False):
+
+def subjectCol(table: pd.DataFrame, combine=False):
     sub_cols_header = []
     anno = TA.TableColumnAnnotation(table, isCombine=combine)
     types = anno.annotation
