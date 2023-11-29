@@ -33,8 +33,8 @@ for metric in metrics:
     plt.plot(augmentation_times, sample_cells_roberta, marker='o', label='Sample_cells_RoBERTa')
     plt.plot(augmentation_times, sample_cells_tfidf_bert, marker='o', label='Sample_cells_TFIDF_BERT')
     plt.plot(augmentation_times, sample_cells_bert, marker='o', label='Sample_cells_BERT')
-    plt.plot(augmentation_times, sample_cells_tfidf_sbert, marker='o', label='Sample_cells_TFIDF_SBERT')
-    plt.plot(augmentation_times, sample_cells_sbert, marker='o', label='Sample_cells_SBERT')
+    #plt.plot(augmentation_times, sample_cells_tfidf_sbert, marker='o', label='Sample_cells_TFIDF_SBERT')
+    #plt.plot(augmentation_times, sample_cells_sbert, marker='o', label='Sample_cells_SBERT')
 
     # 标题和轴标签
 
@@ -52,9 +52,9 @@ for metric in metrics:
     plt.tight_layout()
 
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                           os.path.join("result/starmie/WDC/"), metric+"LineChart.pdf"))
+                           os.path.join("result/starmie/WDC/"), metric+"LineChart2.pdf"))
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                             os.path.join("result/starmie/WDC/"), metric + "LineChart.png"))
+                             os.path.join("result/starmie/WDC/"), metric + "LineChart2.png"))
     plt.show()
 
 

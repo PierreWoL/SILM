@@ -26,7 +26,7 @@ def silm_clustering(hp: Namespace):
     # graph_gt = pickle.load(F_graph)
 
     files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and f"_{hp.embed}_" in fn and 'sample' in fn]  # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
+             '.pkl' in fn and f"_{hp.embed}_" in fn and 'subCol' in fn]  # pkl  and 'cell' in fn and 'subCol' in fn Pretrain
     if hp.subjectCol:
         F_cluster = open(os.path.join(os.getcwd(),
                                       "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
@@ -100,9 +100,6 @@ def silm_clustering(hp: Namespace):
             e_df.to_csv(store_path + file[:-4] + '_metrics.csv', encoding='utf-8')
             print(e_df)
             dicts[file] = dict_file
-
-
-
 
         except ValueError as e:
             print(e)
@@ -204,11 +201,11 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     if embedding_file is None:
-        Z, T = inputData(data_path, 0.6, 5, hp.embed,column=True)
+        Z, T = inputData(data_path, 0.6, 5, hp.embed, column=True)
 
         content = []
         for index, col in enumerate(Z.columns):
-            content.append((T[index],np.array(Z[col])))
+            content.append((T[index], np.array(Z[col])))
 
         embedding_file = f"D3L_{hp.embed}"
     else:
@@ -227,16 +224,17 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
         datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                      "All/" + embedding_file[:-4] + "/column")
         endTimeCC = time.time()
-        TimespanCC =endTimeCC - startTimeCC
+        TimespanCC = endTimeCC - startTimeCC
 
-        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+        """if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             startTimeTH = time.time()
             ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
             endTimeTH = time.time()
             TimespanTH = endTimeTH - startTimeTH
-            timing = pd.DataFrame({'Column clustering':TimespanCC, 'Hierarchy Inference ':TimespanTH}, columns=['type','time'])
+            timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
+                                  columns=['type', 'time'])
             timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
-                                     "All/" + embedding_file[:-4], "timing.csv"))
+                                       "All/" + embedding_file[:-4], "timing.csv"))"""
 
     # with ThreadPoolExecutor(max_workers=3) as executor:
     # futures = [executor.submit(colCluster, clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp,
@@ -379,19 +377,18 @@ def files_columns_running(hp: Namespace):
         starmie_columnClustering(hp)
     # TODO this needs a little varified in the future, only test for one particular embedding method
     files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and hp.embed in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn]
-    files = [fn for fn in files if not fn.endswith("subCol.pkl") and 'column' in fn]
+             '.pkl' in fn and f"_{hp.embed}_" in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn]
+    files = [fn for fn in files if fn.endswith("_column.pkl")]
     print(len(files), files)
     for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]
         starmie_columnClustering(hp, file)
 
 
-
 def files_hierarchyInference(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
-             fn.endswith('.pkl') and hp.embed in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if not fn.endswith("subCol.pkl")][hp.slice_start:hp.slice_stop]
+             fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
+    files = [fn for fn in files if fn.endswith("_column.pkl")][hp.slice_start:hp.slice_stop]
 
     print(files, len(files))
     for file in files:  # [hp.slice_start:hp.slice_stop]:

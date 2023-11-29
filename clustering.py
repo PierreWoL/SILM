@@ -324,7 +324,7 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     score = -1
     best_model = AgglomerativeClustering()
     at_least = math.ceil(cluster_num // 4 * 3) + 2
-    for n_clusters in range(at_least, 2* cluster_num, 1):  # 2* cluster_num
+    for n_clusters in range(at_least, 4*cluster_num, 1):  # 2* cluster_num
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -756,7 +756,7 @@ def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, c
                             filename=None):
     star_time = time.time()
     parameters = []
-    number_estimate = len(gt_cluster_dict) // 2
+    number_estimate = len(gt_cluster_dict) // 3
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
