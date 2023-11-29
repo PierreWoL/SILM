@@ -2,6 +2,7 @@ from tqdm import tqdm
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Iterable, Tuple
 
+from d3l.indexing.feature_extraction.schema.qgram_transformer import QGramTransformer
 from d3l.indexing.feature_extraction.values.distribution_transformer import (
     DistributionTransformer,
 )
@@ -10,6 +11,7 @@ from SubjectColumnDetection import ColumnType
 from d3l.indexing.feature_extraction.values.fd_transformer import FDTransformer
 
 from d3l.indexing.feature_extraction.values.LM_transformer import LM_Transformer
+from d3l.indexing.feature_extraction.values.glove_embedding_transformer import GloveTransformer
 from d3l.indexing.feature_extraction.values.token_transformer import TokenTransformer
 from d3l.indexing.lsh.lsh_index import LSHIndex
 from d3l.input_output.dataloaders import DataLoader
@@ -123,8 +125,8 @@ class NameIndex(SimilarityIndex):
         self.index_fp_fn_weights = index_fp_fn_weights
         self.index_seed = index_seed
 
-        # self.transformer = QGramTransformer(qgram_size=self.transformer_qgram_size)
-        self.transformer = LM_Transformer(max_df=1, min_df=1,model_name=model)
+        self.transformer = QGramTransformer(qgram_size=self.transformer_qgram_size)
+        #self.transformer = LM_Transformer(max_df=1, min_df=1,model_name=model)
         self.lsh_index = self.create_index()
 
     def create_index(self) -> LSHIndex:
@@ -493,7 +495,17 @@ class EmbeddingIndex(SimilarityIndex):
         self.index_seed = index_seed
         self.index_cache_dir = index_cache_dir
 
-        self.transformer = LM_Transformer(
+
+
+        if model =='glove':
+            self.transformer = GloveTransformer(
+            token_pattern=self.transformer_token_pattern,
+            max_df=self.transformer_max_df,
+            stop_words=self.transformer_stop_words,
+            cache_dir=self.index_cache_dir
+            )
+        else:
+            self.transformer = LM_Transformer(
                 token_pattern=self.transformer_token_pattern,
                 max_df=self.transformer_max_df,
                 stop_words=self.transformer_stop_words,
