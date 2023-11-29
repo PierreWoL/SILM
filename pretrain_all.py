@@ -90,10 +90,11 @@ if __name__ == '__main__':
         end_time_train = time.time()
         time_difference_train = end_time_train - start_time_train
         print(f"Train time: {time_difference_train}\n")
-        
+        """
         start_time_encode = time.time()
         table_features(hp)
         end_time_encode = time.time()
         time_difference_encode = end_time_encode - start_time_encode
         print(f"Encode time: {time_difference_encode} \n ")
+        """
 #--pretrain --subject_column
