@@ -280,18 +280,19 @@ class GloveTransformer:
         tokenset = set()
         tokenizer = vectorizer.build_tokenizer()
         for value in input_values:
-            if is_empty(value) is True:
+            if isinstance(value, float):
                 continue
-            if is_number(value) is True:
+            elif is_empty(value) is True:
                 continue
-            if type(value) is bool:
+            elif is_number(value) is True:
+                continue
+            elif type(value) is bool:
                 value = str(value)
             value = value.lower().replace("\n", " ").strip()
             for shingle in shingles(value):
                 tokens = [t for t in tokenizer(shingle)]
                 if len(tokens) < 1:
                     continue
-
                 token_weights = [weight_map.get(t, 0.0) for t in tokens]
                 min_tok_id = np.argmin(token_weights)
                 tokenset.add(tokens[min_tok_id])

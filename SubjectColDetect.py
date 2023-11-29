@@ -10,7 +10,7 @@ from SubjectColumnDetection import ColumnType
 This should be considered running through the embedding steps
 
 """
-data_path = os.path.join(os.getcwd(), "datasets/WDC/Test")
+data_path = os.path.join(os.getcwd(), "datasets/GoogleSearch/Test")
 datas = [data for data in os.listdir(data_path) if data.endswith("csv")]
 SE = {}
 for data in datas:

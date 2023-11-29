@@ -75,8 +75,8 @@ def metric_ALL(tar_path, index, embeddingMethods: list, fileName, colors, title,
     plt.show()
 
 
-dataset = "WDC"  # TabFact
-Table_content = "Subject_Col"  # Subject_Col All
+dataset = "GoogleSearch"  # TabFact
+Table_content = "All"  # Subject_Col All
 subCol_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), os.path.join("result/starmie", dataset, Table_content))
 #subCol_path= os.path.join(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/{Table_content}")
 print(subCol_path)
