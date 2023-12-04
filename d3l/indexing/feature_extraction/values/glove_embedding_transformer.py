@@ -282,6 +282,8 @@ class GloveTransformer:
         for value in input_values:
             if isinstance(value, float):
                 continue
+            elif isinstance(value, int):
+                continue
             elif is_empty(value) is True:
                 continue
             elif is_number(value) is True:
