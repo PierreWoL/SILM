@@ -58,7 +58,7 @@ def table_col(table: pd.DataFrame):
 
 label_per = ['D3L', 'Starmie', 'Pretrain_HI', 'Pretrain_I', 'SILM_SampleCells_HI', 'SILM_SampleCells_I',
              'SILM_SampleCellsTFIDF_HI', 'SILM_SampleCellsTFIDF_I']
-
+"""
 metric = 'Rand Index'
 dataset = 'WDC'
 data = pd.read_excel(f"D:/CurrentDataset/result/SILM/{dataset}/All/RI.xlsx", index_col=0).iloc[-1:]
@@ -71,7 +71,7 @@ col_roberta = data.loc[[i for i in data.index if '_roberta' in i]]
 
 value_list = {'BERT': table_index(col_bert), 'RoBERTa': table_index(col_roberta), 'SBERT': table_index(col_sbert)}
 
-"""for label, values in value_list.items():
+for label, values in value_list.items():
     print(values.index,list(values.iloc[:,0]))
     fig, ax = plt.subplots(figsize=(13, 10))
     bars = ax.bar(values.index, list(values.iloc[:,0]), color='skyblue')  # label=values.index
@@ -187,16 +187,16 @@ plt.show()"""
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
+"""
 labels = ['BERT', 'RoBERTa', 'SBERT']
 
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                    os.path.join(f"result/starmie/WDC/Sum.xlsx"))
-metrics = ["Purity C", "Rand Index C"]
+                    os.path.join(f"result/starmie/GDS/Sum_Itself.xlsx"))
+metrics = ["Purity", "Rand Index"]
 x = np.arange(len(labels))
 width = 0.1
 
-"""for metric in metrics:
+for metric in metrics:
     sum = pd.read_excel(path, sheet_name=metric,index_col=0)
     labels = sum.index
 
@@ -243,8 +243,15 @@ def autolabel(rects):
                     ha='center', va='bottom', fontsize=16)
 
 ### Long chart PhSAE 1 for all LM
-"""for metric in metrics:
-    sum = pd.read_excel(path, sheet_name=metric, index_col=0).transpose()
+labels = ['BERT', 'RoBERTa', 'SBERT']
+dataset = 'GoogleSearch'
+path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+                    os.path.join(f"result/starmie/{dataset}/Sum1.xlsx"))
+metrics = ["Purity", "Rand Index"]
+width = 0.1
+
+for metric in metrics:
+    sum = pd.read_excel(path, sheet_name=metric, index_col=0).iloc[:-1,].transpose()
     labels = sum.columns
     x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(18, 10))
@@ -256,7 +263,7 @@ def autolabel(rects):
         #rects.append(rect)
         ax.set_ylim(0, 1)
         plt.yticks([i / 10.0 for i in range(11)], fontsize=21)  # 设置y轴间隔为0.1
-        ax.set_ylabel(" ".join(metric.split(" ")[:-1]), fontsize=21)
+        ax.set_ylabel(metric, fontsize=21)
         ax.set_xlabel('Methods', fontsize=21)
 
         plt.xticks(x, fontsize=21)
@@ -268,17 +275,17 @@ def autolabel(rects):
     fig.tight_layout()
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                              os.path.join(f"result/starmie/{dataset}/"),
-                             " ".join(metric.split(" ")[:-1])  + "BarChartALL.pdf"))
+                             metric + "BarChartALL_WholeGDS.pdf"))
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                              os.path.join(f"result/starmie/{dataset}/"),
-                             " ".join(metric.split(" ")[:-1]) +  "BarChartALL.png"))
-    plt.show()"""
+                             metric +  "BarChartALL_WholeGDS.png"))
+    plt.show()
 
 
 
+###The following is for column clustering
 
-
-LM = ['BERT', 'RoBERTa']
+"""LM = ['BERT', 'RoBERTa']
 
 dataset = "WDC"
 metrics = ["Purity", "Rand Index"]
@@ -375,4 +382,4 @@ for metric in metrics:
                                  os.path.join(f"result/SILM/{dataset}/All"),
                                  metric + label + "AttributesBox.png"))
         plt.tight_layout()
-plt.show()
+plt.show()"""

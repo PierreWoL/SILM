@@ -202,14 +202,11 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
 
     if embedding_file is None:
         Z, T = inputData(data_path, 0.6, 5, hp.embed, column=True)
-
         content = []
         for index, col in enumerate(Z.columns):
             content.append((T[index], np.array(Z[col])))
-
         embedding_file = f"D3L_{hp.embed}"
     else:
-
         F = open(datafile_path + embedding_file, 'rb')
         content = pickle.load(F)
         # content is the embeddings for all datasets
@@ -375,7 +372,6 @@ def files_columns_running(hp: Namespace):
 
     if hp.baseline is True:
         starmie_columnClustering(hp)
-    # TODO this needs a little varified in the future, only test for one particular embedding method
     files = [fn for fn in os.listdir(datafile_path) if
              '.pkl' in fn and f"_{hp.embed}_" in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn]
     files = [fn for fn in files if fn.endswith("_column.pkl")]

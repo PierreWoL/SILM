@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("--slice_stop", type=int, default=1)
 
     parser.add_argument("--intervalSlice", type=int, default=20)
-    parser.add_argument("--delta", type=int, default=0.3)
+    parser.add_argument("--delta", type=int, default=0.25)
 
     parser.add_argument("--column", dest="column", action="store_true", default=True)
     # single-column mode without table context
