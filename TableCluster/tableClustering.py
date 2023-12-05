@@ -223,7 +223,7 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
         endTimeCC = time.time()
         TimespanCC = endTimeCC - startTimeCC
 
-        """if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             startTimeTH = time.time()
             ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
             endTimeTH = time.time()
@@ -231,7 +231,7 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
                                   columns=['type', 'time'])
             timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
-                                       "All/" + embedding_file[:-4], "timing.csv"))"""
+                                       "All/" + embedding_file[:-4], "timing.csv"))
 
     # with ThreadPoolExecutor(max_workers=3) as executor:
     # futures = [executor.submit(colCluster, clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp,
@@ -374,7 +374,7 @@ def files_columns_running(hp: Namespace):
         starmie_columnClustering(hp)
     files = [fn for fn in os.listdir(datafile_path) if
              '.pkl' in fn and f"_{hp.embed}_" in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn]
-    files = [fn for fn in files if fn.endswith("_column.pkl")]
+    files = [fn for fn in files if 'subCol' not in fn ] # and 'Pretrain' not in fn and 'subCol' not in fn fn.endswith("_column.pkl")
     print(len(files), files)
     for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]
         starmie_columnClustering(hp, file)
