@@ -44,6 +44,7 @@ def JaccardMatrix(col_clusters: dict, table_path):
         table_pairs:
         jaccard_score:
     """
+    table_names = os.listdir(table_path)
     table_pairs = {}
     # initialize the matrix for random two tables m x n
     start_time = time.time()
@@ -51,8 +52,16 @@ def JaccardMatrix(col_clusters: dict, table_path):
     for index, cluster in col_clusters.items():
         clusters_tables[index] = {}
         for columns in cluster:
-            table_name = columns.split("html.")[0] + "html" if "html" in columns else columns.split(".")[0]
-            column_name = columns.split("html.")[1] if "html" in columns else columns.split(".")[1]
+            if columns.count('.')>1:
+                table_name = columns.split(".")[0]
+                for item in table_names:
+                    if table_name in item:
+                        table_name = item.split(".csv")[0]
+                column_name =columns.replace(table_name+".", '', 1)
+                #print(f" {columns} table { table_name} column {column_name}")
+            else:
+                table_name = columns.split(".")[0]
+                column_name = columns.split(".")[1]
             if table_name not in clusters_tables[index].keys():
                 clusters_tables[index][table_name] = [column_name]
             else:

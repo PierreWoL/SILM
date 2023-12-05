@@ -71,9 +71,9 @@ def table_relationship(df1_embedding, df2_embedding, SubjectAttri: dict, similar
 
 
 def subjectAttri(dataset_path, Embedding):
-    target = os.path.join(dataset_path, "SubjecAttributes.pkl")
+    target = os.path.join(dataset_path, "SubjectCol.pickle")
     if os.path.exists(target):
-        F = open(os.path.join(dataset_path, "SubjecAttributes.pkl"), 'rb')
+        F = open(os.path.join(dataset_path, "SubjectCol.pickle"), 'rb')
         subjectAttributes = pickle.load(F)
     else:
         subjectAttributes = {}
@@ -96,7 +96,7 @@ def subjectAttri(dataset_path, Embedding):
     return subjectAttributes
 
 
-def check_similarity(cluster_1, cluster_2, embeddings: dict):
+def check_similarity(cluster_1, cluster_2):
     """
     Search if table1 and table2 have highly similar attributes  (embeddings), one of which
     must be subject attributes of the belonging tables.
