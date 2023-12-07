@@ -10,22 +10,26 @@ from SubjectColumnDetection import ColumnType
 This should be considered running through the embedding steps
 
 """
-data_path = os.path.join(os.getcwd(), "datasets/GoogleSearch/Test")
-datas = [data for data in os.listdir(data_path) if data.endswith("csv")]
-SE = {}
-for data in datas:
-    print(os.path.join(data_path, data))
-    table = pd.read_csv(os.path.join(data_path, data))
-    # print(table.transpose())
-    anno = TA.TableColumnAnnotation(table, isCombine=True)
-    types = anno.annotation
+def subjectColumns(data_path):
+    target = os.path.join(data_path, "SubjectCol.pickle")
+    if os.path.exists( target):
+        F = open(os.path.join(data_path, "SubjectCol.pickle"), 'rb')
+        SE = pickle.load(F)
+    else:
+        datas = [data for data in os.listdir(os.path.join(data_path,"Test")) if data.endswith("csv")]
+        SE = {}
+        for data in datas:
+            #print(os.path.join(data_path, data))
+            table = pd.read_csv(os.path.join(data_path,"Test", data))
+            # print(table.transpose())
+            anno = TA.TableColumnAnnotation(table)
+            types = anno.annotation
 
-    NE_list = [key for key, type in types.items() if type == ColumnType.named_entity]
-    """for key, type in types.items():
-        if type == ColumnType.named_entity:
-            Sub_cols_header = [table.columns[key]]
-            break"""
+            NE_list = [key for key, type in types.items() if type == ColumnType.named_entity]
+            type_all = {table.columns[key]:value.name for key,value in types.items()}
+            print(data, type_all)
+            SE[data] = (NE_list, table.columns, types)
 
-    SE[data] = (NE_list, table.columns, types)
-with open(os.path.join(data_path, 'SubjectCol.pickle'), 'wb') as handle:
-        pickle.dump(SE, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(os.path.join(data_path, 'SubjectCol.pickle'), 'wb') as handle:
+            pickle.dump(SE, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    return SE

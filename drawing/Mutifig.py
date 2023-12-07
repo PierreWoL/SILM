@@ -243,7 +243,7 @@ def autolabel(rects):
                     ha='center', va='bottom', fontsize=16)
 
 ### Long chart PhSAE 1 for all LM
-labels = ['BERT', 'RoBERTa', 'SBERT']
+"""labels = ['BERT', 'RoBERTa', 'SBERT']
 dataset = 'GoogleSearch'
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                     os.path.join(f"result/starmie/{dataset}/Sum1.xlsx"))
@@ -285,7 +285,8 @@ for metric in metrics:
 
 ###The following is for column clustering
 
-"""LM = ['BERT', 'RoBERTa']
+"""
+LM = ['BERT', 'RoBERTa', 'SBERT']
 
 dataset = "WDC"
 metrics = ["Purity", "Rand Index"]
@@ -338,7 +339,7 @@ for metric in metrics:
 
 import matplotlib.patches as mpatches
 
-LM = ['BERT', 'RoBERTa']
+LM = ['BERT', 'RoBERTa', 'SBERT']
 for metric in metrics:
 
     if metric == "Purity":
@@ -382,4 +383,4 @@ for metric in metrics:
                                  os.path.join(f"result/SILM/{dataset}/All"),
                                  metric + label + "AttributesBox.png"))
         plt.tight_layout()
-plt.show()"""
+plt.show()

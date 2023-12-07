@@ -324,7 +324,7 @@ def AgglomerativeClustering_param_search(input_data, cluster_num):
     score = -1
     best_model = AgglomerativeClustering()
     at_least = math.ceil(cluster_num // 4 * 3) + 2
-    for n_clusters in range( math.ceil(2.5* cluster_num), 3* cluster_num+10, 1):  #
+    for n_clusters in range(at_least,23 , 1):  #math.ceil(2.5* cluster_num), 3* cluster_num+10
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_

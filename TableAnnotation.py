@@ -29,7 +29,7 @@ class TableColumnAnnotation:
         self.matrix_list = []
         self.subject_col = []
 
-    def annotate_type(self, isCombine=False):
+    def annotate_type(self):
         """
         Preprocessing part in the TableMiner+ system
         classifying the cells from each column into one of the types mentioned in
@@ -41,13 +41,6 @@ class TableColumnAnnotation:
         # self.table.shape[1] is the length of columns
         for i in range(self.table.shape[1]):
             column = self.table.iloc[:, i]
-            if isCombine:
-                if isinstance(self.table.iloc[0, i], str):
-
-                    if "|" in self.table.iloc[0, i]:
-                        column = self.table.iloc[0, i].split("|")
-                    else:
-                        column = self.table.iloc[0, i].split(",")
             column_detection = SCD.ColumnDetection(column)
             candidate_type = column_detection.column_type_judge(100)
             self.annotation[i] = candidate_type
@@ -69,7 +62,7 @@ class TableColumnAnnotation:
             if value == SCD.ColumnType.named_entity:
                 self.NE_cols.append(key)
         self.NE_table = self.NE_table.iloc[:, self.NE_cols]
-        self.NE_table = self.NE_table.applymap(convert_to_tuple)  # + ":[]"
+        self.NE_table = self.NE_table.map(convert_to_tuple)  # + ":[]" #applymap
 
         """
         NE_Table should be like this:

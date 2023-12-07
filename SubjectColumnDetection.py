@@ -92,21 +92,20 @@ class ColumnDetection:
         temp_count_text_cell = 0
         try:
             if len(self.column) == 0:
-                raise ValueError("Column does not exist!")
+                raise ValueError("Column has no cell!")
         except ValueError as e:
             print("column_type_judge terminate.", self.column.name, repr(e))
             pass
         checkpoint = fraction
+        if checkpoint >= len(self.column):
+            checkpoint = len(self.column) - 1
         # iterate and judge the element belong to which category
         for index, element in self.column.items():
-
-            if checkpoint>= len(self.column):
-                checkpoint = len(self.column)-1
             if index == checkpoint:
                 if temp_count_text_cell != 0:
                     ave_token_number = total_token_number / temp_count_text_cell
                     # TODO : I think this needs further modification later Currently set to 10 just in case
-                    if ave_token_number > 7:
+                    if ave_token_number > 25:
                         type_count[ColumnType.long_text.value] = temp_count_text_cell
                     else:
                         type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + \
@@ -190,6 +189,7 @@ class ColumnDetection:
                         else:
                             type_count[ColumnType.other.value] += 1
                 else:
+
                     token_str = func.tokenize_str(element)
                     token = token_str.split(" ")
                     token_with_number = func.tokenize_with_number(element).split(" ")
@@ -200,7 +200,7 @@ class ColumnDetection:
                         if func.is_date_expression(func.tokenize_with_number(element)):
                             type_count[ColumnType.date_expression.value] += 1
                             continue
-                    if len(token) < 3:
+                    elif len(token) < 3:
                         acronym = True
                         for i in token:
                             if func.is_acronym(i) is False:
@@ -214,8 +214,10 @@ class ColumnDetection:
                             continue
 
                     else:
+
                         total_token_number = total_token_number + len(token)
                         temp_count_text_cell = temp_count_text_cell + 1
+
 
             # stop iteration to the 1/3rd cell and judge what type occupies the most in columns
         self.acronym_id_num = type_count[ColumnType.other.value]
