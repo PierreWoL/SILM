@@ -347,7 +347,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
         return score
 
     result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
-    file_path = os.path.join(result_folder, embedding_file)
+    file_path = os.path.join(result_folder, embedding_file,str(delta))
     mkdir(file_path)
     mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")
     linkage_matrix = sch.linkage(encodings, method='complete', metric=custom_metric)  # 'euclidean'
@@ -360,7 +360,6 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     #plt.show()
     # tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
     start_time = time.time()
-    # layers = 4
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
                                          customMatrix=custom_metric, sliceInterval=sliceInterval, delta=delta)
     #print(threCluster_dict)
@@ -411,7 +410,7 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
 
     tables = Ground_t[str(KEYS[index_cols])]
     #print(str(KEYS[index_cols]), tables )
-    score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
+    score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" +f"{str(hp.delta)}/"+ embedding_file + "/"
     # print(score_path)
     mkdir(score_path)
     if len(tables) > 1:

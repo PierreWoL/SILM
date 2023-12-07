@@ -206,6 +206,7 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
         for index, col in enumerate(Z.columns):
             content.append((T[index], np.array(Z[col])))
         embedding_file = f"D3L_{hp.embed}"
+        print(embedding_file)
     else:
         F = open(datafile_path + embedding_file, 'rb')
         content = pickle.load(F)
@@ -218,7 +219,11 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
                    gt_clusters,
                    gt_cluster_dict)
         checkfile = f"{index}_colcluster_dict.pickle"
-        datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+        if "D3L" in embedding_file:
+          datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+                                     "All/" + embedding_file + "/column")
+        else:
+          datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                      "All/" + embedding_file[:-4] + "/column")
         endTimeCC = time.time()
         TimespanCC = endTimeCC - startTimeCC
@@ -230,8 +235,8 @@ def starmie_columnClustering(hp: Namespace, embedding_file: str = None):
             TimespanTH = endTimeTH - startTimeTH
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
                                   columns=['type', 'time'])
-            timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
-                                       "All/" + embedding_file[:-4], "timing.csv"))
+            #timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+                                       #"All/" + embedding_file[:-4], "timing.csv"))
 
     # with ThreadPoolExecutor(max_workers=3) as executor:
     # futures = [executor.submit(colCluster, clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp,
@@ -360,7 +365,9 @@ def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
     print(filename)
     for meth in clustering_method:
         # try:
-        hierarchicalColCluster(meth, filename, embedding_file[0:-4], Ground_t,
+       
+        file_embed = embedding_file[0:-4]  if hp.baseline is False else embedding_file
+        hierarchicalColCluster(meth, filename, file_embed, Ground_t,
                                hp)
 
     # except:
@@ -372,12 +379,13 @@ def files_columns_running(hp: Namespace):
 
     if hp.baseline is True:
         starmie_columnClustering(hp)
-    files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and f"_{hp.embed}_" in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn] and 'Pretrain' in fn and 'subCol' not in fn
-    files = [fn for fn in files if fn.endswith("_column.pkl") and '8' in fn]
-    print(len(files), files)
-    for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]
-        starmie_columnClustering(hp, file)
+    else:
+        files = [fn for fn in os.listdir(datafile_path) if
+             '.pkl' in fn and f"_{hp.embed}_" in fn]  # if fn.endswith('_column.pkl') and hp.embed in fn] and 'Pretrain' in fn and 'subCol' not in fn #if fn.endswith("_column.pkl") and '8' in fn
+        files = [fn for fn in files ]
+        print(len(files), files)
+        for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]
+            starmie_columnClustering(hp, file)
 
 
 def files_hierarchyInference(hp: Namespace):
