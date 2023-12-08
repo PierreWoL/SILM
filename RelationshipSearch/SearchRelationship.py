@@ -75,5 +75,5 @@ def relationshipDiscovery(hp: Namespace):
         with open(os.path.join(target_path, 'Relationships.pickle'), 'wb') as handle:
                 pickle.dump(cluster_relationships, handle, protocol=pickle.HIGHEST_PROTOCOL)
     timing_df = pd.DataFrame(timing)
-    timing_df.to_csv(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+    timing_df.to_csv(os.path.join(os.getcwd(),
                                    f"result/P4/{hp.dataset}/timing.csv"))
