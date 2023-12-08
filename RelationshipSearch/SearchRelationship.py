@@ -44,34 +44,36 @@ def relationshipDiscovery(hp: Namespace):
                     embedding_fileName.append(embedding_col[0])
                 tuple_file = fileName, np.array(embedding_fileName)
                 content.append(tuple_file)
-            print(content)
+            #print(content)
         else:
             content = pickle.load(F)
 
         startTimeS = time.time()
         cluster_relationships = {}
-        for index, type_i in enumerate(types):
-            for type_j in types[index:]:
-                cluster2 = Ground_t[type_i]
-                cluster1 = Ground_t[type_j]
-
-                cluster1_embedding = [i for i in content if i[0] in cluster1]
-                cluster2_embedding = [i for i in content if i[0] in cluster2]
-                relationship1 = entityTypeRelationship(cluster1_embedding, cluster2_embedding, 0.6, SE)
-
-                relationship2 = entityTypeRelationship(cluster2_embedding, cluster1_embedding, 0.6, SE)
-                if len(relationship1) > 0:
-                    cluster_relationships[(type_i, type_j)] = relationship1
-                if len(relationship2) > 0:
-                    cluster_relationships[(type_j, type_i)] = relationship2
-        # print(cluster_relationships)
-        endTimeS = time.time()
-        timing.append({'Embedding File':embedding_file, "timing":endTimeS})
-        target_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+        target_path = os.path.join(os.getcwd(),
                                    f"result/P4/{hp.dataset}/{embedding_file[:-4]}")
+
+        for index, type_i in enumerate(types):
+                for type_j in types[index+1:]:
+                    cluster2 = Ground_t[type_i]
+                    cluster1 = Ground_t[type_j]
+
+                    cluster1_embedding = [i for i in content if i[0] in cluster1]
+                    cluster2_embedding = [i for i in content if i[0] in cluster2]
+                    relationship1 = entityTypeRelationship(cluster1_embedding, cluster2_embedding, 0.6, SE)
+
+                    relationship2 = entityTypeRelationship(cluster2_embedding, cluster1_embedding, 0.6, SE)
+                    if len(relationship1) > 0:
+                        cluster_relationships[(type_i, type_j)] = relationship1
+                    if len(relationship2) > 0:
+                        cluster_relationships[(type_j, type_i)] = relationship2
+        #print(cluster_relationships)
+        endTimeS = time.time()
+        timing.append({'Embedding File': embedding_file, "timing": endTimeS})
+
         mkdir(target_path)
         with open(os.path.join(target_path, 'Relationships.pickle'), 'wb') as handle:
-            pickle.dump(cluster_relationships, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(cluster_relationships, handle, protocol=pickle.HIGHEST_PROTOCOL)
     timing_df = pd.DataFrame(timing)
     timing_df.to_csv(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                    f"result/P4/{hp.dataset}/timing.csv"))
