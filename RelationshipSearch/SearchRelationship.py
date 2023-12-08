@@ -3,14 +3,18 @@ from concurrent.futures import ThreadPoolExecutor
 import pickle
 from argparse import Namespace
 import os
+import time
 
 import numpy as np
 import pandas as pd
 from SubjectColDetect import subjectColumns
 from Utils import mkdir
-from RelationshipSearch.SimilaritySearch import group_files,entityTypeRelationship
-def relationshipDiscovery(hp: Namespace):
 
+from RelationshipSearch.SimilaritySearch import group_files, entityTypeRelationship
+
+
+def relationshipDiscovery(hp: Namespace):
+    timing = []
     subjectColPath = os.path.join(os.getcwd(), f"datasets/{hp.dataset}")
     data_path = os.path.join(subjectColPath, "Test")
     table_names = [i for i in os.listdir(data_path) if i.endswith(".csv")]
@@ -27,22 +31,24 @@ def relationshipDiscovery(hp: Namespace):
 
     print(files, len(files))
     for embedding_file in files:
+
         F = open(os.path.join(datafile_path, embedding_file), 'rb')
         if embedding_file.endswith("_column.pkl"):
             original_content = pickle.load(F)
             content = []
             for fileName in table_names:
                 embedding_fileName = []
-                table = pd.read_csv(os.path.join(data_path,fileName))
+                table = pd.read_csv(os.path.join(data_path, fileName))
                 for col in table.columns:
                     embedding_col = [i[1] for i in original_content if i[0] == f"{fileName[:-4]}.{col}"][0]
                     embedding_fileName.append(embedding_col[0])
-                tuple_file = fileName,np.array(embedding_fileName)
+                tuple_file = fileName, np.array(embedding_fileName)
                 content.append(tuple_file)
             print(content)
         else:
             content = pickle.load(F)
 
+        startTimeS = time.time()
         cluster_relationships = {}
         for index, type_i in enumerate(types):
             for type_j in types[index:]:
@@ -59,8 +65,13 @@ def relationshipDiscovery(hp: Namespace):
                 if len(relationship2) > 0:
                     cluster_relationships[(type_j, type_i)] = relationship2
         # print(cluster_relationships)
+        endTimeS = time.time()
+        timing.append({'Embedding File':embedding_file, "timing":endTimeS})
         target_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                    f"result/P4/{hp.dataset}/{embedding_file[:-4]}")
         mkdir(target_path)
         with open(os.path.join(target_path, 'Relationships.pickle'), 'wb') as handle:
             pickle.dump(cluster_relationships, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    timing_df = pd.DataFrame(timing)
+    timing_df.to_csv(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+                                   f"result/P4/{hp.dataset}/timing.csv"))
