@@ -67,13 +67,13 @@ def relationshipDiscovery(hp: Namespace):
                         cluster_relationships[(type_i, type_j)] = relationship1
                     if len(relationship2) > 0:
                         cluster_relationships[(type_j, type_i)] = relationship2
-        #print(cluster_relationships)
+        print(cluster_relationships)
         endTimeS = time.time()
-        timing.append({'Embedding File': embedding_file, "timing": endTimeS})
+        timing.append({'Embedding File': embedding_file, "timing": endTimeS-startTimeS})
 
         mkdir(target_path)
         with open(os.path.join(target_path, 'Relationships.pickle'), 'wb') as handle:
                 pickle.dump(cluster_relationships, handle, protocol=pickle.HIGHEST_PROTOCOL)
     timing_df = pd.DataFrame(timing)
     timing_df.to_csv(os.path.join(os.getcwd(),
-                                   f"result/P4/{hp.dataset}/timing.csv"))
+                                   f"result/P4/{hp.dataset}/timing_{hp.embed}.csv"))
