@@ -1,5 +1,5 @@
 import argparse
-from TableCluster.tableClustering import silm_clustering, files_columns_running, files_hierarchyInference,baselineTypeClustering
+from TableCluster.tableClustering import P1, P2, P3,endToEnd,baselineP1
 from RelationshipSearch.SearchRelationship import  relationshipDiscovery
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -23,11 +23,14 @@ if __name__ == '__main__':
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     parser.add_argument("--step", type=int, default=1)
-    parser.add_argument("--slice_start", type=int, default=1)
+    parser.add_argument("--slice_start", type=int, default=0)
     parser.add_argument("--slice_stop", type=int, default=1)
 
     parser.add_argument("--intervalSlice", type=int, default=20)
     parser.add_argument("--delta", type=float, default=0.1)
+    parser.add_argument("--similarity", type=float, default=0.6)
+    parser.add_argument("--clustering", type=str, default='Agglomerative') #Agglomerative
+    parser.add_argument("--iteration", type=int, default=1)  # Agglomerative
 
     parser.add_argument("--column", dest="column", action="store_true", default=True)
     # single-column mode without table context
@@ -37,14 +40,25 @@ if __name__ == '__main__':
     parser.add_argument("--phaseTest", dest="phaseTest", action="store_true")
     # for sampling
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
-    # mlflow tag
 
+    parser.add_argument("--topk", type=int, default=0)
+
+    parser.add_argument("--P1Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_none_subCol.pkl')
+    parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')
+    parser.add_argument("--P4Embed", type=str, default='Pretrain_sbert_head_column_none_False.pkl')
+    #TODO Needs to delete later/ or re-code
+    parser.add_argument("--SelectType", type=str, default='')
     hp = parser.parse_args()
     if hp.step == 1:
-        silm_clustering(hp) if hp.baseline is False else baselineTypeClustering(hp)
-    if hp.step == 2:
-        files_columns_running(hp)
-    if hp.step ==3:
-        files_hierarchyInference(hp)
-    if hp.step ==4:
+        P1(hp) if hp.baseline is False else baselineP1(hp)
+    elif hp.step == 2:
+        P2(hp)
+    elif hp.step ==3:
+        P3(hp)
+    elif hp.step ==4:
         relationshipDiscovery(hp)
+    elif hp.step ==-1:
+        endToEnd(hp)
+
+
+

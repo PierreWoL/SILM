@@ -22,7 +22,7 @@ class TableColumnAnnotation:
             self.NE_table.rename(columns={col: str(i)}, inplace=True)
         # print(self.table)
         self.NE_cols = []
-        self.annotate_type(isCombine=isCombine)
+        self.annotate_type()
         # in the NE_columns() self.NE_table is also updated to store the tokens of cells in named_entity columns
         self.NE_columns()
         self.vocabulary = self.vocabularySet()

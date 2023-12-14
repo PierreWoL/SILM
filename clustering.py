@@ -3,6 +3,7 @@ import math
 import os
 import time
 from collections import Counter
+from Utils import most_frequent
 from typing import Optional
 from scipy.spatial.distance import cosine, euclidean
 import experimentalData as ed
@@ -19,9 +20,7 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
-from Graph import consistency_of_cluster
-
-from Utils import naming
+#from Graph import consistency_of_cluster
 from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
 from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.querying.query_engine import QueryEngine
@@ -151,18 +150,18 @@ def initialise_distance_matrix(dataloader, data_path, indexes, k, column=False):
             Neighbours = qe.column_query(col_tuple[1], aggregator=None, k=k)
             for n in Neighbours:
                 (name, similarities) = n
-                #print(name, similarities)
+                # print(name, similarities)
                 if name in L and col_name != name:
                     # print(L[t], L[name])
                     # print(L[name], L[t])
 
                     D[L[col_name], L[name]] = 1 - statistics.mean([float(sim) for sim in similarities])
                     D[L[name], L[col_name]] = 1 - statistics.mean([float(sim) for sim in similarities])
-                    #print(L[col_name], L[name],similarities, D[L[col_name], L[name]] )
+                    # print(L[col_name], L[name],similarities, D[L[col_name], L[name]] )
 
         cols = [i[0] for i in columns]
-        #for row in D:
-            #print(row)
+        # for row in D:
+        # print(row)
         return D, cols
 
     else:
@@ -187,7 +186,7 @@ def initialise_distance_matrix(dataloader, data_path, indexes, k, column=False):
 
 
 def distance_matrix(data_path, index, k, column=False):
-    print(index)
+    # print(index)
     dataloader = CSVDataLoader(root_path=(data_path), encoding='latin1')
     # before_distance_matrix = time()
     D, T = initialise_distance_matrix(dataloader, data_path, index, k, column=column)
@@ -212,7 +211,7 @@ def inputData(data_path, threshold, k, LM, subjectCol=False, column=False):
         indexes = create_or_find_indexes(data_path, threshold, LM=LM,
                                          subjectCol=subjectCol)
         Z, T = distance_matrix(data_path, indexes, k, column=column)
-        #print("Z,T is ", Z, T)
+        # print("Z,T is ", Z, T)
         file = (Z, T)
         pickle_python_object(file, ZT_Files)
     return Z, T
@@ -319,12 +318,12 @@ def KMeans_param_search(input_data, cluster_num):
     return best_model, best_model.labels_
 
 
-def AgglomerativeClustering_param_search(input_data, cluster_num):
+def AgglomerativeClustering_param_search(input_data, cluster_num_min, cluster_num_max):
     input_data = np.array(input_data, dtype=np.float32)
     score = -1
     best_model = AgglomerativeClustering()
-    at_least = math.ceil(cluster_num // 4 * 3) + 2
-    for n_clusters in range(at_least,23 , 1):  #math.ceil(2.5* cluster_num), 3* cluster_num+10
+    #at_least = math.ceil(cluster_num // 4 * 3) + 2
+    for n_clusters in range(cluster_num_min,cluster_num_max, 1):  # math.ceil(2.5* cluster_num), 3* cluster_num+10
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
@@ -408,11 +407,9 @@ def metric_Spee(labels_true, labels_pred):
             "ARI": adjusted_random_score, "FMI": FMI}
 
 
+"""
 def most_frequent(list1, isFirst=True):
-    """
-    count the most frequent occurring annotated label in the cluster
-    """
-
+   
     count = Counter(list1)
     if isFirst is True:
         return count.most_common(1)[0][0]
@@ -421,7 +418,7 @@ def most_frequent(list1, isFirst=True):
         max_frequency = most_common_elements[0][1]
         most_common_elements_list = [element for element, frequency in most_common_elements if
                                      frequency == max_frequency]
-        return most_common_elements_list
+        return most_common_elements_list"""
 
 
 def most_frequent_list(nested_list):
@@ -543,7 +540,6 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
     columns = []
     columns_ref = []
     for index, column_list in clusterDict.items():
-
         labels = []
         for column in column_list:
             if column in gtclusters.keys():
@@ -556,7 +552,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
                 else:
                     gt_column_label.append(gtclusters_dict[label])
                     labels.append(label)
-        # print("Start iterating in cluster of column", column_list,labels,gt_column_label)
+
         if len(labels) == 0:
             continue
         else:
@@ -693,14 +689,15 @@ def evaluate_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=None
     return Z, T"""
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None):  # , graph = None
+def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, numEstimate=0):  # , graph = None
     star_time = time.time()
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
     gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
     del ground_t0, gt_cluster_dict0
+    number_estimate = len(gt_cluster_dict) if numEstimate==0 else numEstimate
+    # print(number_estimate)
+    """
     parameters = []
-    number_estimate = len(gt_cluster_dict)
-    print(number_estimate)
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -715,7 +712,10 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
         parameters = BIRCH_param_search(input_data, number_estimate)
     clusters = cluster_discovery(parameters, tables)
     cluster_dict = cluster_Dict(clusters)
-
+    """
+    min = number_estimate
+    max = 3* number_estimate
+    cluster_dict = clustering(input_data, tables, min, clusteringName,max=max)
     """
     # THE FOLLOWING IS TO USE TSNE to show 2D figure of existing clusters
     tsne = TSNE(n_components=2, perplexity=30, random_state=0)
@@ -738,7 +738,6 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
     fig.write_html("output_plot2.html")"""
     # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
-
     end_time = time.time()
     time_difference_run = end_time - star_time
 
@@ -752,11 +751,30 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
     return cluster_dict, metrics_value
 
 
+def clustering(input_data, data_names, number_estimate, clustering_method, max=None):
+    parameters = []
+    if clustering_method == "DBSCAN":
+        parameters = dbscan_param_search(input_data)
+    if clustering_method == "GMM":
+        parameters = gaussian_m_param_search(input_data, number_estimate)
+    if clustering_method == "Agglomerative":
+        parameters = AgglomerativeClustering_param_search(input_data, number_estimate,max)
+    if clustering_method == "OPTICS":
+        parameters = OPTICS_param_search(input_data)
+    if clustering_method == "KMeans":
+        parameters = KMeans_param_search(input_data, number_estimate)
+    if clustering_method == "BIRCH":
+        parameters = BIRCH_param_search(input_data, number_estimate)
+    clusters = cluster_discovery(parameters, data_names)
+    cluster_dict = cluster_Dict(clusters)
+    return cluster_dict
+
+
 def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     star_time = time.time()
-    parameters = []
     number_estimate = len(gt_cluster_dict) // 3
+    """parameters = []
     if clusteringName == "DBSCAN":
         parameters = dbscan_param_search(input_data)
     if clusteringName == "GMM":
@@ -770,7 +788,10 @@ def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, c
     if clusteringName == "BIRCH":
         parameters = BIRCH_param_search(input_data, number_estimate)
     clusters = cluster_discovery(parameters, columns)
-    cluster_dict = cluster_Dict(clusters)
+    cluster_dict = cluster_Dict(clusters)"""
+    min = number_estimate
+    max = 2*number_estimate
+    cluster_dict = clustering(input_data, columns, min, clusteringName,max=max )
     end_time = time.time()
     time_difference_run = end_time - star_time
 

@@ -1,9 +1,10 @@
 import os
+import re
 
 import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModel, AutoConfig
-
+from collections import Counter
 import TableAnnotation as TA
 from SubjectColumnDetection import ColumnType
 
@@ -55,7 +56,20 @@ def subjectCol(table: pd.DataFrame, combine=False):
             sub_cols_header = [table.columns[key]]
             break
     return sub_cols_header
+def most_frequent(list1, isFirst=True):
+    """
+    count the most frequent occurring annotated label in the cluster
+    """
 
+    count = Counter(list1)
+    if isFirst is True:
+        return count.most_common(1)[0][0]
+    else:
+        most_common_elements = count.most_common()
+        max_frequency = most_common_elements[0][1]
+        most_common_elements_list = [element for element, frequency in most_common_elements if
+                                     frequency == max_frequency]
+        return most_common_elements_list
 example_clusters = {112: ['2-1180976-1.html.name', '2-1180976-2.html.model'],
                     4: ['2-1180976-1.html.power', '2-1180976-1.html.torque', '2-1415652-1.html.power'],
                     5: ['2-1180976-1.html.size', '1-1212189-1.html.capacity', '2-1212189-1.html.capacity', '2-1530048-1.html.displacement'],
@@ -135,6 +149,7 @@ def naming(InitialNames, threshold= 0):
     GivenEntities = {}
 
     for name in InitialNames:
+        name = re.sub(r'\d', '', name)
         tokens = nltk.word_tokenize(name)
         Entities = namedEntityRecognition(tokens)
         Synonyms = set()
@@ -158,6 +173,9 @@ def naming(InitialNames, threshold= 0):
     most_frequent_terms = [term for term, freq in sorted_frequency if freq > threshold]
     if len(most_frequent_terms)==0:
         most_frequent_terms = [term for term, freq in sorted_frequency if freq > 0]
+        if len(most_frequent_terms)==0:
+            most_frequent_terms =[""]
+            #
     #print("Most Frequent Terms:", most_frequent_terms)
     # Given data
     return most_frequent_terms

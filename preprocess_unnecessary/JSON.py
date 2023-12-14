@@ -186,3 +186,16 @@ def write_line(csv_name, row: list):
 # parameters = dbscan_param_search(ed.WDCsamplePath, indexes)
 # print(parameters)
 # clusters = cluster_discovery(ed.WDCsamplePath,parameters)
+"""files_exclude = list(pd.read_csv("E:\datasets\Backups\classes_GS.csv")["fileName"])
+files_exclude = [i.replace(".tar.gz","") for i in files_exclude]
+T2DV2("E:\datasets\Backups\\tables\\").copy("E:\datasets\Backups\\T2DV2\\")
+tables = [table for table in os.listdir("E:\datasets\Backups\\T2DV2\\") if table[:-4] not in files_exclude]
+sum = 0
+for table in tables:
+    sum += len(pd.read_csv(f"E:\datasets\Backups\\T2DV2\{table}").columns)
+print(sum)"""
+tables = [table for table in os.listdir("E:\datasets\Backups\Test\\")]
+sum = 0
+for table in tables:
+    sum += len(pd.read_csv(f"E:\datasets\Backups\Test\{table}").columns)
+print(sum)

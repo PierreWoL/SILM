@@ -333,8 +333,6 @@ with open(f"result/embedding/starmie/vectors/TabFact/{i}.pkl", "rb") as file:
     print(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
     embedding_i = pickle.load(file)
 print(len(embedding_i),embedding_i[0])"""
-df_A = pd.read_csv('datasets/TabFact/groundTruth.csv',encoding='latin1')
-tables = df_A["fileName"].unique()
 
 """for i in subCol:
     df_B = pd.read_csv(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/Subject_Col/{i}/overall_clustering.csv") #_subCol
@@ -380,3 +378,18 @@ for i in pre:
         embedding_new.append((name, vector))
     with open(os.path.join(path, f"{i}N.pkl"), "wb") as file:
         pickle.dump(embedding_new, file)"""
+dataset = "WDC"
+"""a = pd.read_csv(f"D:\CurrentDataset\datasets\{dataset}\SBERT_header_columnRelationships.csv") #columnRelationships
+print(a.columns)
+gt_dict = {}
+for index, row in a.iterrows():
+    type_pairs = row['Type1'], row['Type2']
+    if type_pairs not in gt_dict:
+        gt_dict[type_pairs] = [(row['SubAttribute'], row['Attribute'])]
+    else:
+        if (row['SubAttribute'], row['Attribute']) not in gt_dict[type_pairs]:
+            gt_dict[type_pairs].append((row['SubAttribute'], row['Attribute']))
+for key,value in gt_dict.items():
+    print(key,value)
+with open(f'D:\CurrentDataset\datasets\{dataset}\Relationship_gt.pickle', 'wb') as handle:
+    pickle.dump(gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)"""

@@ -24,18 +24,22 @@ def entityTypeRelationship(cluster1, cluster2, threshold, EntityColumns):
     for table_1, table1_embedding in cluster1:
         NE_list_1, columns1, types1 = EntityColumns[table_1]
         subjectCol_1_embedding = table1_embedding[NE_list_1[0]] if len(NE_list_1) != 0 else table1_embedding[0]
-
+        subcol1= columns1[NE_list_1[0]] if len(NE_list_1) != 0 else columns1[0]
         for table_2, table2_embedding in cluster2:
             similar_pairs = {}
 
             NE_list_2, columns2, types2 = EntityColumns[table_2]
+
             NE_embeddings2 = np.array([table2_embedding[i] for i in NE_list_2]) if len(
                 NE_list_2) != 0 else table2_embedding
             NE_columns = [columns2[i] for i in NE_list_2] if len(NE_list_2) != 0 else columns2
             for index, j in enumerate(NE_embeddings2):
                 similarity = calculate_similarity(subjectCol_1_embedding, j)
+
                 if similarity > threshold:
                     similar_pairs[NE_columns[index]] = similarity
+
+
             # if len(similar_pairs)==0:
             # similar_pairs[most_similar_col] = highest_sim
             if len(similar_pairs) != 0:
@@ -43,15 +47,6 @@ def entityTypeRelationship(cluster1, cluster2, threshold, EntityColumns):
     return table_pairs
 
 
-"""def group_files_by_superclass(df):
-    superclass_dict = {}
-    df['superclass'] =df['superclass'].apply(eval)
-    for superclass in df['superclass'].unique():
-        print(superclass)
-        files = df[df['superclass'].apply(lambda x: x == superclass)]['fileName'].tolist()
-        superclass_dict[str(superclass)] = files
-    return superclass_dict
-"""
 
 
 def group_files(df):

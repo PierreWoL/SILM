@@ -183,7 +183,7 @@ def drawing():
         #box_plot(df_P_A, colors, y_name, name, fn)
 
 
-drawing()
+#drawing()
 """
 df_RI_A = pd.read_excel(os.path.join(data_path, "RI.xlsx"),sheet_name=algo[0])
 print(df_RI_A,len(df_RI_A.columns)-1)

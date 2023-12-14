@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from Step2_1 import reName
 colors = get_n_colors(6)
-def TreeConsistency():
+def TreeConsistency(num):
     box_colorsM = colors
     for algorithm in algo:
         overall_tcs = {}
-        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/SILM/WDC/") #SILM WDC
+        data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),f"result/SILM/GDS/{num}/") #SILM WDC
         folders = [fn for fn in os.listdir(data_path) if "." not in fn and "_" in fn and '5' not in fn]
         print(folders)
         for index, fold in enumerate(folders):
@@ -36,8 +36,9 @@ def TreeConsistency():
         fn = os.path.join(data_path, algorithm+"_overall_tcs.png")
         #box_plot(df2, box_colorsM, y_name, title, fn)
 
+for i in [ 0.12]:
+    TreeConsistency(i)
 
-TreeConsistency()
 
 
 def Layer_Purity(i):
