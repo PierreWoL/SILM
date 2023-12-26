@@ -13,6 +13,7 @@ import scipy.cluster.hierarchy as sch
 from ClusterHierarchy.JaccardMetric import JaccardMatrix
 from Utils import mkdir
 from clustering import data_classes
+from interactiveFigure import draw_interactive_graph
 
 
 def find_frequent_labels(ancestors: list, G: nx.DiGraph()):
@@ -123,7 +124,6 @@ def updateNodeInfo(tree, clusterNode, tables, dataset, mode=0):
     tree.nodes[clusterNode]['Purity'] = freq / len(tables)
 
 
-
 def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
     # print(len(table_names))
     lowest_layer = []
@@ -173,7 +173,9 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
                             if is_subset is True:
                                 typeNode = 'data cluster node' if index != len(threCluster_dict) - 1 \
                                     else 'data cluster node parent layer'
+                                ### TODO this is  a bit strange here
                                 labelMode = 0 if index != len(threCluster_dict) - 1 else 2
+                                # labelMode = 0
                                 tables = [table_names[ta] for ta in tables_idx]
                                 simple_tree.add_node(clusterNodeId, type=typeNode)
                                 updateNodeInfo(simple_tree, clusterNodeId, tables, dataset, mode=labelMode)
@@ -193,6 +195,7 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
 
     Top_layer = [i for i in simple_tree.nodes() if simple_tree.in_degree(i) == 0]
     # PKL.hierarchy_tree(simple_tree)
+    print(lowest_layer)
     return simple_tree, lowest_layer, Top_layer
 
 
@@ -330,7 +333,7 @@ def TreeConsistencyScore(tree, lowest_layer, top_layer, dataset):
 
 
 def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file, dataset, Naming=None,
-                            sliceInterval=10, delta=0.1):
+                            sliceInterval=10, delta=0.1,targetName = None):
     """data_path = os.path.join(os.getcwd(), "datasets", dataset, "groundTruth.csv")
     ground_truth_csv = pd.read_csv(data_path, encoding='latin1')"""
     encodings = [[i] for i in range(0, len(tables))]
@@ -356,6 +359,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     # plt.xticks(rotation=30)
     # plt.show()
     # tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
+    # PKL.hierarchy_tree(tree_test)
     start_time = time.time()
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
                                          customMatrix=custom_metric, sliceInterval=sliceInterval, delta=delta)
@@ -365,11 +369,17 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     timing['Finding Layers'] = {'timing': end_time - start_time}
     # elapsed_time = end_time - start_time
     # print(f"Elapsed time: {elapsed_time:.4f} seconds for finding the best clusters")
+
     if threCluster_dict == []:  # len(threCluster_dict) == 1 and threCluster_dict[0][1] is None
         print("no hierarchy!")
-        return 0, 0,None
+        return 0, 0, None
     simple_tree, lower_layer, top_layer = \
         simple_tree_with_cluster_label(threCluster_dict, tables, dataset)
+
+    #simple_tree = PKL.hierarchy_tree(simple_tree)
+    # file_path = f"result/SILM/WDC/"
+    # draw_interactive_graph(simple_tree,file_path=f"figure/SCT8_SBERT_HI/{targetName}.html")
+
     start_time = time.time()
     TCS, len_path = TreeConsistencyScore(simple_tree, lower_layer, top_layer, dataset)
     end_time = time.time()
@@ -412,10 +422,9 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
 
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
-    print(col_cluster)
+    # print(col_cluster)
 
     tables = Ground_t[str(KEYS[index_cols])]
-    print("tables", tables)
     # print(str(KEYS[index_cols]), tables )
     score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + f"{str(hp.delta)}/" + embedding_file + "/"
     # print(score_path)
@@ -426,7 +435,7 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
         TCS, ALL_path, simple_tree = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file,
                                                              hp.dataset,
                                                              str(index_cols), sliceInterval=hp.intervalSlice,
-                                                             delta=hp.delta)
+                                                             delta=hp.delta,targetName=str(index_cols))
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'), index_col=0)
         else:

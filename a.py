@@ -393,3 +393,18 @@ for key,value in gt_dict.items():
     print(key,value)
 with open(f'D:\CurrentDataset\datasets\{dataset}\Relationship_gt.pickle', 'wb') as handle:
     pickle.dump(gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)"""
+
+df = pd.read_csv("datasets/WDC/column_gt.csv",encoding="latin1")
+df_place = df[df['TopClass'].apply(lambda x: "['Place']" in x)]
+print(len(df_place))
+# Group by 'ColumnLabel' and count unique values
+column_label_group = df_place.groupby('ColumnLabel').agg({'fileName': pd.Series.nunique})
+
+# Reset index to make 'ColumnLabel' a column again
+column_label_group = column_label_group.reset_index()
+
+# Rename the columns for clarity
+column_label_group.columns = ['ColumnLabel', 'UniqueFileCount']
+column_label_group.sort_values(by='UniqueFileCount', ascending=False).reset_index(drop=True)
+column_label_group.to_csv("datasets/WDC/aggre_place.csv")
+print(column_label_group)
