@@ -112,29 +112,3 @@ def InsertOperation(table_pairs, table_i, table_j, cols_i, cols_j, table_path):
     Distinct_cols_j = [table_j + "." + i for i in table_j_headers.columns.tolist()]
     table_pairs[(table_i, table_j)] = {'MatchCol': all_matched, 'Matchscore': 1,
                                        'Distinct': Distinct_cols_i + Distinct_cols_j}
-"""
-
-embedding_file_path = "cl_drop_num_col_lm_roberta_head_column_0_subjectheader"
-datafile_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), "result/starmie/TabFact",
-                             "All/" + embedding_file_path + "/column")
-# datafile_path = os.path.join(os.getcwd(),"result/starmie/TabFact","All/" +  embedding_file_path+ "/column")
-ground_truth_table = os.path.abspath(os.path.dirname(os.getcwd())) + "/datasets/TabFact/groundTruth.csv"
-data_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/datasets/TabFact/Test/"
-Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
-
-target_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/result/Valerie/Column/TabFact/_gt_cluster.pickle"
-F_cluster = open(target_path, 'rb')
-KEYS = pickle.load(F_cluster)
-
-files = [fn for fn in os.listdir(datafile_path) if fn.endswith('.pickle')]
-inx = 12
-example_file = files[inx]  # 12
-F_cluster = open(os.path.join(datafile_path, example_file), 'rb')
-col_cluster = pickle.load(F_cluster)
-index_cols = example_file = int(files[inx].split("_")[0])
-tables = Ground_t[KEYS[index_cols]]
-print(tables)
-# table_pair = matrix(tables, data_path)
-jaccard_score = JaccardMatrix(col_cluster["Agglomerative"], data_path)[2]
-print(jaccard_score)
-"""

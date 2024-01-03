@@ -24,7 +24,7 @@ print(f"{node_A} 的出节点列表：{successors_list}")
 print(f"{node_A} 祖先列表：{asn}")
 print(f"{node_A} 不知道什么玩意：{te}")
 dataset = "WDC"
-path = 'result/embedding/starmie/vectors/%s' % dataset
+path = 'result/embedding/%s' % dataset
 files = [file for file in os.listdir(path) if "Pretrain" not in file and file.endswith("pkl")]
 for file in files:
     with open(os.path.join(path, file), "rb") as f:

@@ -16,6 +16,15 @@ from clustering import data_classes
 from interactiveFigure import draw_interactive_graph
 
 
+def tables_of_node(tree: nx.DiGraph(), node):
+    successors_of_node = list(nx.descendants(tree, node))
+    tables = tree.nodes[node]['Tables']
+    if successors_of_node:
+        for successor in successors_of_node:
+            tables.extend(tree.nodes[successor]['Tables'])
+    return tables
+
+
 def find_frequent_labels(ancestors: list, G: nx.DiGraph()):
     # All parent nodes
     indegrees = [G.in_degree(parent) for parent in ancestors]
@@ -45,60 +54,33 @@ def labels_most_fre(datas: dict):
     return most_common_labels, max_frequency
 
 
-def ground_truth_labels(filename, mode=0, dataset="TabFact"):
-    if mode > 2:
-        print("wrong label mode!")
-        return None
-    ground_label_name1 = "groundTruth.csv"  #
-    data_path = os.path.join(os.getcwd(), "datasets/" + dataset, ground_label_name1)
-    ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
-    target_path = os.path.join(os.getcwd(), "datasets/" + dataset)
+def jaccard_similarity(list1, list2):
+    set1 = set(list1)
+    set2 = set(list2)
+
+    intersection = set1.intersection(set2)
+    union = set1.union(set2)
+    if not union:
+        return 0
+    jaccard_sim = len(intersection) / len(union)
+    return jaccard_sim
+
+
+def label_dict(tables: list, dataset="WDC"):
+    target_path = f"datasets/{dataset}"
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
-
-    top_nodes = [i for i in G.nodes() if G.in_degree(i) == 0]
-    successors = [succ for node in top_nodes for succ in G.successors(node)]
-
-    row = ground_truth_csv[ground_truth_csv['fileName'] == filename]
-
-    classX = [row["class"].iloc[0]] if dataset != "TabFact" else ast.literal_eval(row["class"].iloc[0])  # LowestClass
-
-    if mode == 0:
-        return classX
-    elif mode == 1:
-        # Return the intermedia type of this cluster
-        all_anc = []
-        for class_file in classX:
-            if class_file in G.nodes():
-                ancestors = [i for i in nx.ancestors(G, class_file)
-                             if i not in successors and i not in top_nodes and G.out_degree(i) != 0]
-                all_anc.extend(ancestors)
-
-        if len(all_anc) == 0:
-            all_anc = classX
-
-        return all_anc
-
-    elif mode == 2:
-        # Return the top level type of this cluster
-        all_anc = []
-        for class_file in classX:
-            if class_file in G.nodes():
-                ancestors = [i for i in nx.ancestors(G, class_file) if i in successors]
-                all_anc.extend(ancestors)
-        if len(all_anc) == 0:
-            all_anc = classX
-
-        return all_anc
-
-
-def label_dict(tables: list, mode=0, dataset="TabFact"):
-    dict_table_labels = {}
-
-    for table in tables:
-        dict_table_labels[table] = ground_truth_labels(table + ".csv", mode=mode, dataset=dataset)
-
-    return dict_table_labels
+    matched_node = []
+    jaccardSim = 0
+    for node, attrs in G.nodes(data=True):
+        tables_node = tables_of_node(G, node)
+        sim = jaccard_similarity(tables, tables_node)
+        if sim >= jaccardSim:
+            jaccardSim = sim
+            matched_node = [node]
+        elif sim == jaccardSim:
+            matched_node.append(node)
+    return matched_node, jaccardSim
 
 
 def no_intersection(list1, list2):
@@ -110,41 +92,45 @@ def no_intersection(list1, list2):
         return False
 
 
-def updateNodeInfo(tree, clusterNode, tables, dataset, mode=0):
-    label_dict_cluster = label_dict(list(tables), mode=mode, dataset=dataset)  # True
-    labels, freq = labels_most_fre(label_dict_cluster)
+def updateNodeInfo(tree, clusterNode, tables, dataset):
+    labels, sim = label_dict(list(tables), dataset=dataset)  # True
+
     tree.nodes[clusterNode]['label'] = labels
     tree.nodes[clusterNode]['tables'] = tables
+
     wrong_labels = {}
-    for i in tables:
-        if no_intersection(label_dict_cluster[i], tree.nodes[clusterNode]['label']) is True:
-            # this have problems
-            wrong_labels[i] = label_dict_cluster[i]
-    tree.nodes[clusterNode]['Wrong_labels'] = wrong_labels
-    tree.nodes[clusterNode]['Purity'] = freq / len(tables)
+    # tree.nodes[clusterNode]['Wrong_labels'] = wrong_labels
+    tree.nodes[clusterNode]['Purity'] = sim
 
 
 def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
     # print(len(table_names))
     lowest_layer = []
-
     simple_tree = nx.DiGraph()
+    target_path = f"datasets/{dataset}"
+    table_gt = pd.read_csv(os.path.join(target_path, "groundTruth.csv"))
     for table in table_names:
-        label_dict_cluster = label_dict([table], mode=0, dataset=dataset)  # True
-        labels, freq = labels_most_fre(label_dict_cluster)
+        if table + ".csv" in list(table_gt['fileName']):
+            labels = list(table_gt[table_gt['fileName'] == table + ".csv"]['class'])
+        else:
+            labels = []
         simple_tree.add_node(table, type='data', label=labels)
     clusterNodeId = len(table_names)
     last_layer_info = {}
     for index, (thre, clusters) in enumerate(threCluster_dict):
         layer_current = {}
-        # print("the threshold is ", "{:.3f}".format(thre), "the cluster size is ", len(clusters))
+        # print("the threshold is ", "{:.3f}".format(thre), "the cluster size is ", len(clusters), len(table_names))
         # print(f"current cluster {len(clusters), clusters}")
+        """
+        If index is 0, that means the lowest layer 
+        """
         if index == 0:
             for cluster_id, tables_id in clusters.items():
                 if len(tables_id) > 1:
                     tables = [table_names[ta] for ta in tables_id]
                     simple_tree.add_node(clusterNodeId, type='data cluster node')
-                    updateNodeInfo(simple_tree, clusterNodeId, tables, dataset, mode=0)
+
+                    updateNodeInfo(simple_tree, clusterNodeId, tables, dataset)
                     lowest_layer.append(clusterNodeId)
 
                     for ta in tables_id:
@@ -173,12 +159,11 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
                             if is_subset is True:
                                 typeNode = 'data cluster node' if index != len(threCluster_dict) - 1 \
                                     else 'data cluster node parent layer'
-                                ### TODO this is  a bit strange here
-                                labelMode = 0 if index != len(threCluster_dict) - 1 else 2
+
                                 # labelMode = 0
                                 tables = [table_names[ta] for ta in tables_idx]
                                 simple_tree.add_node(clusterNodeId, type=typeNode)
-                                updateNodeInfo(simple_tree, clusterNodeId, tables, dataset, mode=labelMode)
+                                updateNodeInfo(simple_tree, clusterNodeId, tables, dataset)
                                 simple_tree.add_edge(clusterNodeId, current_idz)
                                 left_tables = [i for i in left_tables if i not in tables_idz]
                                 checked_ids.append(cluster_idz)
@@ -195,77 +180,29 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
 
     Top_layer = [i for i in simple_tree.nodes() if simple_tree.in_degree(i) == 0]
     # PKL.hierarchy_tree(simple_tree)
-    print(lowest_layer)
+
     return simple_tree, lowest_layer, Top_layer
 
 
-"""
-def TreeConsistencyScore(tree, layer_info, Parent_nodes, strict=True, dataset="TabFact"):
-    target_path = os.path.join(os.getcwd(), "datasets/" + dataset)
-    with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
-        G = pickle.load(file)
-    all_pathCompatibility = []
-
-    ind, ind_o = 0, 0
-    for cluster, (closest_parent, mutual_parent_nodes) in layer_info.items():
-        path = sorted(list(mutual_parent_nodes))
-        ind_o += 1
-        for indexp, (clusterP, closest_parentP) in enumerate(Parent_nodes.items()):
-            if closest_parentP in path:
-                superLabels = tree.nodes[closest_parentP].get('label', 0)
-                path = path[0:path.index(closest_parentP)]
-                MatchedElementPath = len(path)
-                MatchedElementGT = 0
-                if len(path) > 0:
-                    ind += 1
-                    for index, i in enumerate(path):
-                        label = tree.nodes[i].get('label', 0)
-                        if label != 0:
-                           
-                           # print(f" Node: {i}", f" Type: {tree.nodes[i].get('type', 0)} \n",
-                             #     f" cluster label: {label} \n",
-                             #     f" Purity: {tree.nodes[i].get('Purity', 0)} \n"
-                            #      f" Data: {tree.nodes[i].get('data', 0)} \n")
-                                  
-                            if superLabels != 0:
-                                if strict is False:
-                                    topmost_parent = []
-                                    for label_per in label:
-                                        ancestors = list(nx.ancestors(G, label_per))
-                                        if len(ancestors) == 0:
-                                            freq_final = [label_per]
-                                        else:
-                                            freq_final = find_frequent_labels(ancestors, G)[0]
-                                        for la in freq_final:
-                                            topmost_parent.append(la)
-                                        # print(F'topmost_parent label of {label_per} is {topmost_parent}')
-
-                                        for superLabel in topmost_parent:
-                                            if superLabel in superLabels:
-                                                MatchedElementGT += 1
-                                                break  # Break out of the inner loop when the condition is met
-                                        else:
-                                            continue
-                                        break
-                                else:
-                                    for label_per in label:
-                                        if label_per in superLabels:
-                                            MatchedElementGT += 1
-                                            break
-                        else:
-                            MatchedElementPath -= 1
-                        if index == 0 and MatchedElementGT == 0:
-                            break
-                    if MatchedElementPath != 0:
-                        pathCompatibility = MatchedElementGT / MatchedElementPath
-                        all_pathCompatibility.append(pathCompatibility)
-    if len(all_pathCompatibility) != 0:
-        tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
-    else:
-        tree_consistency_score = None
-
-    return tree_consistency_score, len(all_pathCompatibility)
-"""
+def find_most_similar_lists(base_list, other_lists):
+    max_similarity = 0
+    most_similar_lists = []
+    for lst in other_lists:
+        if isinstance(base_list[0], str):
+            matched = [i for i in base_list if i in lst]
+            if len(matched) > max_similarity:
+                max_similarity = len(matched)
+                most_similar_lists = lst
+            return most_similar_lists, max_similarity
+        elif isinstance(base_list[0], list):
+            noIntersection = []
+            for a in base_list:
+                if not any(set(a).intersection(set(lst))):
+                    noIntersection.append(a)
+                if len(base_list) - len(noIntersection) > max_similarity:
+                    max_similarity = len(base_list) - len(noIntersection)
+                    most_similar_lists = [i for i in base_list if i not in noIntersection]
+                return most_similar_lists, max_similarity
 
 
 def TreeConsistencyScore(tree, lowest_layer, top_layer, dataset):
@@ -276,64 +213,61 @@ def TreeConsistencyScore(tree, lowest_layer, top_layer, dataset):
 
     all_paths = []
     for bottom_node in lowest_layer:
+
         for top_node in top_layer:
             paths = list(nx.all_simple_paths(tree, top_node, bottom_node))
             all_paths.extend(paths)
     for path in all_paths:
-        matchedElement_GT = 0
-        matchedElement = 0
+
         types_path = [tree.nodes[i]['label'] for i in path]
         has_path = False
-        intersection = set(types_path[0]).intersection(set(types_path[-1]))
-        if intersection:
-            matchedElement = len(types_path)
-            for index, types in enumerate(types_path):
-                if index == 0 or index == len(types_path) - 1:
-                    matchedElement_GT += 1
-
+        possible_paths = []
+        bottom = types_path[-1]
+        tops = types_path[0]
+        special = False
+        for top_node in tops:
+            for bottom_node in bottom:
+                if bottom_node == top_node:
+                    has_path = True
+                    special = True
+                    continue
                 else:
-                    intersection_other = set(types_path[0]).intersection(set(types))
-                    if intersection_other:
-                        matchedElement_GT += 1
-            perConsistencyS = matchedElement_GT / matchedElement
-
-        else:
-            possible_paths_elements = set()
-            for top_node in types_path[0]:
-                for bottom_node in types_path[-1]:
                     if nx.has_path(G, top_node, bottom_node):
                         paths = list(nx.all_simple_paths(G, top_node, bottom_node))
                         has_path = True
-                        matchedElement = len(types_path)
-                        for sublist in paths:
-                            possible_paths_elements.update(sublist)
+                        for subpath in paths:
+
+                            possible_paths.append(subpath)
                     elif nx.has_path(G, bottom_node, top_node):
                         paths = list(nx.all_simple_paths(G, bottom_node, top_node))
                         has_path = True
-                        matchedElement = len(types_path)
-                        for sublist in paths:
-                            possible_paths_elements.update(sublist)
-            if has_path is False:
-                perConsistencyS = 0
-                # print(types_path, perConsistencyS)
+                        for subpath in paths:
+
+                            possible_paths.append(subpath)
+
+        if has_path is False:
+            #print("No path!", path, types_path, possible_paths)
+            perConsistencyS = 0
+        else:
+
+            if special is True and possible_paths == []:
+                #print("Direct!", types_path)
+                perConsistencyS = 1
+
             else:
-                for index, types in enumerate(types_path):
-                    if index == 0 or index == len(types_path) - 1:
-                        matchedElement_GT += 1
+                matchedElement = len(types_path)
 
-                    else:
-                        intersection_other = set(possible_paths_elements).intersection(set(types))
-                        if intersection_other:
-                            matchedElement_GT += 1
+                most_similar_path, matchedElement_GT = find_most_similar_lists(types_path, possible_paths)
+
                 perConsistencyS = matchedElement_GT / matchedElement
-
+                #print("path types_path, possible paths", types_path, possible_paths, perConsistencyS)
         overall_path_score += perConsistencyS
     overall_path_score = overall_path_score / len(all_paths) if len(all_paths) > 0 else 1
     return overall_path_score, len(all_paths)
 
 
 def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file, dataset, Naming=None,
-                            sliceInterval=10, delta=0.1,targetName = None):
+                            sliceInterval=10, delta=0.1, targetName=None):
     """data_path = os.path.join(os.getcwd(), "datasets", dataset, "groundTruth.csv")
     ground_truth_csv = pd.read_csv(data_path, encoding='latin1')"""
     encodings = [[i] for i in range(0, len(tables))]
@@ -351,7 +285,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
             score = JaccardMatrix[(table2, table1)]
         return score
 
-    linkage_matrix = sch.linkage(encodings, method='complete', metric=custom_metric)  # 'euclidean'
+    linkage_matrix = sch.linkage(encodings, method='single', metric=custom_metric)  # 'euclidean' # ward  complete
 
     # table_ids = [i for i in range(0, len(tables))]
     # plt.figure(figsize=(10, 7))
@@ -376,7 +310,7 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
     simple_tree, lower_layer, top_layer = \
         simple_tree_with_cluster_label(threCluster_dict, tables, dataset)
 
-    #simple_tree = PKL.hierarchy_tree(simple_tree)
+    # simple_tree = PKL.hierarchy_tree(simple_tree)
     # file_path = f"result/SILM/WDC/"
     # draw_interactive_graph(simple_tree,file_path=f"figure/SCT8_SBERT_HI/{targetName}.html")
 
@@ -419,7 +353,6 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
     index_cols = int(filename.split("_")[0])
     # print("index col", index_cols, "\n")
     print(KEYS[index_cols])
-
     F_cluster = open(os.path.join(datafile_path, filename), 'rb')
     col_cluster = pickle.load(F_cluster)
     # print(col_cluster)
@@ -435,7 +368,7 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
         TCS, ALL_path, simple_tree = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file,
                                                              hp.dataset,
                                                              str(index_cols), sliceInterval=hp.intervalSlice,
-                                                             delta=hp.delta,targetName=str(index_cols))
+                                                             delta=hp.delta, targetName=str(index_cols))
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'), index_col=0)
         else:
@@ -458,73 +391,3 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
             df.loc[str(index_cols) + clustering, 'ClusteringAlgorithm'] = clustering
             # print(df)
             df.to_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'))
-
-
-"""
-def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, table_names, timing, dataset):
-    layer_info_dict = {}
-    Parent_nodes_h = {}
-    simple_tree = None
-    lowerNodes = None
-    for index, (thre, clusters) in enumerate(threCluster_dict):
-        print("the threshold is ", "{:.3f}".format(thre), "the cluster size is ", len(clusters))
-    for index, (thre, clusters) in enumerate(threCluster_dict):
-        print("check here", index)
-        if index == 0:
-            parent_nodes = PKL.slice_tree(orginal_tree, clusters, table_names)  #
-            simple_tree = PKL.simplify_graph(orginal_tree, parent_nodes)
-        else:
-            parent_nodes = PKL.slice_tree(simple_tree, clusters, table_names)  #
-            simple_tree = PKL.simplify_graph(simple_tree, parent_nodes, lowerNode=lowerNodes)
-        if index == len(threCluster_dict) - 1:
-            top_node = [i for i in simple_tree.nodes() if simple_tree.in_degree(i) == 0][0]
-            clusterDict = {0: (top_node, {top_node})}
-            curentNodes = set([i[0] for i in list(parent_nodes.values())])
-            simple_tree = PKL.simplify_graph(simple_tree, clusterDict, lowerNode=curentNodes)
-
-        PKL.hierarchy_tree(simple_tree)
-        parent_nodes = PKL.slice_tree(simple_tree, clusters, table_names)
-        #print(parent_nodes)
-        lowerNodes = set([i[0] for i in list(parent_nodes.values())])
-       # print(lowerNodes)
-        # PKL.hierarchy_tree(simple_tree)
-        start_time = time.time()
-        # print(parent_nodes,"\n")
-
-        layer_info_dict[index] = parent_nodes
-        end_time = time.time()
-        # Calculate the elapsed time
-        timing[str(index) + '_slicing'] = {'timing': end_time - start_time}
-        # print(f"Elapsed time: {elapsed_time:.4f} seconds for slice the tree")
-        layer_num = len(threCluster_dict) - 1
-        start_time_label = time.time()
-        for cluster, (closest_parent, mutual_parent_nodes) in parent_nodes.items():
-            simple_tree.nodes[closest_parent]['data'] = list(cluster)
-            if index == layer_num:
-                simple_tree.nodes[closest_parent]['type'] = 'data cluster node parent layer'
-                Parent_nodes_h[cluster] = closest_parent
-            else:
-                simple_tree.nodes[closest_parent]['type'] = 'data cluster node'
-
-            label_dict_cluster = label_dict(list(cluster), mode=1, dataset=dataset)  # True
-
-            labels, freq = labels_most_fre(label_dict_cluster)
-
-            simple_tree.nodes[closest_parent]['label'] = labels
-            wrong_labels = {}
-            for i in cluster:
-                if no_intersection(label_dict_cluster[i], simple_tree.nodes[closest_parent]['label']) is True:
-                    # this have problems
-                    wrong_labels[i] = label_dict_cluster[i]
-            simple_tree.nodes[closest_parent]['Wrong_labels'] = wrong_labels
-            label_cluster = simple_tree.nodes[closest_parent]['label']
-            simple_tree.nodes[closest_parent]['Purity'] = freq / len(cluster)
-
-        end_time_label = time.time()
-        timing[str(index) + '_label'] = {'timing': end_time_label - start_time_label}
-        # elapsed_time = end_time_label - start_time_label
-        # print(f"Elapsed time: {elapsed_time:.4f} seconds for calculate the label of the tree") 
-
-    return simple_tree, layer_info_dict, Parent_nodes_h
-
-"""

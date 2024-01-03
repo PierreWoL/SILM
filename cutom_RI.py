@@ -85,9 +85,9 @@ ri_score = rand_index(predicted_labels, ground_truth_labels)
 RI = calculate_rand_index(predicted_labels, ground_truth_labels)
 print("Rand Index:", ri_score, RI)
 
-embeddings = [fn for fn in os.listdir("result/embedding/starmie/vectors/TabFact/") if "roberta" in fn and "Pretrain" in fn and "True" in fn]
+embeddings = [fn for fn in os.listdir("result/embedding/TabFact/") if "roberta" in fn and "Pretrain" in fn and "True" in fn]
 for embedding in embeddings:
-    with open(os.path.join("result/embedding/starmie/vectors/TabFact", embedding), "rb") as file:
+    with open(os.path.join("result/embedding/TabFact", embedding), "rb") as file:
         G = pickle.load(file)
     new_embedding = []
     for file_tuple in G:
@@ -97,13 +97,13 @@ for embedding in embeddings:
             list_col.append(np.array(array_col))
         list_col = np.array(list_col)
         new_embedding.append((file_name,list_col))
-    with open(os.path.join("result/embedding/starmie/vectors/TabFact", embedding), "wb") as file:
+    with open(os.path.join("result/embedding/TabFact", embedding), "wb") as file:
         pickle.dump(new_embedding, file)
 
 """
 datasets = ['TabFact', "WDC"]
 for dataset in datasets:
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
     data_path = os.getcwd() + "/datasets/" + dataset + "/Test/"
     files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and "roberta" in fn and "Pretrain" in fn]
     for file in files:
@@ -119,7 +119,7 @@ for dataset in datasets:
             pickle.dump(update_content, file)
 
 for dataset in datasets:
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
     data_path = os.getcwd() + "/datasets/" + dataset + "/Test/"
     files = [fn for fn in os.listdir(datafile_path) if '.pkl' in fn and "roberta" in fn and "Pretrain" in fn]
     for file in files:

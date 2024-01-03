@@ -1,6 +1,6 @@
 import argparse
 from TableCluster.tableClustering import P1, P2, P3,endToEnd,baselineP1
-from RelationshipSearch.SearchRelationship import  relationshipDiscovery
+from RelationshipSearch.SearchRelationship import  relationshipDiscovery,P4
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     parser.add_argument("--phaseTest", dest="phaseTest", action="store_true")
     # for sampling
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
+    parser.add_argument("--groundTruth", dest="groundTruth", action="store_true")
 
     parser.add_argument("--topk", type=int, default=0)
 
@@ -56,7 +57,8 @@ if __name__ == '__main__':
     elif hp.step ==3:
         P3(hp)
     elif hp.step ==4:
-        relationshipDiscovery(hp)
+        #relationshipDiscovery(hp)
+        P4(hp)
     elif hp.step ==-1:
         endToEnd(hp)
 

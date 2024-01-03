@@ -74,7 +74,7 @@ if __name__ == '__main__':
     print(f"Preprocess time: {time_difference_pre}\n")
     
 
-    output_path = 'result/embedding/starmie/vectors/%s' % hp.dataset
+    output_path = 'result/embedding/%s' % hp.dataset
     if hp.pretrain:
         start_time_pretrain = time.time()
         trainset.encodings(output_path,setting=hp.NoContext)

@@ -9,7 +9,7 @@ import pandas as pd
 
 datasets = ["TabFact"] #,"TabFact"
 for dataset in datasets:
-    datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors",  dataset)
+    datafile_path = os.path.join(os.getcwd(), "result/embedding/",  dataset)
     gt_filename = "01SourceTables.csv" if  dataset == "TabFact" else "groundTruth.csv"
     ground_truth = os.path.join(os.getcwd(), "datasets", dataset, gt_filename)
     gt = pd.read_csv(ground_truth, encoding='latin1')

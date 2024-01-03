@@ -183,7 +183,8 @@ print_tree(tree['root'])"""
 
 # Generate a random distance matrix
 
-def sliced_clusters(linkage_m: sch.linkage, threshold: float, data, customMatrix='euclidean'):
+def sliced_clusters( linkage_m: sch.linkage, threshold: float, data,
+                    customMatrix='euclidean'):
     clusters = sch.cut_tree(linkage_m, height=threshold)
     # print(clusters)
     clusters1 = clusters.flatten()
@@ -200,6 +201,27 @@ def sliced_clusters(linkage_m: sch.linkage, threshold: float, data, customMatrix
     else:
         silhouette_avg = np.mean(silhouette_samples(data, clusters_1d, metric=customMatrix))
     return silhouette_avg, custom_clusters
+
+
+def findBestSilhouetteDendro(dendrogram: sch.dendrogram,linkage_m: sch.linkage, data, customMatrix='euclidean'):
+    silhouette = -1
+    best_clustersR = None
+    best_threshold = 0.0
+    numbers_with_boundaries = np.linspace(best_threshold, np.max(dendrogram['dcoord']), 20)
+    for threshold in numbers_with_boundaries[1:-1]:
+        try:
+            silhouette_avg, custom_clusters = sliced_clusters(linkage_m, threshold, data, customMatrix)
+            # print(silhouette_avg, len(custom_clusters))
+            if silhouette_avg > silhouette:
+                best_clustersR = custom_clusters
+                silhouette = silhouette_avg
+                best_threshold = threshold
+            else:
+                continue
+        except ValueError as e:
+            #print(e)
+            continue
+    return best_threshold, best_clustersR
 
 
 def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
@@ -228,7 +250,7 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
         except ValueError as e:
 
             continue
-    if silhouette!=-1:
+    if silhouette != -1:
         print("best silhouette, ", silhouette, len(best_clustersR.keys()))
 
         clusters.append((best_threshold, best_clustersR))
@@ -248,9 +270,8 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
                         clusters.append((threshold, custom_clusters))
             except:
                 continue
-    #print(f'the total layer number is {len(clusters)}')
+    # print(f'the total layer number is {len(clusters)}')
     return clusters
-
 
 
 def slice_tree(tree: nx.DiGraph(), custom_clusters, node_labels, is_Label=True):
@@ -269,8 +290,8 @@ def slice_tree(tree: nx.DiGraph(), custom_clusters, node_labels, is_Label=True):
         # Find the closest parent node
         closest_parent = None
         min_depth = float('inf')
-        if len(common_ancestors)==0:
-            #print(nodes)
+        if len(common_ancestors) == 0:
+            # print(nodes)
             closest_parent = nodes[0]
             common_ancestors = nodes
         for ancestor in common_ancestors:

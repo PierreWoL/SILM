@@ -20,7 +20,7 @@ import sys
 # sys.setrecursionlimit(3000)  # or another higher value
 
 def P1(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  # /Subject attribute/None
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"  # /Subject attribute/None
     # Read the groung truth hierarchy
     # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
     # graph_gt = pickle.load(F_graph)
@@ -194,7 +194,7 @@ def column_gts(dataset):
 
 def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None):
     print(embedding_file)
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     target_path = os.getcwd() + "/result/SILM/Column/" + hp.dataset + "/"
     mkdir(target_path)
@@ -263,14 +263,14 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
         checkfile = f"{index}_colcluster_dict.pickle" if hp.phaseTest is False else f"{index}_colcluster_dictGT.pickle"
         datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                      "All/" + embedding_file[:-4] + "/column")
-        print(os.path.join(datafile_path, checkfile))
+        #print(os.path.join(datafile_path, checkfile))
         if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
 
             if hp.phaseTest is True:
                 clustering_method = ["groundTruth"]
                 store_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                           "All/" + embedding_file[0:-4] + f"/column/")
-                print(store_path)
+                #print(store_path)
                 mkdir(store_path)
                 path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                     "All/" + embedding_file[0:-4] + f"/column/{str(index)}_colcluster_dictGT.pickle")
@@ -280,10 +280,11 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
                     # print(path)
                     with open(path, 'wb') as handle:
                         pickle.dump(dict_groundTruth, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            try:
-                ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
-            except:
-                print("error", index, clu)
+            #try:
+            #if index == 2:
+            ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+            #except:
+               # print("error", index, clu)
 
 
 def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
@@ -357,7 +358,7 @@ def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
         filename = str(index) + '_colcluster_dictGT.pickle'
     else:
         filename = str(index) + '_colcluster_dict.pickle'
-    print(filename)
+    #print(filename)
     for meth in clustering_method:
         # try:
 
@@ -370,7 +371,7 @@ def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
 
 
 def P2(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
 
     if hp.baseline is True:
         conceptualAttri(hp)
@@ -386,10 +387,10 @@ def P2(hp: Namespace):
 
 
 def P3(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if not fn.endswith("_column.pkl") and 'Pretrain' not in fn][
+    files = [fn for fn in files if  fn.endswith("_column.pkl") and 'Pretrain' not in fn][
             hp.slice_start:hp.slice_stop]
     print(files, len(files))
     for file in files:  # [hp.slice_start:hp.slice_stop]:
@@ -415,7 +416,7 @@ def name_type(cluster, name_dict=None):
 
 
 def hierarchy(cluster_dict, hp: Namespace, name_dict):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     filepath = f"datasets/{hp.dataset}/Test/"
     F = open(datafile_path + hp.P23Embed, 'rb')
     content = pickle.load(F)
@@ -472,7 +473,7 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict):
 
 def endToEnd(hp: Namespace):
     # TODO hard coded part needs to change later
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     dict_file = typeInference(hp.P1Embed, hp, datafile_path)
     cluster_dict = dict_file[hp.clustering]
     # print(cluster_dict)

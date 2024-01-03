@@ -289,7 +289,7 @@ def calculate_matrix(file):
 
 
 
-file = "D:/CurrentDataset/result/embedding/starmie/vectors/WDC/cluster"
+file = "D:/CurrentDataset/result/embedding/WDC/cluster"
 calculate_matrix(file)
 
 

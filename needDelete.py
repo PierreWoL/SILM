@@ -260,7 +260,7 @@ def print_path_label(tree, layer_info, Parent_nodes):
 
 
 def tree_consistency_metric(embedding_file, dataset):
-    EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", dataset)
+    EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding/", dataset)
     with open(os.path.join(EMBEDDING_FOLDER, embedding_file), 'rb') as file:
         data = pickle.load(file)
     data_path = os.path.join(os.getcwd(), "datasets", dataset, "Try.csv")

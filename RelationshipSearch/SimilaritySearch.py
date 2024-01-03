@@ -35,7 +35,9 @@ def entityTypeRelationship(cluster1, cluster2, threshold, EntityColumns):
             NE_columns = [columns2[i] for i in NE_list_2] if len(NE_list_2) != 0 else columns2
             for index, j in enumerate(NE_embeddings2):
                 similarity = calculate_similarity(subjectCol_1_embedding, j)
-
+                eu_sim = np.linalg.norm(subjectCol_1_embedding - j)
+                if similarity>0.6:
+                    print(subcol1, NE_columns[index], eu_sim, similarity)
                 if similarity > threshold:
                     similar_pairs[NE_columns[index]] = similarity
 
@@ -71,7 +73,7 @@ def group_files(df):
 
 dataset = 'WDC'
 datafile_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                             f"result/embedding/starmie/vectors/{dataset}/")
+                             f"result/embedding/{dataset}/")
 embedding_file = "Pretrain_sbert_head_column_header_False.pkl"
 F = open(os.path.join(datafile_path, embedding_file), 'rb')
 content = pickle.load(F)

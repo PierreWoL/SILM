@@ -106,7 +106,7 @@ column_based = ['cl_SC6_lm_sbert_head_column_0_header_column','cl_SC6_lm_sbert_h
        'cl_SCT6_lm_sbert_head_column_0_header_column','cl_SCT6_lm_sbert_head_column_0_none_column'] #_subCol
 for i in column_based:
     print(i)
-    embedding_i = unpickle_python_object(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
+    embedding_i = unpickle_python_object(f"result/embedding/TabFact/{i}.pkl")
     print(embedding_i)
     break
     

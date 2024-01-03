@@ -4,6 +4,7 @@ augment(df,"replace_high_cells")"""
 import concurrent
 import os
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import pickle
@@ -309,8 +310,8 @@ column_based = ['cl_SC6_lm_sbert_head_column_0_header_column', 'cl_SC6_lm_sbert_
 """for i in column_based:
     dataset_embedding = {}
     print(i)
-    with open(f"result/embedding/starmie/vectors/TabFact/{i}.pkl", "rb") as file:
-        print(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
+    with open(f"result/embedding/TabFact/{i}.pkl", "rb") as file:
+        print(f"result/embedding/TabFact/{i}.pkl")
         embedding_i = pickle.load(file)
     for col_name,column_embedding in embedding_i:
         tableName = col_name.split("html.")[0] +"html.csv"
@@ -320,7 +321,7 @@ column_based = ['cl_SC6_lm_sbert_head_column_0_header_column', 'cl_SC6_lm_sbert_
             dataset_embedding[tableName].append(column_embedding[0])
     tuple_embedding = [(key, np.array(value)) for key, value in dataset_embedding.items()]
     rename = i[:-7]
-    with open(os.path.join(f"result/embedding/starmie/vectors/TabFact/{rename}.pkl"), "wb") as file:
+    with open(os.path.join(f"result/embedding/TabFact/{rename}.pkl"), "wb") as file:
         pickle.dump(tuple_embedding, file)
 """
 all = ['cl_SC6_lm_sbert_head_column_0_header', 'cl_SC6_lm_sbert_head_column_0_none',
@@ -329,8 +330,8 @@ subCol = ["Pretrain_sbert_head_column_header_False", "Pretrain_sbert_head_column
 """
 i='cl_SCT5_lm_sbert_head_column_0_none_subCol'
 print(i)
-with open(f"result/embedding/starmie/vectors/TabFact/{i}.pkl", "rb") as file:
-    print(f"result/embedding/starmie/vectors/TabFact/{i}.pkl")
+with open(f"result/embedding/TabFact/{i}.pkl", "rb") as file:
+    print(f"result/embedding/TabFact/{i}.pkl")
     embedding_i = pickle.load(file)
 print(len(embedding_i),embedding_i[0])"""
 
@@ -342,10 +343,9 @@ print(len(embedding_i),embedding_i[0])"""
     print(df_B)
     df_B.to_csv(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/Subject_Col/{i}/overall_clusteringNew.csv")
 """
-path = 'result/embedding/starmie/vectors/WDC/'
+path = 'result/embedding/WDC/'
 pre = ['Pretrain_bert_head_column_header_False', 'Pretrain_bert_head_column_none_False']
 lefts = []
-
 
 """
 for i in pre:
@@ -394,6 +394,20 @@ for key,value in gt_dict.items():
 with open(f'D:\CurrentDataset\datasets\{dataset}\Relationship_gt.pickle', 'wb') as handle:
     pickle.dump(gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)"""
 
+"""
+lms = ["sbert", "roberta", "bert"]
+datasets = ["WDC", "GDS"]
+for data in datasets:
+    target_folders = [i for i in os.listdir(f"result/SILM/{data}/All") if i != "2Mx" and '.' not in i]
+    for j in target_folders:
+        files = os.listdir(f"result/SILM/{data}/All\{j}\column\example\{j}")
+        for file in files:
+            csv_clustering = pd.read_csv(f"result/SILM/{data}/All\{j}\column\example\{j}\{file}")
+            df_cleaned = csv_clustering.drop_duplicates()
+
+            # 可选：将清理后的数据保存到新的CSV文件
+            #df_cleaned.to_csv(f"result/SILM/{data}/All\{j}\column\example\{j}\{file}", index=False)
+
 df = pd.read_csv("datasets/WDC/column_gt.csv",encoding="latin1")
 df_place = df[df['TopClass'].apply(lambda x: "['Place']" in x)]
 print(len(df_place))
@@ -408,3 +422,35 @@ column_label_group.columns = ['ColumnLabel', 'UniqueFileCount']
 column_label_group.sort_values(by='UniqueFileCount', ascending=False).reset_index(drop=True)
 column_label_group.to_csv("datasets/WDC/aggre_place.csv")
 print(column_label_group)
+"""
+target_path = "datasets/GDS"
+table_gt = pd.read_csv(os.path.join(target_path, "groundTruth.csv"))
+
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
+    G = pickle.load(file)
+for node, attrs in G.nodes(data=True):
+    G.nodes[node]['Tables'] = []
+
+for index, row in table_gt.iterrows():
+     class_table = row["class"]
+     G.nodes[class_table]['Tables'].append(row["fileName"][:-4])
+
+
+
+for node, attrs in G.nodes(data=True):
+    print(f"node : {node} attributes {attrs}")
+print(len(G.nodes()))
+with open(os.path.join(target_path, "graphGroundTruth.pkl"), "wb") as handle:
+    pickle.dump(G, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def tables_of_node(tree: nx.DiGraph(), node):
+    successors_of_node = list(nx.descendants(tree, node))
+    tables = tree.nodes[node]['Tables']
+    if successors_of_node:
+        for successor in successors_of_node:
+            tables.extend(tree.nodes[successor]['Tables'])
+    return tables
+
+
+""""""

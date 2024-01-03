@@ -473,9 +473,17 @@ def ColumnBar(dataset,metrics,num_test = 0.0):
         elif metric == "RandIndex":
             path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                 os.path.join(f"result/SILM/{dataset}/All/RandIndex.xlsx"))
-        else:
+        elif metric == "TCS":
             path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                 os.path.join(f"result/SILM/{dataset}/{str(num_test)}/TCS.xlsx"))
+        elif metric == "Precision@GroundTruth":
+            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+                                os.path.join(f"result/P4/{dataset}/Attribute.xlsx"))
+        elif metric == "Precision":
+            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+                                os.path.join(f"result/P4/{dataset}/Type_P.xlsx"))
+        else:
+            return 0
         dfs=[]
 
         for i in labels:
@@ -511,6 +519,13 @@ def ColumnBar(dataset,metrics,num_test = 0.0):
             plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                      os.path.join(f"result/SILM/{dataset}/{str(num_test)}"),
                                      metric + f"BarChartALL_Whole{dataset}.png"))
+        elif   metric =="Precision@GroundTruth" or "Precision":
+            plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+                                     os.path.join(f"result/P4/{dataset}"),
+                                     metric + f"BarChartALL_Whole{dataset}_{metric}.pdf"))
+            plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+                                     os.path.join(f"result/P4/{dataset}"),
+                                     metric + f"BarChartALL_Whole{dataset}_{metric}.png"))
         else:
 
             plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
@@ -520,9 +535,11 @@ def ColumnBar(dataset,metrics,num_test = 0.0):
                                  os.path.join(f"result/SILM/{dataset}/All"),
                                  metric + f"BarChartALL_Whole{dataset}.png"))
         plt.show()
-metris = ["Purity", "Rand Index"]
+"""metris = ["Purity", "Rand Index"]
 #ColumnBar("GDS",metris)
 box("GDS",["TCS"], num_test=0.1)
 ColumnBar("GDS",["TCS"], num_test=0.1)
 box("WDC",["TCS"], num_test=0.15)
-ColumnBar("WDC",["TCS"], num_test=0.15)
+ColumnBar("WDC",["TCS"], num_test=0.15)"""
+metris = ["Precision@GroundTruth", "Precision"]
+ColumnBar("WDC",metris)

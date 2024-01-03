@@ -145,7 +145,7 @@ def table_features(hp: Namespace):
 
 def hierarchical_clustering(hp: Namespace):
     print("hierarchical_clustering ...")
-    datafile_path = os.path.join(os.getcwd(), "result/embedding/starmie/vectors", hp.dataset)
+    datafile_path = os.path.join(os.getcwd(), "result/embedding/", hp.dataset)
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     gt_filename = "groundTruth.csv"
     ground_truth = os.path.join(os.getcwd(), "datasets", hp.dataset, gt_filename)
@@ -222,7 +222,7 @@ def hierarchical_clustering(hp: Namespace):
 """def silm_clustering(hp: Namespace):
     dicts = {}
     files = []
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
 
     # subject_path = os.getcwd() + "/datasets/" + hp.dataset + "/SubjectColumn/"
@@ -420,7 +420,7 @@ def columncluster_gt(tablegt, column_cluster: dict):
 
 def starmie_columnClustering(embedding_file: str, hp: Namespace):
     print(embedding_file)
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     target_path = os.getcwd() + "/result/Valerie/Column/" + hp.dataset + "/"
     mkdir(target_path)
@@ -512,6 +512,6 @@ def starmie_clusterHierarchy(hp: Namespace):
 
 
 def files_columns_running(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if fn.endswith(hp.embedMethod+'.pkl') and hp.embed in fn]
     starmie_columnClustering(files[0], hp)

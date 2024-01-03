@@ -6,11 +6,16 @@ import os
 import time
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+from readPKL import findBestSilhouetteDendro, sliced_clusters
 from SubjectColDetect import subjectColumns
 from Utils import mkdir, most_frequent
 from TableCluster.tableClustering import column_gts
 from RelationshipSearch.SimilaritySearch import group_files, entityTypeRelationship
-
+import numpy as np
+from scipy.spatial.distance import pdist, cdist
+from scipy.cluster.hierarchy import dendrogram, linkage
+from Utils import most_frequent
 
 def group_files_by_superclass(df):
     superclass_dict = {}
@@ -55,6 +60,182 @@ def find_conceptualAttri(cols_dict, table, attributes, gtclusters=None):
     return conceptualAttributes
 
 
+def calculate_linkage_distance(cluster_a, cluster_b, method='single'):
+    if method == 'single':
+        # 最近邻距离
+        return np.min(cdist(cluster_a, cluster_b, metric='euclidean'))
+    elif method == 'average':
+        # 平均链接距离
+        return np.mean(cdist(cluster_a, cluster_b, metric='euclidean'))
+    elif method == 'complete':
+        # 最远邻距离
+        return np.max(cdist(cluster_a, cluster_b, metric='euclidean'))
+
+def labels_found(clu_list, clusters,gt_col,number=0):
+    label_all =[]
+    for index_a in clu_list:
+        cluster_a_per = clusters[index_a] if number ==0 else  clusters[index_a-number]
+        labels = [gt_col[i[0]] for i in cluster_a_per]
+        cluster_label = most_frequent(labels)
+
+        label_all.append(cluster_label)
+    return label_all
+
+### TODO 这个算是废了
+def clustersMerge1(clusters_a,clustera_name, clusters_b,clusterb_name,dataset, method="single"):
+    def check_values_in_list(lst, n):
+        has_less_than_n = [x for x in lst if x < n]
+
+        has_greater_than_n =  [x for x in lst if x > n]
+        return has_less_than_n , has_greater_than_n
+
+    all = len(clusters_a) + len(clusters_b)
+
+    cluster_all = clusters_a + clusters_b
+    distances = np.zeros((all, all))
+    for i, a in enumerate(cluster_all):
+        a_embedding = np.array([t[1] for t in a])
+        j = 1
+        for b in cluster_all[i + 1:]:
+            b_embedding = np.array([t[1] for t in b])
+            dist = calculate_linkage_distance(a_embedding, b_embedding, method=method)
+            distances[i, i + j] = dist
+            j += 1
+    gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
+
+    gt_col_a = gt_clusters[clustera_name]
+    gt_col_b = gt_clusters[clusterb_name]
+    # print(len(distances), distances)
+
+    # 使用层次聚类来寻找最佳阈值
+    linkage_m = linkage(np.array(distances), method="single")
+    # print(linkage_m)
+    dendrogramz = dendrogram(linkage_m)
+    best_threshold = findBestSilhouetteDendro(dendrogramz, linkage_m, distances)[0]
+    silhouette_avg, custom_clusters = sliced_clusters(linkage_m, best_threshold-0.8, distances)
+    print(silhouette_avg, len(custom_clusters), custom_clusters)
+    for index, cluster in custom_clusters.items():
+        a_clu, b_clu = check_values_in_list(cluster, len(clusters_a)-1)
+        if len(a_clu) > 0 and len(b_clu) > 0:
+            print(a_clu, "\n",b_clu)
+            cluster_labelsa = labels_found(a_clu, cluster_all, gt_col_a)
+            cluster_labelsb = labels_found(b_clu, cluster_all, gt_col_b)
+            print(cluster_labelsa,"\n",cluster_labelsb)
+
+
+    ### TODO this can be deleted later, just to see the result
+    """ 
+    plt.figure(figsize=(10, 8))
+    plt.title('Dendrogram')
+    plt.ylabel('Distance')
+    plt.show()"""
+
+#def clustersMerge(clusters_a,clustera_name, clusters_b,clusterb_name,dataset, method="complete"):
+
+ # 直接算他们的clustering
+
+def groundTruthRelation(dataset):
+    with open(f'datasets\{dataset}\Relationship_gt.pickle', 'rb') as handle:
+        gt_relationship = pickle.load(handle)
+    gt_attributes = []
+    for key, value in gt_relationship.items():
+        for atttr_p in value:
+            a1 = f"{key[0]}.{atttr_p[0]}"
+            a2 = f"{key[1]}.{atttr_p[1]}"
+            gt_attributes.append((a1, a2))
+    print(gt_relationship.keys())
+    print(gt_attributes)
+    return gt_relationship, gt_attributes
+
+
+def embeddings_dataset(datafile_path, embedding_file, table_names, data_path):
+    F = open(os.path.join(datafile_path, embedding_file), 'rb')
+    if embedding_file.endswith("_column.pkl"):
+        content = pickle.load(F)
+        content = [(i[0], i[1][0]) for i in content]
+    else:
+        original_content = pickle.load(F)
+        original_content_dict = {i[0]: i[1] for i in original_content}
+        content = []
+        for fileName in table_names:
+            embedding_fileName = []
+            table = pd.read_csv(os.path.join(data_path, fileName))
+            for index, col in enumerate(table.columns):
+                col_embed_tuple = f"{fileName[:-4]}.{col}", original_content_dict[fileName][index]
+                content.append(col_embed_tuple)
+
+    return content
+
+
+def clusteringEmbedding(embedding_file, index, dataset, content, groundTruth=False, clustering="Agglomerative"):
+    filename = f"{index}_colcluster_dict.pickle" if not groundTruth else f"{index}_colcluster_dictGT.pickle"
+    F_cluster = open(os.path.join(os.getcwd(), "result/SILM/", dataset,
+                                  "All/" + embedding_file[:-4] + "/column", filename), 'rb')
+    ### TODO hard coded problem
+
+    col_cluster = pickle.load(F_cluster)[clustering]
+    clusters = list(col_cluster.values())
+    print("clusters", len(clusters))
+    clusters_embedding = []
+    for cluster in clusters:
+        cluster_embedding = [i for i in content if i[0] in cluster]
+        clusters_embedding.append((cluster_embedding))
+
+    return clusters_embedding
+
+
+def P4(hp: Namespace):
+    # Read table and their corresponding lowest type
+    subjectColPath = os.path.join(os.getcwd(), f"datasets/{hp.dataset}")
+    data_path = os.path.join(subjectColPath, "Test")
+    table_names = [i for i in os.listdir(data_path) if i.endswith(".csv")]
+
+    SE = subjectColumns(subjectColPath)
+
+    # embedding of the tables
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
+    files = [fn for fn in os.listdir(datafile_path) if
+             fn.endswith(
+                 '.pkl') and f"_{hp.embed}_" in fn and '8' in fn]  # and 'SCT6' in fn and 'header' not in fn
+    files = [fn for fn in files if not fn.endswith("subCol.pkl")]  # and 'Pretrain' in fn and 'header' in fn
+    print(files)
+
+    # ground truth of conceptual attributes
+    gt_relationship, gt_attributes = groundTruthRelation(hp.dataset)
+
+    score_path = os.path.join(os.getcwd(),
+                              f"result/P4/new/{hp.dataset}/")
+    mkdir(score_path)
+
+    # start to test finding relationship in each embedding method
+    for embedding_file in files:
+        print(embedding_file)
+        content = embeddings_dataset(datafile_path, embedding_file, table_names, data_path)
+
+        cluster_relationships = {}
+        target_path = os.path.join(os.getcwd(),
+                                   f"result/P4/{hp.dataset}/{embedding_file[:-4]}/")
+        # Start to calculate time
+        startTimeS = time.time()
+        gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
+        keys = list(gt_cluster_dict.keys())
+
+        ### TODO hard coded problem
+        for index, clu in enumerate(keys):
+
+            if clu =="['Person']":
+                cluster_a = clusteringEmbedding(embedding_file, index, hp.dataset, content, clustering=hp.clustering)
+
+                for clu_j in keys[index + 1:]:
+                    if clu_j == "['Place']":
+                        print(clu, clu_j)
+                        cluster_b = clusteringEmbedding(embedding_file, keys.index(clu_j), hp.dataset, content,
+                                                clustering=hp.clustering)
+                        clustersMerge1(cluster_a, clu, cluster_b,clu_j,hp.dataset)
+
+
+
+# 假设clusters_a和clusters_b分别是集群A和B中的聚类
 def MetricType(groundTruth, results):
     TP = [i for i in results if i in groundTruth]
     FP = [i for i in results if i not in groundTruth]
@@ -79,10 +260,10 @@ def relationshipDiscovery(hp: Namespace):
     print(types)
     SE = subjectColumns(subjectColPath)
 
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith(
-                 '.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
+                 '.pkl') and f"_{hp.embed}_" in fn and '8' in fn]  # and 'SCT6' in fn and 'header' not in fn
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]  # and 'Pretrain' in fn and 'header' in fn
 
     with open(f'datasets\{hp.dataset}\Relationship_gt.pickle', 'rb') as handle:
@@ -97,12 +278,9 @@ def relationshipDiscovery(hp: Namespace):
     print(gt_attributes)
     print(files)
 
-
-
     score_path = os.path.join(os.getcwd(),
-                               f"result/P4/{hp.dataset}/")
+                              f"result/P4/{hp.dataset}/")
     mkdir(score_path)
-
 
     for embedding_file in files:
 
@@ -131,8 +309,8 @@ def relationshipDiscovery(hp: Namespace):
 
                 cluster1 = Ground_t[type_i]
                 cluster2 = Ground_t[type_j]
-                # print(type_i, type_j, cluster1, cluster2)
-                #if type_i == 'Organization' and type_j == 'Person':
+                print(type_i, type_j, cluster1, cluster2)
+                # if type_i == 'Organization' and type_j == 'Person':
                 cluster1_embedding = [i for i in content if i[0] in cluster1]
                 cluster2_embedding = [i for i in content if i[0] in cluster2]
                 relationship1 = entityTypeRelationship(cluster1_embedding, cluster2_embedding, hp.similarity,
@@ -143,6 +321,8 @@ def relationshipDiscovery(hp: Namespace):
                     cluster_relationships[(type_i, type_j)] = relationship1
                 if len(relationship2) > 0:
                     cluster_relationships[(type_j, type_i)] = relationship2
+                break
+            break
 
         endTimeS = time.time()
         timing.append({'Embedding File': embedding_file, "timing": endTimeS - startTimeS})
@@ -203,15 +383,12 @@ def relationshipDiscovery(hp: Namespace):
             df.to_csv(os.path.join(score_path, 'AttributeRelationshipScore.csv'))
         else:
             df.loc[str(hp.similarity), 'Similarity'] = hp.similarity
-            df.loc[str(hp.similarity) , 'Embedding'] =  embedding_file[:-4]
-            df.loc[str(hp.similarity) , 'Precision@GT'] =precisionk
+            df.loc[str(hp.similarity), 'Embedding'] = embedding_file[:-4]
+            df.loc[str(hp.similarity), 'Precision@GT'] = precisionk
 
             # print(df)
             df.to_csv(os.path.join(score_path, 'AttributeRelationshipScore.csv'))
-
-
-
-
+        break
 
 
 def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_file, SE, gt_attributes):
@@ -237,7 +414,6 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
         # print(i[0])
         precision = len(resultK) / len(result_list) if len(result_list) > 0 else 0
         return precision
-
 
     # read generated conceptual attributes of the embedding methods
     gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
