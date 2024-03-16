@@ -31,6 +31,30 @@ def table_index(table: pd.DataFrame):
     return table
 
 
+def rename(name):
+    renaming = ""
+    if ' Pretrain' in name:
+        if 'header' in name:
+            renaming = 'Pretrain_HI'
+        if 'none' in name:
+            renaming = 'Pretrain_I'
+    elif '_Column' in name:
+        if 'SCT' in name and '_HI' in name:
+            renaming = 'SILM_SampleCells_TFIDF_HI'
+        elif 'SCT' in name and '_I' in name:
+            renaming = 'SILM_SampleCells_TFIDF_I'
+        elif re.search("SC\d+", name) and '_HI' in name:
+            renaming = 'SILM_SampleCell_HI'
+        elif re.search("SC\d+", name) and '_I' in name:
+            renaming = 'SILM_SampleCell_I'
+    elif 'sample_cells' in name:
+        renaming = 'Starmie'
+    elif 'D3L' in name:
+        renaming = 'D3L'
+    print(renaming,name )
+    return renaming
+
+
 def table_col(table: pd.DataFrame):
     for col in table.columns:
         if 'Pre' in col:
@@ -57,6 +81,7 @@ def table_col(table: pd.DataFrame):
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
 dataset = "GDS"
 
 labels = ['BERT', 'RoBERTa', 'SBERT']
@@ -154,9 +179,7 @@ for metric in metrics:
     plt.show()
 """
 
-
 ###The following is for column clustering
-
 
 
 """
@@ -259,7 +282,6 @@ for metric in metrics:
         plt.tight_layout()
 plt.show()"""
 
-
 ### don't know what is it
 """data = pd.read_excel(f"D:/CurrentDataset/result/SILM/{dataset}/All/RI.xlsx", index_col=0).iloc[:-1,:]
 data = data[[col for col in data.columns if
@@ -328,7 +350,8 @@ col_bert = data.loc[[i for i in data.index if '_bert' in i]]
 col_sbert = data.loc[[i for i in data.index if '_sbert' in i]]
 col_roberta = data.loc[[i for i in data.index if '_roberta' in i]]
 
-value_list = {'BERT': table_index(col_bert), 'RoBERTa': table_index(col_roberta), 'SBERT': table_index(col_sbert)}
+value_list = {'BERT': table_index(col_bert), 'RoBERTa': table_index(col_roberta), 'SBERT': .
+(col_sbert)}
 
 for label, values in value_list.items():
     print(values.index,list(values.iloc[:,0]))
@@ -368,7 +391,7 @@ plt.show()
 import matplotlib.pyplot as plt
 
 
-def box(dataset,metrics,num_test = 0.0):
+def box(dataset, metrics, num_test=0.0):
     LM = ['BERT', 'RoBERTa', 'SBERT']
 
     for metric in metrics:
@@ -448,18 +471,15 @@ def box(dataset,metrics,num_test = 0.0):
     plt.show()
 
 
-
-
-
-def ColumnBar(dataset,metrics,num_test = 0.0):
+def ColumnBar(dataset, metrics, num_test=0.0):
     def autolabel(rects):
         for rect in rects:
             height = rect.get_height()
-            ax.annotate('{:.3f}'.format(height),
+            ax.annotate('{:.2f}'.format(height),
                         xy=(rect.get_x() + rect.get_width() / 2, height),
                         xytext=(0, 3),
                         textcoords="offset points",
-                        ha='center', va='bottom', fontsize=16)
+                        ha='center', va='bottom', fontsize=22)
 
     labels = ['BERT', 'RoBERTa', 'SBERT']
     width = 0.1
@@ -467,59 +487,59 @@ def ColumnBar(dataset,metrics,num_test = 0.0):
     for metric in metrics:
 
         if metric == "Purity":
-            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                os.path.join(f"result/SILM/{dataset}/All/P.xlsx"))
+            path = f"D:/CurrentDataset/result/SILM/{dataset}/All/P.xlsx"
+            #os.path.abspath(os.path.dirname(os.getcwd())),
 
-        elif metric == "RandIndex":
-            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                os.path.join(f"result/SILM/{dataset}/All/RandIndex.xlsx"))
+
+        elif metric == "Rand Index":
+            path = f"D:/CurrentDataset/result/SILM/{dataset}/All/RandIndex.xlsx"
+    #os.path.abspath(os.path.dirname(os.getcwd())),
         elif metric == "TCS":
-            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                os.path.join(f"result/SILM/{dataset}/{str(num_test)}/TCS.xlsx"))
+            path =  f"D:/CurrentDataset/result/SILM/{dataset}/{str(num_test)}/TCS.xlsx"
         elif metric == "Precision@GroundTruth":
-            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+            path = os.path.join(os.getcwd(),#os.path.abspath(os.path.dirname(os.getcwd())),
                                 os.path.join(f"result/P4/{dataset}/Attribute.xlsx"))
         elif metric == "Precision":
-            path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
+            path = os.path.join(os.getcwd(),#os.path.abspath(os.path.dirname(os.getcwd())),
                                 os.path.join(f"result/P4/{dataset}/Type_P.xlsx"))
         else:
             return 0
-        dfs=[]
+        dfs = []
 
         for i in labels:
             dfs.append(list(pd.read_excel(path, sheet_name=i, index_col=0).iloc[-1,]))
 
-        sum = pd.DataFrame({ labels[0]: dfs[0], labels[1]: dfs[1], labels[2]: dfs[2]}, index=pd.read_excel(path, sheet_name=labels[0], index_col=0).columns)
-        print(sum)
-
+        sum = pd.DataFrame({labels[0]: dfs[0], labels[1]: dfs[1], labels[2]: dfs[2]},
+                           index=pd.read_excel(path, sheet_name=labels[0], index_col=0).columns)
+        print(sum.index)
 
         x = np.arange(len(labels))
-        fig, ax = plt.subplots(figsize=(18, 10))
+        fig, ax = plt.subplots(figsize=(19, 10))
         rects = []
         for num, row_tuple in enumerate(sum.iterrows()):
             index, row = row_tuple
             # print(num, index, "\n", row, "\n", list(row))
-            rect = ax.bar(x + (num - 2) * width + 0.015 * num, list(row), width, label=index)
+            rect = ax.bar(x + (num - 2) * width + 0.018 * num, list(row), width, label=index)
             # rects.append(rect)
             ax.set_ylim(0, 1)
-            plt.yticks([i / 10.0 for i in range(11)], fontsize=21)  # 设置y轴间隔为0.1
-            ax.set_ylabel(metric, fontsize=21)
-            ax.set_xlabel('Methods', fontsize=21)
+            plt.yticks([i / 10.0 for i in range(11)], fontsize=26)  # 设置y轴间隔为0.1
+            ax.set_ylabel(metric, fontsize=26)
+            ax.set_xlabel('Methods', fontsize=26)
 
-            plt.xticks(x, fontsize=21)
+            plt.xticks(x, fontsize=26)
             ax.set_xticklabels(labels)
-            ax.legend(loc='upper left', bbox_to_anchor=(0.1, -0.08), fontsize=18, ncol=4)
+            ax.legend(loc='upper left', bbox_to_anchor=(0.01, -0.08), fontsize=22, ncol=4)
             autolabel(rect)
 
         fig.tight_layout()
-        if metric =='TCS':
+        if metric == 'TCS':
             plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                      os.path.join(f"result/SILM/{dataset}/{str(num_test)}"),
                                      metric + f"BarChartALL_Whole{dataset}.pdf"))
             plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                      os.path.join(f"result/SILM/{dataset}/{str(num_test)}"),
                                      metric + f"BarChartALL_Whole{dataset}.png"))
-        elif   metric =="Precision@GroundTruth" or "Precision":
+        elif metric ==  "Precision":
             plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                                      os.path.join(f"result/P4/{dataset}"),
                                      metric + f"BarChartALL_Whole{dataset}_{metric}.pdf"))
@@ -527,19 +547,47 @@ def ColumnBar(dataset,metrics,num_test = 0.0):
                                      os.path.join(f"result/P4/{dataset}"),
                                      metric + f"BarChartALL_Whole{dataset}_{metric}.png"))
         else:
-
-            plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                 os.path.join(f"result/SILM/{dataset}/All"),
-                                 metric + f"BarChartALL_Whole{dataset}.pdf"))
-            plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                                 os.path.join(f"result/SILM/{dataset}/All"),
-                                 metric + f"BarChartALL_Whole{dataset}.png"))
+            plt.savefig(os.path.join(f"D://CurrentDataset/result/SILM/{dataset}/All",metric + f"BarChartALL_Whole{dataset}.pdf"))
+            plt.savefig( os.path.join(f"D://CurrentDataset/result/SILM/{dataset}/All",   metric + f"BarChartALL_Whole{dataset}.png"))
         plt.show()
-"""metris = ["Purity", "Rand Index"]
-#ColumnBar("GDS",metris)
-box("GDS",["TCS"], num_test=0.1)
+
+
+metris = ["Purity","Rand Index"] #,
+ColumnBar("GDS",metris)
+ColumnBar("GDS",["TCS"], num_test=0.15)
+"""box("GDS",["TCS"], num_test=0.1)
 ColumnBar("GDS",["TCS"], num_test=0.1)
 box("WDC",["TCS"], num_test=0.15)
 ColumnBar("WDC",["TCS"], num_test=0.15)"""
-metris = ["Precision@GroundTruth", "Precision"]
-ColumnBar("WDC",metris)
+
+
+"""
+def plot_metric(history, method):
+    Precision = history["Precision"]
+    Recall = history["Recall"]
+    epochs = history["Similarity"]
+    #plt.figure(figsize=(8, 8))
+    plt.plot(epochs, Precision, 'bo--')
+    plt.plot(epochs, Recall, 'ro-')
+    plt.yticks([i / 20.0 for i in range(21)])  # 设置y轴间隔为0.1
+    plt.xlabel("Similarity threshold")
+    plt.ylabel(method)
+    plt.title(method)
+    print(method)
+    plt.legend(["Precision", "Recall"])
+from Utils import mkdir
+from Step2_1 import reName
+dataset = "WDC"
+data = pd.read_csv(os.path.dirname(os.getcwd())+f"/result/P4/{dataset}/AttributeRelationshipScore.csv")
+for i in data["Embedding"].unique():
+    embed_df = data.loc[data['Embedding'] == i]
+    embed_df=embed_df.sort_values(by=['Similarity'])
+    new_name = reName(i)
+    print(i, new_name)
+    plot_metric(embed_df,new_name )
+
+    path =os.path.dirname(os.getcwd())+f"/result/P4/Figure/{dataset}/"
+    mkdir(path)
+    plt.savefig(path+f"{new_name}.png")
+    plt.show()
+"""

@@ -10,12 +10,12 @@ import seaborn as sns
 def get_n_colors(n):
     return sns.color_palette("husl", n)
 
-dataset = "WDC"
+dataset = "GDS"
 
 target_path = os.path.abspath(os.path.dirname(os.getcwd())) + f"/result/SILM/Column/{dataset}/_gt_cluster.pickle"
 F_cluster = open(target_path, 'rb')
 KEYS = pickle.load(F_cluster)
-print( len(KEYS),KEYS)
+#print( len(KEYS),KEYS)
 RI = {'Agglomerative': {} }  # 'BIRCH': {},
 
 Purity = {'Agglomerative': {} }
@@ -27,6 +27,7 @@ data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), f"result
                 'SBERT_SubAttr', 'RoBERTa_SubAttr',
                 'SBERT_AttrNameI', 'RoBERTa_AttrNameI']"""
 def reName(fileName:str):
+    print(fileName)
     re_name = ""
     if fileName.startswith("cl_"):
         fileName = fileName[3:]
@@ -34,7 +35,6 @@ def reName(fileName:str):
         Aug_op = fileName_split[0]
         txt = fileName_split[1]
         split_txt =  txt.split("_")
-
         is_SubCol = False
         is_col = False
         if split_txt[-1] == "subCol":
@@ -70,7 +70,6 @@ def reName(fileName:str):
         re_name +=fileName[0]+"_"+meta
     elif fileName.startswith("D3L"):
         re_name += "D3L"
-    print(fileName,re_name)
     return re_name
 test = "cl_sample_cells_lm_sbert_head_column_0_subjectheader_subCol_metrics.csv".split("_metrics.csv")[0]
 

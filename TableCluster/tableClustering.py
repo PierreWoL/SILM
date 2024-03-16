@@ -9,7 +9,7 @@ import pickle
 from argparse import Namespace
 import os
 from clustering import clustering_results, data_classes, clusteringColumnResults, inputData, clustering
-from Utils import mkdir, naming
+from Utils import mkdir, naming, findSubCol
 from ClusterHierarchy.JaccardMetric import JaccardMatrix
 from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster, tree_consistency_metric
 from readPKL import hierarchy_tree
@@ -224,8 +224,7 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None
         print(index, clu)
         startTimeCC = time.time()
         colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
-                   gt_clusters,
-                   gt_cluster_dict)
+                   gt_clusters, gt_cluster_dict)
         checkfile = f"{index}_colcluster_dict.pickle"
         if "D3L" in embedding_file:
             datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -236,13 +235,13 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None
         endTimeCC = time.time()
         TimespanCC = endTimeCC - startTimeCC
 
-        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+        """ if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             startTimeTH = time.time()
             ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
             endTimeTH = time.time()
             TimespanTH = endTimeTH - startTimeTH
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
-                                  columns=['type', 'time'])
+                                  columns=['type', 'time'])"""
             # timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
             # "All/" + embedding_file[:-4], "timing.csv"))
 
@@ -293,28 +292,53 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     # tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
     Ts[clu] = []
     Zs[clu] = []
+    F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
+    SE = pickle.load(F)
+    subcols = []
+
+    if embedding_file.endswith("_column.pkl"):
+
+        tables = [i for i in os.listdir(f"datasets/{hp.dataset}/Test") if i.endswith(".csv")]
+
+        for table in tables:
+            subcol = findSubCol(SE,table)
+            if subcol is not None:
+                subcols.append(f"{table[:-4]}.{subcol}")
+
+
+
+
     for vector in content:
         if embedding_file.endswith("_column.pkl"):
-            if vector[0] in gt_clusters[clu].keys():
+
+            if vector[0] in gt_clusters[clu].keys() and vector[0] not in subcols:
                 Ts[clu].append(vector[0])
                 Zs[clu].append(vector[1][0])
         elif "D3L" in embedding_file:
-
-            if vector[0] in gt_clusters[clu].keys():
-                Ts[clu].append(vector[0])
-                Zs[clu].append(vector[1])
+            if vector[0] in gt_clusters[clu].keys() and vector[0] not in subcols:
+                    Ts[clu].append(vector[0])
+                    Zs[clu].append(vector[1])
+                
         else:
+            NE_list, headers, types = SE[vector[0]]
+            subjectName = None
+            if NE_list:
+                subjectName = headers[NE_list[0]]
             if vector[0].removesuffix(".csv") in Ground_t[clu]:
                 table = pd.read_csv(data_path + vector[0], encoding="latin1")
                 for i in range(0, len(table.columns)):
-                    Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
-                    Zs[clu].append(vector[1][i])
+                    if table.columns[i] !=subjectName:
+                        Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
+                        Zs[clu].append(vector[1][i])
+
+    #print(len(Ts[clu]))
+
+
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
     store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
     embedding_file_path = embedding_file.split(".")[0]
     store_path += "All/" + embedding_file_path + "/column/"
     mkdir(store_path)
-    # if len(Zs[clu]) > 20000:  # 816 1328 5000<len(Zs[clu]) <
     if os.path.isfile(store_path + str(index) + '_ColumnMetrics.csv'):
         print(f"exists! index: {index} columns NO :{len(Zs[clu])}, cluster NO: {len(gt_cluster_dict[clu])} ")
     else:
@@ -353,6 +377,7 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
             pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+
 def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
     if hp.phaseTest is True:
         filename = str(index) + '_colcluster_dictGT.pickle'
@@ -377,7 +402,7 @@ def P2(hp: Namespace):
         conceptualAttri(hp)
     else:
         files = [fn for fn in os.listdir(datafile_path) if
-                 '.pkl' in fn and f"_{hp.embed}_" in fn]
+                 '.pkl' in fn and f"_{hp.embed}_" in fn and 'subCol' not in fn]
         # if fn.endswith('_column.pkl') and hp.embed in fn] and 'Pretrain' in fn and 'subCol' not in fn
         # if fn.endswith("_column.pkl") and '8' in fn
         files = [fn for fn in files]

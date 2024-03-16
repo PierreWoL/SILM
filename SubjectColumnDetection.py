@@ -1,6 +1,4 @@
-import math
 import string
-
 import pandas as pd
 from typing import Iterable
 from d3l.input_output.dataloaders import CSVDataLoader
@@ -14,18 +12,13 @@ import statistics
 from d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
 import experimentalData as ed
-from country_list import countries_for_language
+
 """
 This combines the features to detection subject columns of tables
 both in tableMiner+ and recovering semantics of data on the web
 1. column_type_judge: judge the type of column:
     named_entity, long_text, number, date_expression, empty, other
 """
-
-
-def is_country(string):
-    token = func.tokenize_str(string)
-    countries = [x[1] for x in countries_for_language('en')]
 
 
 class ColumnType(Enum):
@@ -39,26 +32,29 @@ class ColumnType(Enum):
 
 
 class ColumnDetection:
-    def __init__(self, values: Iterable[Any]):
+    def __init__(self, values: Iterable[Any], column_type=None):
 
         if not isinstance(values, pd.Series):
             values = pd.Series(values)
         self.column = values
-        self.col_type = self.column_type_judge(3)
+        if column_type is None:
+            self.col_type = self.column_type_judge(50)
+        else:
+            self.col_type = column_type
 
         '''
         feature used in the subject column detection
-       
+
         emc: fraction of empty cells
         uc: fraction of cells with unique content 
         ac: if over 50% cells contain acronym or id
         df: distance from the first NE-column
         cm: context match score (doubt this could work)
         ws: web search score
-        
+
         additional ones in the recovering semantics of data 
         on the web
-        
+
         tlc: average number of words in each cell
         vt: variance in the number of data tokens in each cell
         '''
@@ -156,7 +152,7 @@ class ColumnDetection:
                     if element.isalpha():
                         # actually this is an acronym type, but this will fixed in the future todo: later add this type
                         if func.is_acronym(element):
-                            if is_country(element) is True:
+                            if func.is_country(element) is True:
                                 type_count[ColumnType.named_entity.value] += 1
                                 continue
                             else:
@@ -275,30 +271,22 @@ class ColumnDetection:
         if self.acronym_id_num / len(self.column) > 0.5:
             self.ac = 1
 
-    def df_cal(self, index: int, NE_table: pd.DataFrame):
+    def df_cal(self, index: int, annotation_dict: dict):
         """
         calculate the df score
         the distance between this NE column and the first NE column
         -------
          """
+        first_NE_column_index = [index for index, value in annotation_dict.items() if value == ColumnType.named_entity][
+            0]
         if self.col_type == ColumnType.named_entity:
-            first_pair = NE_table.columns[0]
+            first_pair = first_NE_column_index
             self.df = index - int(first_pair)
-        """
-            temp_annotation = list(annotation_table.annotation.items())
-            # pass the index of this column through parameter
-            res = [index for index, pair in enumerate(temp_annotation) if pair[0] == self.col_type]
-        """
-
-    def ws_cal(self, index: int, NE_table: pd.DataFrame):
-        if self.col_type == ColumnType.named_entity:
-            for item in NE_table[str(index)]:
-                self.ws += item[1]
 
     def cm_cal(self):
         """
         calculate the context match score:
-        TableMiner+ explanation: the frequency of the column header's composing words in the header's context
+        TableMiner explanation: the frequency of the column header's composing words in the header's context
         note: In the paper they mention the different context include webpage title/table caption and surrounding
         paragraphs, currently our datasets doesn't include this, so we pass this score as 1
         Returns
@@ -310,6 +298,35 @@ class ColumnDetection:
         else:
             self.cm = 1
 
+    def calculate_cms(self, contexts, context_weights):
+        """
+        Calculate the context match score for a column header.
+        :param contexts: A dictionary where keys are context types (e.g., 'title', 'caption') and
+                         values are the text of these contexts.
+        :param context_weights: A dictionary where keys are context types and values are the weights for each context.
+        :return: The context match score.
+        """
+        # Tokenize the column header and create a bag-of-words
+        if self.col_type != ColumnType.named_entity or self.col_type != ColumnType.long_text:
+            # print("No need to calculate context match score!")
+            pass
+        else:
+            bow_header = func.bow(self.column.name)
+            # Initialize the context match score
+            cm_score = 0
+
+            # Iterate over each word in the bag-of-words representation of the column header
+            for word in bow_header:
+                # For each context type
+                for context_type, context_text in contexts.items():
+                    # Tokenize the context text
+                    context_tokens = func.nltk_tokenize(context_text)
+                    # Count the frequency of the word in this context
+                    word_freq = context_tokens.count(word)
+                    # Add to the context match score, weighted by the context type
+                    cm_score += word_freq * context_weights[context_type]
+            return cm_score
+
     def tlc_cal(self):
         """
         variance in the number of data tokens in each cell
@@ -319,22 +336,20 @@ class ColumnDetection:
         if self.col_type == ColumnType.named_entity:
             token_list = list(self.column.apply((lambda x: len(func.token_stop_word(x)))))
             self.tlc = statistics.variance(token_list)
-        # return self.tlc
 
     def vt_cal(self):
         self.vt = self.column.apply((lambda x: len(str(x).split(" ")))).sum() / len(self.column)
-        # return self.vt
 
-    def features(self, index: int, NE_table: pd.DataFrame):
+    def features(self, index: int, annotation_dict):
         self.emc_cal()
         self.uc_cal()
         self.ac_cal()
-        self.df_cal(index, NE_table)
-        self.ws_cal(index, NE_table)
+        self.df_cal(index, annotation_dict)
         self.cm_cal()
-        self.vt_cal()
-        self.tlc_cal()
-        return [self.ac, self.uc, self.ws, self.cm, self.emc, self.df, self.vt, self.tlc]
+        # self.vt_cal()
+        # self.tlc_cal()
+        # self.vt, self.tlc
+        return {'emc': self.emc, 'uc': self.uc, 'ac': self.ac, 'df': self.df, 'cm': self.cm}
 
 
 def datasets(root_path):
@@ -352,22 +367,22 @@ def datasets(root_path):
     dataloader = CSVDataLoader(root_path=root_path, encoding='latin-1')
     T = os.listdir(root_path)
     T = [t[:-4] for t in T if t.endswith('.csv')]
-    if len(T)>1:
+    if len(T) > 1:
         T.sort()
-        #print(T)
-        #random.choices(T, k=400)
+        # print(T)
+        # random.choices(T, k=400)
     else:
         Table_names = []
         T = os.listdir(root_path)
         for t in T:
-            if t!=".DS_Store" and not t.endswith(".csv"):
-                for file in os.listdir(root_path+t+"/"):
+            if t != ".DS_Store" and not t.endswith(".csv"):
+                for file in os.listdir(root_path + t + "/"):
                     if file.endswith('.csv'):
-                        Table_names.append(t+"/"+file)
+                        Table_names.append(t + "/" + file)
         T = Table_names.copy()
     for t in T:
         table = dataloader.read_table(table_name=t)
-        #print(table.iloc[:,1])
+        # print(table.iloc[:,1])
         tables[t] = table
     return tables
 
@@ -387,65 +402,3 @@ def test_subject_column(filename):
             annotation = ColumnDetection(table.iloc[:, i])
             print(annotation.column_type_judge(3))
 
-
-'''
-This is random test for the column-detection
-TODO: write a test function that can randomly choose table 's column and 
-detect its type
-if type is invalid(-1) throw exception
-'''
-
-"""
-example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/3887681_0_7938589465814037992.csv'
-tableExample = pd.read_csv(example)
-detection = ColumnDetection(tableExample.iloc[:, 4])
-typeTest = detection.column_type_judge(2)
-print(detection.col_type)
-"""
-
-# print(func.is_long_text(tableExample.iloc[:,2]))
-'''
-def column_type_detection(table):
-    for i in table.columns:
-        for element in table[i]:
-'''
-
-'''
-Used in read tables, Useless now but may be a little helpful
-in the future
-
-    def __init__(self, root_path: str, **loading_kwargs: Any):
-        super().__init__(root_path, **loading_kwargs)
-        if not os.path.isdir(root_path):
-            raise FileNotFoundError(
-                "The {} root directory was not found locally. "
-                "A CSV loader must have an existing directory associated!".format(
-                    root_path
-                )
-            )
-        self.data_path = root_path
-        if self.data_path[-1] != "/":
-            self.data_path = self.data_path + "/"
-        self.loading_kwargs = loading_kwargs
-        self.data_path = root_path
-        self.tables = []
-        CSVDataLoader(root_path=(root_path), encoding='latin-1')
-
-    def read_tables(self):
-        T = os.listdir(self.data_path)
-        T = [t[:-4] for t in T if t.endswith('.csv')]
-        T.sort()
-        dataloader = CSVDataLoader(
-            root_path=(self.data_path),
-            encoding='latin-1'
-        )
-        for t in T:
-            table = dataloader.read_table(table_name=t)
-            # print(table)
-            self.tables.append(table)
-
-    def Tables(self):
-        return self.tables
-'''
-
-# print(subject.tables[0].columns.tolist())
