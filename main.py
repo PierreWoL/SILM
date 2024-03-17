@@ -1,10 +1,11 @@
 import argparse
-from TableCluster.tableClustering import P1, P2, P3,endToEnd,baselineP1
-from RelationshipSearch.SearchRelationship import  relationshipDiscovery,P4
+from TableCluster.tableClustering import P1, P2, P3, endToEnd, baselineP1
+from RelationshipSearch.SearchRelationship import relationshipDiscovery, P4
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="TabFact")  # WDC TabFact
+    parser.add_argument("--method", type=str, default="starmie")  #
+    parser.add_argument("--dataset", type=str, default="WDC")  # WDC TabFact
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -28,8 +29,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--intervalSlice", type=int, default=20)
     parser.add_argument("--delta", type=float, default=0.1)
-    parser.add_argument("--similarity", type=float, default=0.6)
-    parser.add_argument("--clustering", type=str, default='Agglomerative') #Agglomerative
+    parser.add_argument("--similarity", type=float, default=0.1)
+    parser.add_argument("--clustering", type=str, default='Agglomerative')  # Agglomerative
     parser.add_argument("--iteration", type=int, default=1)  # Agglomerative
 
     parser.add_argument("--column", dest="column", action="store_true", default=True)
@@ -47,20 +48,17 @@ if __name__ == '__main__':
     parser.add_argument("--P1Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_none_subCol.pkl')
     parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')
     parser.add_argument("--P4Embed", type=str, default='Pretrain_sbert_head_column_none_False.pkl')
-    #TODO Needs to delete later/ or re-code
+    # TODO Needs to delete later/ or re-code
     parser.add_argument("--SelectType", type=str, default='')
     hp = parser.parse_args()
     if hp.step == 1:
         P1(hp) if hp.baseline is False else baselineP1(hp)
     elif hp.step == 2:
         P2(hp)
-    elif hp.step ==3:
+    elif hp.step == 3:
         P3(hp)
-    elif hp.step ==4:
-        #relationshipDiscovery(hp)
-        P4(hp)
-    elif hp.step ==-1:
+    elif hp.step == 4:
+        relationshipDiscovery(hp)
+        # P4(hp)
+    elif hp.step == -1:
         endToEnd(hp)
-
-
-

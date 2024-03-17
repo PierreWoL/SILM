@@ -19,6 +19,31 @@ def calculate_similarity(e1, e2):
 
     cosine_similarity = dot_product / (norm_e1 * norm_e2)
     return cosine_similarity
+def entityTypeRelationship(cluster1, cluster2, threshold, EntityColumns):
+    table_pairs = {}
+    for table_1, table1_embedding in cluster1:
+        NE_list_1, columns1, types1 = EntityColumns[table_1]
+        subjectCol_1_embedding = table1_embedding[NE_list_1[0]] if len(NE_list_1) != 0 else table1_embedding[0]
+        for table_2, table2_embedding in cluster2:
+            similar_pairs = {}
+            NE_list_2, columns2, types2 = EntityColumns[table_2]
+            NE_embeddings2 = np.array([table2_embedding[i] for i in NE_list_2]) if len(
+                NE_list_2) != 0 else table2_embedding
+            NE_columns = [columns2[i] for i in NE_list_2] if len(NE_list_2) != 0 else columns2
+            for index, j in enumerate(NE_embeddings2):
+                similarity = calculate_similarity(subjectCol_1_embedding, j)
+                eu_sim = np.linalg.norm(subjectCol_1_embedding - j)
+                # if similarity>0.6:
+                    # print(subcol1, NE_columns[index], eu_sim, similarity)
+                if similarity > threshold:
+                    similar_pairs[NE_columns[index]] = similarity
+            # if len(similar_pairs)==0:
+            # similar_pairs[most_similar_col] = highest_sim
+            if len(similar_pairs) != 0:
+                table_pairs[(table_1, table_2)] = similar_pairs
+    return table_pairs
+
+
 
 
 def table_relationship(df1_embedding, df2_embedding, SubjectAttri: dict, similarity_dict:dict):
@@ -96,6 +121,23 @@ def subjectAttri(dataset_path, Embedding):
     return subjectAttributes
 
 
+def group_files(df):
+    df['superclass'] = df['superclass'].apply(eval)
+    # Create an empty dictionary to store the grouped file names
+    grouped_files = {}
+    # Iterate over the DataFrame rows
+    for index, row in df.iterrows():
+        # Handle rows with multiple superclasses
+        if len(row['superclass']) > 1:
+            # If the class is one of the superclasses, choose it, otherwise choose the first superclass
+            chosen_superclass = row['class'] if row['class'] in row['superclass'] else row['superclass'][0]
+            grouped_files.setdefault(chosen_superclass, []).append(row['fileName'])
+        else:
+            # For rows with a single superclass, simply add the fileName to the corresponding list
+            superclass_str = row['superclass'][0]  # Since we have lists of single items, we take the first one
+            grouped_files.setdefault(superclass_str, []).append(row['fileName'])
+    return grouped_files
+
 def check_similarity(cluster_1, cluster_2, embeddings: dict):
     """
     Search if table1 and table2 have highly similar attributes  (embeddings), one of which
@@ -112,7 +154,7 @@ def check_similarity(cluster_1, cluster_2, embeddings: dict):
         dictionary: {df1_name: (subjectAttri, []),df2_name:(subjectAttri, [])}
     """
 
-
+"""
 datafile_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/result/embedding/starmie/vectors/WDC/"
 table_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/datasets/WDC/"
 similarity_dict = {}
@@ -127,3 +169,4 @@ df2_example = "SOTAB_200.csv",example_embedding["SOTAB_200.csv"]
 
 relations = table_relationship(df1_example, df2_example,subjectAttri_datasets,similarity_dict)
 print(relations)
+"""

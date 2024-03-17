@@ -83,7 +83,6 @@ def labels_found(clu_list, clusters, gt_col, number=0):
     return label_all
 
 
-### TODO 这个算是废了
 def clustersMerge1(clusters_a, clustera_name, clusters_b, clusterb_name, dataset, method="single"):
     def check_values_in_list(lst, n):
         has_less_than_n = [x for x in lst if x < n]
@@ -107,11 +106,7 @@ def clustersMerge1(clusters_a, clustera_name, clusters_b, clusterb_name, dataset
 
     gt_col_a = gt_clusters[clustera_name]
     gt_col_b = gt_clusters[clusterb_name]
-    # print(len(distances), distances)
-
-    # 使用层次聚类来寻找最佳阈值
     linkage_m = linkage(np.array(distances), method="single")
-    # print(linkage_m)
     dendrogramz = dendrogram(linkage_m)
     best_threshold = findBestSilhouetteDendro(dendrogramz, linkage_m, distances)[0]
     silhouette_avg, custom_clusters = sliced_clusters(linkage_m, best_threshold - 0.8, distances)
@@ -123,13 +118,6 @@ def clustersMerge1(clusters_a, clustera_name, clusters_b, clusterb_name, dataset
             cluster_labelsa = labels_found(a_clu, cluster_all, gt_col_a)
             cluster_labelsb = labels_found(b_clu, cluster_all, gt_col_b)
             print(cluster_labelsa, "\n", cluster_labelsb)
-
-    ### TODO this can be deleted later, just to see the result
-    """ 
-    plt.figure(figsize=(10, 8))
-    plt.title('Dendrogram')
-    plt.ylabel('Distance')
-    plt.show()"""
 
 
 # def clustersMerge(clusters_a,clustera_name, clusters_b,clusterb_name,dataset, method="complete"):
@@ -258,21 +246,21 @@ def relationshipDiscovery(hp: Namespace):
     ground_truth = os.path.join(os.getcwd(), f"datasets/{hp.dataset}/groundTruth.csv")
     Ground_t = group_files(pd.read_csv(ground_truth))
     types = list(Ground_t.keys())
-    print(types)
+    # print("types",types)
 
     # load the embedding file of different embedding methods
     datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
     files = [fn for fn in files if not fn.endswith("subCol.pkl")]  # and 'Pretrain' in fn and 'header' in fn
-    print(files)
+    # print("files",files)
 
     # create the folder that stores the scores of column matching using
     score_path = os.path.join(os.getcwd(), f"result/P4/{hp.dataset}/")
     mkdir(score_path)
     for embedding_file in files:
         # load the column name and corresponding vector
-        print(embedding_file)
+        # print("embedding_file", embedding_file)
         F = open(os.path.join(datafile_path, embedding_file), 'rb')
         if embedding_file.endswith("_column.pkl"):
             original_content = pickle.load(F)
@@ -287,10 +275,8 @@ def relationshipDiscovery(hp: Namespace):
                 content.append(tuple_file)
         else:
             content = pickle.load(F)
-
         cluster_relationships = {}
-        target_path = os.path.join(os.getcwd(),
-                                   f"result/P4/{hp.dataset}/{embedding_file[:-4]}/")
+
 
         startTimeS = time.time()
 
@@ -302,9 +288,9 @@ def relationshipDiscovery(hp: Namespace):
                 cluster1_embedding = [i for i in content if i[0] in cluster1]
                 cluster2_embedding = [i for i in content if i[0] in cluster2]
                 relationship1 = entityTypeRelationship(cluster1_embedding, cluster2_embedding, hp.similarity,
-                                                       SE, Euclidean=hp.Euclidean)
+                                                       SE)
                 relationship2 = entityTypeRelationship(cluster2_embedding, cluster1_embedding, hp.similarity,
-                                                       SE, Euclidean=hp.Euclidean)
+                                                       SE)
                 if len(relationship1) > 0:
                     cluster_relationships[(type_i, type_j)] = relationship1
                 if len(relationship2) > 0:
@@ -314,33 +300,32 @@ def relationshipDiscovery(hp: Namespace):
 
         endTimeS = time.time()
         timing.append({'Embedding File': embedding_file, "timing": endTimeS - startTimeS})
-
+        gt_relationship = relationshipGT(hp.dataset)
+        target_path = os.path.join(os.getcwd(),
+                                   f"result/P4/{hp.dataset}/{embedding_file[:-4]}/")
         mkdir(target_path)
-        sub_string = "Eu" if hp.Euclidean is False else "Cos"
         mid_string = "Base" if hp.baseline is False else ""
         file_pickle = f'Relationships_{mid_string}_{str(hp.similarity)}_{hp.embed}.pickle'
         attributeRelation(hp.dataset, target_path, cluster_relationships, file_pickle)
-
         ### Todo STOP HERE: Needs to refine the metric function
         timing_df = pd.DataFrame(timing)
         timing_df.to_csv(os.path.join(os.getcwd(),
                                       f"result/P4/{hp.dataset}/timing_{hp.embed}.csv"))
         result_type_pairs = list(cluster_relationships.keys())
-        p, r, f1 = MetricType(list(gt_relationship.keys()), result_type_pairs)
-
+        p, r, f1 = MetricType(list(gt_relationship[0].keys()), result_type_pairs)
         precision, recall, sort_result, TN = attributeRelationshipSearch(cluster_relationships, hp, embedding_file, SE,
-                                                                         gt_attributes)
+                                                                         gt_relationship[1])
 
         storing = (cluster_relationships, sort_result, TN)
-        print(len(sort_result), len(TN), sort_result, TN)
+        # print(len(sort_result), len(TN), sort_result, TN)
         with open(os.path.join(target_path, file_pickle), 'wb') as handle:
             pickle.dump(storing, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print(embedding_file, " type metric:\n",
               f"precision {p} recall: {r} F1-score: {f1}\n",
               f"attribute Precision: {precision}",
               f"attribute recall: {recall}")
-        type_csv = f'TypeRelationshipScore_{mid_string}_{sub_string}.csv'
-        attri_csv = f'AttributeRelationshipScore_{mid_string}_{sub_string}.csv'
+        type_csv = f'TypeRelationshipScore_{mid_string}.csv'
+        attri_csv = f'AttributeRelationshipScore_{mid_string}.csv'
         if type_csv in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, type_csv), index_col=0)
         else:
@@ -374,7 +359,7 @@ def relationshipDiscovery(hp: Namespace):
 
         if str(hp.similarity) + embedding_file[:-4] not in df.index:
             new_data = {'Similarity': hp.similarity, 'Embedding': embedding_file[:-4], "Recall": recall,
-                        "Precision": precision}
+                        "Precision": precision, "sort_result": sort_result, "TN":TN}
             # print(new_data)
             new_row = pd.DataFrame([new_data], index=[str(hp.similarity) + embedding_file[:-4]])
             # Concatenate the new DataFrame with the original DataFrame
@@ -386,10 +371,26 @@ def relationshipDiscovery(hp: Namespace):
             df.loc[str(hp.similarity), 'Embedding'] = embedding_file[:-4]
             df.loc[str(hp.similarity), 'Recall'] = recall
             df.loc[str(hp.similarity), 'Precision'] = precision
-
+            df.loc[str(hp.similarity), 'sort_result'] = sort_result
+            df.loc[str(hp.similarity), 'TN'] = TN
             # print(df)
             df.to_csv(os.path.join(score_path, attri_csv))
-        # break
+
+
+def relationshipGT(dataset):
+    gt = pd.read_excel(f"datasets\{dataset}\Relationship.xlsx")
+    gt_dict = {}
+    for index, row in gt.iterrows():
+        t1, t2 = row[gt.columns[0]], row[gt.columns[2]]
+        sa1, nsa2 = row[gt.columns[1]], row[gt.columns[3]]
+        if (t1, t2) not in gt_dict.keys():
+            gt_dict[(t1, t2)] = []
+        gt_dict[(t1, t2)].append(nsa2)
+    relation_attributes = []
+    for table_pair, attributes in gt_dict.items():
+        for attr in attributes:
+            relation_attributes.append((f"{table_pair[0]}", f"{table_pair[1]}.{attr}"))
+    return gt_dict,relation_attributes
 
 
 def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_file, SE, gt_attributes):
@@ -445,17 +446,28 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
                     else:
                         relationships[type_pair][(Attri_i, Attri_j)].append(list(similarities.values())[index])
     overall_results = {}
+    ### TODO I think this needs to simplify
     for type_pair, attribute_pair_dict in relationships.items():
+        for attribute_pair, attribute_similarities in attribute_pair_dict.items():
+            attri_combine1 = f"{type_pair[0]}"
+            attri_combine2 = f"{type_pair[1]}.{attribute_pair[1]}"
+            sim_attri = sum(attribute_similarities) / len(attribute_similarities)
+            overall_results[(attri_combine1, attri_combine2)] = sim_attri
+    sort_results = sorted(overall_results.items(), key=lambda item: item[1])
+    precision, TN = metric(gt_attributes, sort_results)
+    recall = metric(gt_attributes, sort_results, metric='R')[0]
+    return precision, recall, sort_results, TN
+
+
+"""for type_pair, attribute_pair_dict in relationships.items():
         for attribute_pair, attribute_similarities in attribute_pair_dict.items():
             attri_combine1 = f"{type_pair[0]}.{attribute_pair[0]}"
             attri_combine2 = f"{type_pair[1]}.{attribute_pair[1]}"
             sim_attri = sum(attribute_similarities) / len(attribute_similarities)
             overall_results[(attri_combine1, attri_combine2)] = sim_attri
-    reverse = True if hp.Euclidean is False else True
-    sort_results = sorted(overall_results.items(), key=lambda item: item[1], reverse=reverse)
+    sort_results = sorted(overall_results.items(), key=lambda item: item[1])
     precision, TN = metric(gt_attributes, sort_results)
-    recall = metric(gt_attributes, sort_results, metric='R')[0]
-    return precision, recall, sort_results, TN
+    recall = metric(gt_attributes, sort_results, metric='R')[0]"""
 
 
 # TODO this needs to delete later
