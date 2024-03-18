@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--intervalSlice", type=int, default=20)
     parser.add_argument("--delta", type=float, default=0.1)
-    parser.add_argument("--similarity", type=float, default=0.1)
+    parser.add_argument("--similarity", type=float, default=0.5)
     parser.add_argument("--clustering", type=str, default='Agglomerative')  # Agglomerative
     parser.add_argument("--iteration", type=int, default=1)  # Agglomerative
 
