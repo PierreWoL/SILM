@@ -8,7 +8,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pickle
-from plotly.figure_factory._dendrogram import sch
+#from plotly.figure_factory._dendrogram import sch
 
 from d3l.utils.functions import unpickle_python_object
 
@@ -423,6 +423,9 @@ column_label_group.sort_values(by='UniqueFileCount', ascending=False).reset_inde
 column_label_group.to_csv("datasets/WDC/aggre_place.csv")
 print(column_label_group)
 """
+
+
+"""
 target_path = "datasets/GDS"
 table_gt = pd.read_csv(os.path.join(target_path, "groundTruth.csv"))
 
@@ -453,4 +456,27 @@ def tables_of_node(tree: nx.DiGraph(), node):
     return tables
 
 
-""""""
+"""
+
+"""import pandas as pd
+import os
+def relationshipGT(dataset):
+    gt = pd.read_excel(f"datasets\{dataset}\Relationship.xlsx")
+    gt_dict = {}
+    for index, row in gt.iterrows():
+        t1, t2 = row[gt.columns[0]], row[gt.columns[2]]
+        sa1, nsa2 = row[gt.columns[1]], row[gt.columns[3]]
+        if (t1, t2) not in gt_dict.keys():
+            gt_dict[(t1, t2)] = []
+        gt_dict[(t1, t2)].append(nsa2)
+    relation_attributes = []
+    for table_pair, attributes in gt_dict.items():
+        for attr in attributes:
+            relation_attributes.append((f"{table_pair[0]}", f"{table_pair[1]}.{attr}"))
+    print(gt_dict,"\n",relation_attributes)
+    return gt_dict,relation_attributes
+
+relationshipGT("WDC")"""
+
+
+

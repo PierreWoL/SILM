@@ -551,10 +551,10 @@ def ColumnBar(dataset, metrics, num_test=0.0):
             plt.savefig( os.path.join(f"D://CurrentDataset/result/SILM/{dataset}/All",   metric + f"BarChartALL_Whole{dataset}.png"))
         plt.show()
 
-
+"""
 metris = ["Purity","Rand Index"] #,
 ColumnBar("GDS",metris)
-ColumnBar("GDS",["TCS"], num_test=0.15)
+ColumnBar("GDS",["TCS"], num_test=0.15)"""
 """box("GDS",["TCS"], num_test=0.1)
 ColumnBar("GDS",["TCS"], num_test=0.1)
 box("WDC",["TCS"], num_test=0.15)
