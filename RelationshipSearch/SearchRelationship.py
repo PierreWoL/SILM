@@ -371,7 +371,6 @@ def relationshipDiscovery(hp: Namespace):
             df.loc[str(hp.similarity), 'TN'] = str(TN)
             # print(df)
             df.to_csv(os.path.join(score_path, attri_csv))
-        break
 
 
 def relationshipGT(dataset):
