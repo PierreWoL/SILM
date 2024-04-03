@@ -16,9 +16,7 @@ if __name__ == '__main__':
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='drop_num_col')
     parser.add_argument("--strict", dest="strict", action="store_true")
-
     parser.add_argument("--embed", type=str, default='sbert')
-
     parser.add_argument("--embedMethod", type=str, default='')
     parser.add_argument("--baseline", dest="baseline", action="store_true")
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
@@ -26,10 +24,11 @@ if __name__ == '__main__':
     parser.add_argument("--step", type=int, default=1)
     parser.add_argument("--slice_start", type=int, default=0)
     parser.add_argument("--slice_stop", type=int, default=1)
-
     parser.add_argument("--intervalSlice", type=int, default=20)
     parser.add_argument("--delta", type=float, default=0.1)
-    parser.add_argument("--similarity", type=float, default=0.5)
+    parser.add_argument("--similarity", type=float, default=0.4)
+    parser.add_argument("--portion", type=float, default=0.05)
+    parser.add_argument("--Euclidean", dest="Euclidean", action="store_true")
     parser.add_argument("--clustering", type=str, default='Agglomerative')  # Agglomerative
     parser.add_argument("--iteration", type=int, default=1)  # Agglomerative
 

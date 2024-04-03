@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import pandas as pd
+
 sys.path.append('../')
 import TableAnnotation as TA
 from SubjectColumnDetection import ColumnType
@@ -11,15 +12,18 @@ from SubjectColumnDetection import ColumnType
 
 # Assuming that embeddings are stored in a dictionary in this format:
 # embeddings = { 'subject1': [...], 'A': [...], ... }
-def calculate_similarity(e1, e2):
-    dot_product = np.dot(e1, e2)
+def calculate_similarity(e1, e2, Euclidean=False):
+    if Euclidean is False:
+        dot_product = np.dot(e1, e2)
+        norm_e1 = np.linalg.norm(e1)
+        norm_e2 = np.linalg.norm(e2)
+        similarity = dot_product / (norm_e1 * norm_e2)
+    else:
+        similarity = np.linalg.norm(e1- e2)
+    return similarity
 
-    norm_e1 = np.linalg.norm(e1)
-    norm_e2 = np.linalg.norm(e2)
 
-    cosine_similarity = dot_product / (norm_e1 * norm_e2)
-    return cosine_similarity
-def entityTypeRelationship(cluster1, cluster2, threshold, EntityColumns):
+def entityTypeRelationship(cluster1, cluster2, threshold1, EntityColumns, isEuclidean=False):
     table_pairs = {}
     for table_1, table1_embedding in cluster1:
         NE_list_1, columns1, types1 = EntityColumns[table_1]
@@ -31,22 +35,18 @@ def entityTypeRelationship(cluster1, cluster2, threshold, EntityColumns):
                 NE_list_2) != 0 else table2_embedding
             NE_columns = [columns2[i] for i in NE_list_2[1:]] if len(NE_list_2) != 0 else columns2
             for index, j in enumerate(NE_embeddings2):
-                similarity = calculate_similarity(subjectCol_1_embedding, j)
-                eu_sim = np.linalg.norm(subjectCol_1_embedding - j)
-                # if similarity>0.6:
-                    # print(subcol1, NE_columns[index], eu_sim, similarity)
-                if similarity > threshold:
+                similarity = calculate_similarity(subjectCol_1_embedding, j, Euclidean=isEuclidean)
+                should_add = (not isEuclidean and similarity > threshold1) or (isEuclidean and similarity < threshold1)
+                if should_add:
                     similar_pairs[NE_columns[index]] = similarity
-            # if len(similar_pairs)==0:
-            # similar_pairs[most_similar_col] = highest_sim
+
             if len(similar_pairs) != 0:
                 table_pairs[(table_1, table_2)] = similar_pairs
+
     return table_pairs
 
 
-
-
-def table_relationship(df1_embedding, df2_embedding, SubjectAttri: dict, similarity_dict:dict):
+def table_relationship(df1_embedding, df2_embedding, SubjectAttri: dict, similarity_dict: dict):
     """
     Search if table1 and table2 have highly similar attributes  (embeddings), one of which
     must be subject attributes of the belonging tables.
@@ -93,8 +93,6 @@ def table_relationship(df1_embedding, df2_embedding, SubjectAttri: dict, similar
     similarity_dict[df1_name][1].append()
 
 
-
-
 def subjectAttri(dataset_path, Embedding):
     target = os.path.join(dataset_path, "SubjecAttributes.pkl")
     if os.path.exists(target):
@@ -138,6 +136,7 @@ def group_files(df):
             grouped_files.setdefault(superclass_str, []).append(row['fileName'])
     return grouped_files
 
+
 def check_similarity(cluster_1, cluster_2, embeddings: dict):
     """
     Search if table1 and table2 have highly similar attributes  (embeddings), one of which
@@ -153,6 +152,7 @@ def check_similarity(cluster_1, cluster_2, embeddings: dict):
     Return:
         dictionary: {df1_name: (subjectAttri, []),df2_name:(subjectAttri, [])}
     """
+
 
 """
 datafile_path = os.path.abspath(os.path.dirname(os.getcwd())) + "/result/embedding/starmie/vectors/WDC/"
