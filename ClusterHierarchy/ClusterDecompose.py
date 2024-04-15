@@ -70,7 +70,7 @@ def ground_truth_labels(filename, mode=0, dataset="TabFact"):
         for class_file in classX:
             if class_file in G.nodes():
                 ancestors = [i for i in nx.ancestors(G, class_file)
-                         if i not in successors and i not in top_nodes and G.out_degree(i) != 0]
+                             if i not in successors and i not in top_nodes and G.out_degree(i) != 0]
                 all_anc.extend(ancestors)
 
         if len(all_anc) == 0:
@@ -83,8 +83,8 @@ def ground_truth_labels(filename, mode=0, dataset="TabFact"):
         all_anc = []
         for class_file in classX:
             if class_file in G.nodes():
-              ancestors = [i for i in nx.ancestors(G, class_file) if i in successors]
-              all_anc.extend(ancestors)
+                ancestors = [i for i in nx.ancestors(G, class_file) if i in successors]
+                all_anc.extend(ancestors)
         if len(all_anc) == 0:
             all_anc = classX
 
@@ -124,16 +124,20 @@ def updateNodeInfo(tree, clusterNode, tables, dataset, mode=0):
 
 def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
     # print(len(table_names))
-    lowest_layer = []
+
 
     simple_tree = nx.DiGraph()
     for table in table_names:
         label_dict_cluster = label_dict([table], mode=0, dataset=dataset)  # True
         labels, freq = labels_most_fre(label_dict_cluster)
         simple_tree.add_node(table, type='data', label=labels)
+
     clusterNodeId = len(table_names)
+    # print("total number of clusters: ", clusterNodeId)
+    lowest_layer = []
     last_layer_info = {}
     for index, (thre, clusters) in enumerate(threCluster_dict):
+        #print( index, (thre, clusters) )
         layer_current = {}
         # print("the threshold is ", "{:.3f}".format(thre), "the cluster size is ", len(clusters))
         # print(f"current cluster {len(clusters), clusters}")
@@ -141,10 +145,9 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
             for cluster_id, tables_id in clusters.items():
                 if len(tables_id) > 1:
                     tables = [table_names[ta] for ta in tables_id]
-                    simple_tree.add_node(clusterNodeId, type='data cluster node')
+                    simple_tree.add_node(clusterNodeId, type='data cluster node', layer=0)
                     updateNodeInfo(simple_tree, clusterNodeId, tables, dataset, mode=0)
                     lowest_layer.append(clusterNodeId)
-
                     for ta in tables_id:
                         simple_tree.add_edge(clusterNodeId, table_names[ta])
                     layer_current[cluster_id] = clusterNodeId
@@ -173,7 +176,7 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset):
                                     else 'data cluster node parent layer'
                                 labelMode = 0 if index != len(threCluster_dict) - 1 else 2
                                 tables = [table_names[ta] for ta in tables_idx]
-                                simple_tree.add_node(clusterNodeId, type=typeNode)
+                                simple_tree.add_node(clusterNodeId, type=typeNode, layer = index)
                                 updateNodeInfo(simple_tree, clusterNodeId, tables, dataset, mode=labelMode)
                                 simple_tree.add_edge(clusterNodeId, current_idz)
                                 left_tables = [i for i in left_tables if i not in tables_idz]
@@ -327,14 +330,12 @@ def TreeConsistencyScore(tree, lowest_layer, top_layer, dataset):
     return overall_path_score, len(all_paths)
 
 
-def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file, dataset, Naming,
-                            sliceInterval=10, delta=0.1):
+def tree_consistency_metric(tables, JaccardMatrix, embedding_file, dataset,
+                            sliceInterval=10, delta=0.1,cluster_name=None, Naming=None, endtoEnd=False):
     """data_path = os.path.join(os.getcwd(), "datasets", dataset, "groundTruth.csv")
     ground_truth_csv = pd.read_csv(data_path, encoding='latin1')"""
     encodings = [[i] for i in range(0, len(tables))]
     timing = {}
-    layer_purity = []
-
     def custom_metric(index_table1, index_table2):
         score = 1
         table1 = tables[int(index_table1)]
@@ -346,52 +347,48 @@ def tree_consistency_metric(cluster_name, tables, JaccardMatrix, embedding_file,
             score = JaccardMatrix[(table2, table1)]
         return score
 
-    result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
-    file_path = os.path.join(result_folder, embedding_file)
-    mkdir(file_path)
-    mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")
     linkage_matrix = sch.linkage(encodings, method='complete', metric=custom_metric)  # 'euclidean'
-
-    mkdir(result_folder)
-    # table_ids = [i for i in range(0, len(tables))]
-    # plt.figure(figsize=(10, 7))
     dendrogra = sch.dendrogram(linkage_matrix, labels=tables)
-    #plt.xticks(rotation=30)
-    #plt.show()
-    # tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, tables)
     start_time = time.time()
-    # layers = 4
     threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
                                          customMatrix=custom_metric, sliceInterval=sliceInterval, delta=delta)
     #print(threCluster_dict)
     end_time = time.time()
+    elapsed_time = end_time - start_time
     # Calculate the elapsed time
-    timing['Finding Layers'] = {'timing': end_time - start_time}
-    # elapsed_time = end_time - start_time
+    timing['Finding Layers'] = {'timing': elapsed_time}
     # print(f"Elapsed time: {elapsed_time:.4f} seconds for finding the best clusters")
-    if threCluster_dict ==[]:#len(threCluster_dict) == 1 and threCluster_dict[0][1] is None
+    if threCluster_dict == []:  # len(threCluster_dict) == 1 and threCluster_dict[0][1] is None
         print("no hierarchy!")
-        return  0,0
+        return 0, 0
     simple_tree, lower_layer, top_layer = \
         simple_tree_with_cluster_label(threCluster_dict, tables, dataset)
     start_time = time.time()
     TCS, len_path = TreeConsistencyScore(simple_tree, lower_layer, top_layer, dataset)
+    print(f"#tables{len(tables)}, Total layer: {len(threCluster_dict)} TCS:  {TCS} #PATH is {len_path}")
     end_time = time.time()
     timing['Tree Consistency Score'] = {'timing': end_time - start_time}
-    info_path = os.path.join(file_path, "all_info.csv")
-    print(f"Total layer: {len(threCluster_dict)} TCS:  {TCS} #PATH is {len_path}")
-    timing_df = pd.DataFrame(timing)
-    # timing_df.to_csv(os.path.join(file_path, "timing.csv"))
-    # print(timing_df)
-    with open(os.path.join(file_path, cluster_name + "_results.pkl"), 'wb') as file:
-        # Dump the data into the pickle file
-        pickle.dump((dendrogra, linkage_matrix, threCluster_dict, simple_tree), file)
-    return TCS, len_path
+
+    """
+    Create folder for the results
+    """
+    if endtoEnd is False:
+        result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
+        file_path = os.path.join(result_folder, embedding_file)
+        mkdir(file_path)
+        mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")
+        mkdir(result_folder)
+        # timing_df = pd.DataFrame(timing)
+        # timing_df.to_csv(os.path.join(file_path, "timing.csv"))
+        # print(timing_df)
+        with open(os.path.join(file_path, cluster_name + "_results.pkl"), 'wb') as file:
+            # Dump the data into the pickle file
+            pickle.dump((dendrogra, linkage_matrix, threCluster_dict, simple_tree), file)
+    return TCS, len_path, simple_tree
 
 
 def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
-
 
     datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                  "All/" + embedding_file + "/column")
@@ -410,15 +407,16 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
     col_cluster = pickle.load(F_cluster)
 
     tables = Ground_t[str(KEYS[index_cols])]
-    #print(str(KEYS[index_cols]), tables )
+    # print(str(KEYS[index_cols]), tables )
     score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
     # print(score_path)
     mkdir(score_path)
     if len(tables) > 1:
         jaccard_score = JaccardMatrix(col_cluster[clustering], data_path)[2]
-        #print(jaccard_score)
-        TCS, ALL_path = tree_consistency_metric(clustering, tables, jaccard_score, embedding_file, hp.dataset,
-                                                str(index_cols), sliceInterval= hp.intervalSlice, delta=hp.delta)
+        # print(jaccard_score)
+        TCS, ALL_path = tree_consistency_metric( tables, jaccard_score, embedding_file,hp.dataset,
+                                                 cluster_name=clustering, Naming=str(index_cols),
+                                                 sliceInterval=hp.intervalSlice, delta=hp.delta)[:1]
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'), index_col=0)
         else:

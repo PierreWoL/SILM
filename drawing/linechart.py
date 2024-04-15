@@ -7,7 +7,7 @@ import pandas as pd
 
 # 数据
 
-
+"""
 
 # 折线
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
@@ -56,7 +56,7 @@ for metric in metrics:
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                              os.path.join("result/starmie/WDC/"), metric + "LineChart2.png"))
     plt.show()
-
+"""
 
 
 

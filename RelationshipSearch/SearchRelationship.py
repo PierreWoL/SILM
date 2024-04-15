@@ -60,167 +60,6 @@ def find_conceptualAttri(cols_dict, table, attributes, gtclusters=None):
     return conceptualAttributes
 
 
-def calculate_linkage_distance(cluster_a, cluster_b, method='single'):
-    if method == 'single':
-        # 最近邻距离
-        return np.min(cdist(cluster_a, cluster_b, metric='euclidean'))
-    elif method == 'average':
-        # 平均链接距离
-        return np.mean(cdist(cluster_a, cluster_b, metric='euclidean'))
-    elif method == 'complete':
-        # 最远邻距离
-        return np.max(cdist(cluster_a, cluster_b, metric='euclidean'))
-
-
-def labels_found(clu_list, clusters, gt_col, number=0):
-    label_all = []
-    for index_a in clu_list:
-        cluster_a_per = clusters[index_a] if number == 0 else clusters[index_a - number]
-        labels = [gt_col[i[0]] for i in cluster_a_per]
-        cluster_label = most_frequent(labels)
-
-        label_all.append(cluster_label)
-    return label_all
-
-
-def clustersMerge1(clusters_a, clustera_name, clusters_b, clusterb_name, dataset, method="single"):
-    def check_values_in_list(lst, n):
-        has_less_than_n = [x for x in lst if x < n]
-
-        has_greater_than_n = [x for x in lst if x > n]
-        return has_less_than_n, has_greater_than_n
-
-    all = len(clusters_a) + len(clusters_b)
-
-    cluster_all = clusters_a + clusters_b
-    distances = np.zeros((all, all))
-    for i, a in enumerate(cluster_all):
-        a_embedding = np.array([t[1] for t in a])
-        j = 1
-        for b in cluster_all[i + 1:]:
-            b_embedding = np.array([t[1] for t in b])
-            dist = calculate_linkage_distance(a_embedding, b_embedding, method=method)
-            distances[i, i + j] = dist
-            j += 1
-    gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
-
-    gt_col_a = gt_clusters[clustera_name]
-    gt_col_b = gt_clusters[clusterb_name]
-    linkage_m = linkage(np.array(distances), method="single")
-    dendrogramz = dendrogram(linkage_m)
-    best_threshold = findBestSilhouetteDendro(dendrogramz, linkage_m, distances)[0]
-    silhouette_avg, custom_clusters = sliced_clusters(linkage_m, best_threshold - 0.8, distances)
-    # print(silhouette_avg, len(custom_clusters), custom_clusters)
-    for index, cluster in custom_clusters.items():
-        a_clu, b_clu = check_values_in_list(cluster, len(clusters_a) - 1)
-        if len(a_clu) > 0 and len(b_clu) > 0:
-            # print(a_clu, "\n", b_clu)
-            cluster_labelsa = labels_found(a_clu, cluster_all, gt_col_a)
-            cluster_labelsb = labels_found(b_clu, cluster_all, gt_col_b)
-        # print(cluster_labelsa, "\n", cluster_labelsb)
-
-
-# def clustersMerge(clusters_a,clustera_name, clusters_b,clusterb_name,dataset, method="complete"):
-
-
-def groundTruthRelation(dataset):
-    with open(f'datasets\{dataset}\Relationship_gt.pickle', 'rb') as handle:
-        gt_relationship = pickle.load(handle)
-    gt_attributes = []
-    for key, value in gt_relationship.items():
-        for atttr_p in value:
-            a1 = f"{key[0]}.{atttr_p[0]}"
-            a2 = f"{key[1]}.{atttr_p[1]}"
-            gt_attributes.append((a1, a2))
-    # print(gt_relationship.keys())
-    # print(gt_attributes)
-    return gt_relationship, gt_attributes
-
-
-def embeddings_dataset(datafile_path, embedding_file, table_names, data_path):
-    F = open(os.path.join(datafile_path, embedding_file), 'rb')
-    if embedding_file.endswith("_column.pkl"):
-        content = pickle.load(F)
-        content = [(i[0], i[1][0]) for i in content]
-    else:
-        original_content = pickle.load(F)
-        original_content_dict = {i[0]: i[1] for i in original_content}
-        content = []
-        for fileName in table_names:
-            embedding_fileName = []
-            table = pd.read_csv(os.path.join(data_path, fileName))
-            for index, col in enumerate(table.columns):
-                col_embed_tuple = f"{fileName[:-4]}.{col}", original_content_dict[fileName][index]
-                content.append(col_embed_tuple)
-
-    return content
-
-
-def clusteringEmbedding(embedding_file, index, dataset, content, groundTruth=False, clustering="Agglomerative"):
-    filename = f"{index}_colcluster_dict.pickle" if not groundTruth else f"{index}_colcluster_dictGT.pickle"
-    F_cluster = open(os.path.join(os.getcwd(), "result/SILM/", dataset,
-                                  "All/" + embedding_file[:-4] + "/column", filename), 'rb')
-    ### TODO hard coded problem
-
-    col_cluster = pickle.load(F_cluster)[clustering]
-    clusters = list(col_cluster.values())
-    # print("clusters", len(clusters))
-    clusters_embedding = []
-    for cluster in clusters:
-        cluster_embedding = [i for i in content if i[0] in cluster]
-        clusters_embedding.append((cluster_embedding))
-
-    return clusters_embedding
-
-
-def P4(hp: Namespace):
-    # Read table and their corresponding lowest type
-    subjectColPath = os.path.join(os.getcwd(), f"datasets/{hp.dataset}")
-    data_path = os.path.join(subjectColPath, "Test")
-    table_names = [i for i in os.listdir(data_path) if i.endswith(".csv")]
-
-    SE = subjectColumns(subjectColPath)
-
-    # embedding of the tables
-    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
-    files = [fn for fn in os.listdir(datafile_path) if
-             fn.endswith(
-                 '.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if not fn.endswith("subCol.pkl")]  # and 'Pretrain' in fn and 'header' in fn
-    # print(files)
-
-    # ground truth of conceptual attributes
-    gt_relationship, gt_attributes = groundTruthRelation(hp.dataset)
-
-    score_path = os.path.join(os.getcwd(),
-                              f"result/P4/new/{hp.dataset}/")
-    mkdir(score_path)
-
-    # start to test finding relationship in each embedding method
-    for embedding_file in files:
-        #     print(embedding_file)
-        content = embeddings_dataset(datafile_path, embedding_file, table_names, data_path)
-
-        cluster_relationships = {}
-        target_path = os.path.join(os.getcwd(),
-                                   f"result/P4/{hp.dataset}/{embedding_file[:-4]}/")
-        # Start to calculate time
-        startTimeS = time.time()
-        gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
-        keys = list(gt_cluster_dict.keys())
-
-        ### TODO hard coded problem
-        for index, clu in enumerate(keys):
-
-            if clu == "['Person']":
-                cluster_a = clusteringEmbedding(embedding_file, index, hp.dataset, content, clustering=hp.clustering)
-
-                for clu_j in keys[index + 1:]:
-                    if clu_j == "['Place']":
-                        print(clu, clu_j)
-                        cluster_b = clusteringEmbedding(embedding_file, keys.index(clu_j), hp.dataset, content,
-                                                        clustering=hp.clustering)
-                        clustersMerge1(cluster_a, clu, cluster_b, clu_j, hp.dataset)
 
 
 def MetricType(groundTruth, results):
@@ -234,13 +73,37 @@ def MetricType(groundTruth, results):
     return precision, recall, F1score
 
 
+def readEmbedding(embedding_file, dataset, selected_tables=None):
+    print("embedding_file", embedding_file)
+
+    data_path = os.path.join(f"datasets/{dataset}", "Test")
+    datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
+    if selected_tables is None:
+        selected_tables = [i for i in os.listdir(data_path) if i.endswith(".csv")]
+    F = open(os.path.join(datafile_path, embedding_file), 'rb')
+    if embedding_file.endswith("_column.pkl"):
+        original_content = pickle.load(F)
+        content = []
+        for fileName in selected_tables:
+            embedding_fileName = []
+            table = pd.read_csv(os.path.join(data_path, fileName))
+            for col in table.columns:
+                embedding_col = [i[1] for i in original_content if i[0] == f"{fileName[:-4]}.{col}"][0]
+                embedding_fileName.append(embedding_col[0])
+            tuple_file = fileName, np.array(embedding_fileName)
+            content.append(tuple_file)
+    else:
+        content = pickle.load(F)
+    return content
+
+
 def relationshipDiscovery(hp: Namespace):
     timing = []
     # load data, load subject column in each table
     subjectColPath = os.path.join(os.getcwd(), f"datasets/{hp.dataset}")
-    data_path = os.path.join(subjectColPath, "Test")
+    # data_path = os.path.join(subjectColPath, "Test")
     SE = subjectColumns(subjectColPath)
-    table_names = [i for i in os.listdir(data_path) if i.endswith(".csv")]
+    table_names = [i for i in os.listdir(os.path.join(subjectColPath, "Test")) if i.endswith(".csv")]
     # ground truth of the type of tables
     ground_truth = os.path.join(os.getcwd(), f"datasets/{hp.dataset}/groundTruth.csv")
     Ground_t = group_files(pd.read_csv(ground_truth))
@@ -250,14 +113,16 @@ def relationshipDiscovery(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if not fn.endswith("subCol.pkl")]  # and 'Pretrain' in fn and 'header' in fn
-    # print("files",files)
+    files = [fn for fn in files if
+             not fn.endswith("subCol.pkl") and '1' not in fn]  # and 'Pretrain' in fn and 'header' in fn
+    print("files", len(files))
     # create the folder that stores the scores of column matching using
     score_path = os.path.join(os.getcwd(), f"result/P4/{hp.dataset}/")
     mkdir(score_path)
-    for embedding_file in files[0:]:
+    for embedding_file in files:
+        content = readEmbedding(embedding_file, hp.dataset, table_names)
         # load the column name and corresponding vector
-        print("embedding_file", embedding_file)
+        """print("embedding_file", embedding_file)
         F = open(os.path.join(datafile_path, embedding_file), 'rb')
         if embedding_file.endswith("_column.pkl"):
             original_content = pickle.load(F)
@@ -271,7 +136,7 @@ def relationshipDiscovery(hp: Namespace):
                 tuple_file = fileName, np.array(embedding_fileName)
                 content.append(tuple_file)
         else:
-            content = pickle.load(F)
+            content = pickle.load(F)"""
         cluster_relationships = {}
         startTimeS = time.time()
         for index, type_i in enumerate(types):
@@ -462,11 +327,12 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
             portion_attribute_SA = len(attribute_dict["tables_SA"]) / len(Ground_t[type_table_SA])
             # print(attribute_pair, portion_attribute_SA)
             # print(attribute_pair,len(ground_t[type_table][attribute_pair[1]]), portion_attribute, attribute_dict )
-            if portion_attribute_RA >= hp.portion: #and portion_attribute_SA >= hp.portion
+            if portion_attribute_RA >= hp.portion:  # and portion_attribute_SA >= hp.portion
                 attri_combine1 = f"{type_pair[0]}"
                 attri_combine2 = f"{type_pair[1]}.{attribute_pair[1]}"
                 sim_attri = sum(attribute_similarities) / len(attribute_similarities)
-                overall_results[(attri_combine1, attri_combine2)] = {'sim': sim_attri, 'portion_SA': type_table_SA,
+                overall_results[(attri_combine1, attri_combine2)] = {'sim': sim_attri,
+                                                                     'portion_SA': portion_attribute_SA,
                                                                      'portion_RA': portion_attribute_RA}
     precision, TN = metric(gt_attributes, overall_results)
     recall = metric(gt_attributes, overall_results, metric='R')[0]
@@ -525,3 +391,7 @@ def attributeRelation(dataset, target_path, cluster_relationships, file_target):
     # print(column_relationships)
     column_relationships.to_csv(os.path.join(target_path, file_target), index=False)
     # types.to_csv("datasets/WDC/clusterRelationships.csv",index=False)
+
+
+
+

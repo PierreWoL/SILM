@@ -252,7 +252,7 @@ def best_clusters(dendrogram: sch.dendrogram, linkage_m: sch.linkage, data,
 
             continue
     if silhouette != -1:
-        print("best silhouette, ", silhouette, len(best_clustersR.keys()))
+        #print("best silhouette, ", silhouette, len(best_clustersR.keys()))
 
         clusters.append((best_threshold, best_clustersR))
         range_lower = silhouette - delta if silhouette - delta > -1 else -1

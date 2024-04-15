@@ -1,23 +1,15 @@
-import ast
-import math
-import time
 
+import time
 import pandas as pd
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 import pickle
 from argparse import Namespace
 import os
 from clustering import clustering_results, data_classes, clusteringColumnResults, inputData, clustering
-from Utils import mkdir, naming, findSubCol
-from ClusterHierarchy.JaccardMetric import JaccardMatrix
-from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster, tree_consistency_metric
-from readPKL import hierarchy_tree
+from Utils import mkdir,  findSubCol
+from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
 
-import sys
-
-
-# sys.setrecursionlimit(3000)  # or another higher value
 
 def P1(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  # /Subject attribute/None
@@ -42,15 +34,17 @@ def typeInference(embedding_file, hp: Namespace, datafile_path):
 
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     gt_csv = pd.read_csv(ground_truth)
-    gt_csv['superclass'] = gt_csv['superclass'].apply(eval)
+    numE = hp.estimateNumber  # len(gt_csv['superclass'].unique())
 
+    gt_csv['superclass'] = gt_csv['superclass'].apply(eval)
     available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
-    numE = 0
+    selectType = hp.SelectType.split(",")
+
     if hp.SelectType != "":
-        selectType = hp.SelectType.split(",")
         filtered_df = gt_csv[gt_csv['superclass'].apply(lambda cell: bool(set(cell) & set(selectType)))]
         available_data = filtered_df["fileName"].unique().tolist()
         numE = len(selectType)
+
     store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
     if hp.subjectCol is True:
         store_path += "Subject_Col/"
@@ -79,10 +73,9 @@ def typeInference(embedding_file, hp: Namespace, datafile_path):
         else:
             vec_table = np.mean(vectors[1], axis=0)
         Z.append(vec_table)
-
     Z = np.array(Z)
     try:
-        clustering_method = ["Agglomerative"]  # , "BIRCH"
+        clustering_method = ["Agglomerative"]
         methods_metrics = {}
         for method in clustering_method:
             # print(method)
@@ -92,6 +85,7 @@ def typeInference(embedding_file, hp: Namespace, datafile_path):
             for i in range(0, hp.iteration):
                 new_path = os.path.join(store_path, embedding_file[:-4])
                 mkdir(new_path)
+                print("numE", numE)
                 cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,
                                                                folderName=new_path,
                                                                numEstimate=numE)  # , graph=graph_gt
@@ -225,6 +219,9 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None
         startTimeCC = time.time()
         colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file,
                    gt_clusters, gt_cluster_dict)
+        endTimeCC = time.time()
+        TimespanCC = endTimeCC - startTimeCC
+        """ 
         checkfile = f"{index}_colcluster_dict.pickle"
         if "D3L" in embedding_file:
             datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -232,18 +229,15 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None
         else:
             datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
                                          "All/" + embedding_file[:-4] + "/column")
-        endTimeCC = time.time()
-        TimespanCC = endTimeCC - startTimeCC
-
-        """ if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             startTimeTH = time.time()
             ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
             endTimeTH = time.time()
             TimespanTH = endTimeTH - startTimeTH
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
-                                  columns=['type', 'time'])"""
-            # timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
-            # "All/" + embedding_file[:-4], "timing.csv"))
+                                  columns=['type', 'time'])
+        timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+        "All/" + embedding_file[:-4], "timing.csv"))"""
 
 
 def inferenceHierarchy(embedding_file: str, hp: Namespace):
@@ -288,7 +282,6 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
 def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
                gt_cluster_dict):
     clusters_result = {}
-    # tables_vectors = [vector for vector in content if vector[0].removesuffix(".csv") in Ground_t[clu]]
     Ts[clu] = []
     Zs[clu] = []
     F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
@@ -297,19 +290,18 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     if embedding_file.endswith("_column.pkl"):
         tables = [i for i in os.listdir(f"datasets/{hp.dataset}/Test") if i.endswith(".csv")]
         for table in tables:
-            subcol = findSubCol(SE,table)
+            subcol = findSubCol(SE, table)
             if subcol is not None:
                 subcols.append(f"{table[:-4]}.{subcol}")
     for vector in content:
         if embedding_file.endswith("_column.pkl"):
-
             if vector[0] in gt_clusters[clu].keys() and vector[0] not in subcols:
                 Ts[clu].append(vector[0])
                 Zs[clu].append(vector[1][0])
         elif "D3L" in embedding_file:
             if vector[0] in gt_clusters[clu].keys() and vector[0] not in subcols:
-                    Ts[clu].append(vector[0])
-                    Zs[clu].append(vector[1])
+                Ts[clu].append(vector[0])
+                Zs[clu].append(vector[1])
         else:
             NE_list, headers, types = SE[vector[0]]
             subjectName = None
@@ -318,7 +310,7 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
             if vector[0].removesuffix(".csv") in Ground_t[clu]:
                 table = pd.read_csv(data_path + vector[0], encoding="latin1")
                 for i in range(0, len(table.columns)):
-                    if table.columns[i] !=subjectName:
+                    if table.columns[i] != subjectName:
                         Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
                         Zs[clu].append(vector[1][i])
 
@@ -365,7 +357,6 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
             pickle.dump(clusters_result, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-
 def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
     if hp.phaseTest is True:
         filename = str(index) + '_colcluster_dictGT.pickle'
@@ -410,92 +401,45 @@ def P3(hp: Namespace):
         inferenceHierarchy(file, hp)
 
 
-def name_types(cluster_dict, name_dict=None):
-    new_cluster_dict = {}
-    for i, cluster in cluster_dict.items():
-        name_i = name_type(cluster, name_dict)
-
-        new_cluster_dict[name_i[0]] = cluster
-    return new_cluster_dict
 
 
-def name_type(cluster, name_dict=None):
-    if name_dict is None:
-        name_i = naming(cluster, threshold=5)
-    else:
-        names = [str(name_dict[i + ".csv"]) for i in cluster]
-        name_i = naming(names, threshold=5)
-    return name_i
 
-
-def hierarchy(cluster_dict, hp: Namespace, name_dict):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
-    filepath = f"datasets/{hp.dataset}/Test/"
-    F = open(datafile_path + hp.P23Embed, 'rb')
-    content = pickle.load(F)
-
-    store_path = f"/result/EndToEnd/{hp.dataset}/"
-    mkdir(store_path)
-
-    for name, cluster in cluster_dict.items():
-        names = []
-        input_data = []
-        for table_name in cluster:
-            column_table = pd.read_csv(os.path.join(filepath, table_name + ".csv")).columns
-            # names.extend(column_table)
-            column_table_combine = [f"{table_name}.{i}" for i in column_table]
-            names.extend(column_table_combine)
-            if hp.P23Embed.endswith("_column.pkl"):
-                input_data.extend([i[1][0] for i in content if i[0] in column_table_combine])
-        #print(len(cluster), len(input_data))
-        colcluster_dict = clustering(input_data, names, math.ceil(len(input_data) / 10), "Agglomerative",
-                                     max=3 * math.ceil(len(input_data) / 10))
-
-        attributes = []
-        for index, cluster_all in colcluster_dict.items():
-            name_a = name_type([i.split(".")[1] for i in cluster_all])[0]
-            if name_a not in attributes and name_a!='':
-                attributes.append(name_a)
-        print("\n",name,len(cluster),attributes)
-
-        data_path = os.getcwd() + "/datasets/%s/Test/" % hp.dataset
-        jaccard_score = JaccardMatrix(colcluster_dict, data_path)[2]
-        TCS, ALL_path, simple_tree = tree_consistency_metric(clustering, cluster, jaccard_score, hp.P23Embed,
-                                                             hp.dataset,
-                                                             sliceInterval=hp.intervalSlice, delta=hp.delta)
-        # hierarchy_tree(simple_tree)
-        if simple_tree is not None:
-            Top_layer = [i for i in simple_tree.nodes() if simple_tree.in_degree(i) == 0]
-
-            for node in Top_layer:
-                if simple_tree.nodes[node].get('type') != 'data':
-                    successors = list(simple_tree.successors(node))
-                    successors = [i for i in successors if simple_tree.nodes[i].get('type') != 'data']
-                    if len(successors) == 0:
-                        print(node,
-                              name_type(simple_tree.nodes[node].get('tables'), name_dict)[
-                                  0],
-                              simple_tree.nodes[node].get('label'))  # simple_tree.nodes[successor].get('tables')
-                    # print(node,successors )
-                    else:
-                        for successor in successors:
-                            print(successor, simple_tree.nodes[successor].get('tables'),
-                                  name_type(simple_tree.nodes[successor].get('tables'), name_dict)[0],
-                                  simple_tree.nodes[successor].get('label'))  #
-
-
+# from interactiveFigure import draw_interactive_graph
+"""
 def endToEnd(hp: Namespace):
+    def name_types(cluster_dict, name_dict=None):
+        new_cluster_dict = {}
+        for i, cluster in cluster_dict.items():
+            name_i = name_type(cluster, name_dict)
+            new_cluster_dict[i] = {'cluster': cluster, 'name': name_i}
+        return new_cluster_dict
+
+    def type_info(typeDict, nameDict):
+        gt_clusters = data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv")[0]
+        gt_clusters_low = \
+            data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv", superclass=False)[0]
+
+        new_cluster_dict = name_types(typeDict, nameDict)
+        for index in new_cluster_dict.keys():
+            info_dict = new_cluster_dict[index]
+            gt_labels = most_frequent_list([gt_clusters[i] for i in info_dict["cluster"]])
+            gt_labels_low = most_frequent_list([[gt_clusters_low[i]] for i in info_dict["cluster"]])
+            info_dict["TopLabel"] = gt_labels
+            info_dict["TPurity"] = len(
+                [i for i in info_dict["cluster"] if bool(set(gt_clusters[i]).intersection(set(gt_labels)))])
+            info_dict["LowLabel"] = gt_labels_low
+
+        return new_cluster_dict
+
     # TODO hard coded part needs to change later
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     dict_file = typeInference(hp.P1Embed, hp, datafile_path)
     cluster_dict = dict_file[hp.clustering]
-    # print(cluster_dict)
-
     name_dict = {row["table"]: row["name"] for index, row in
                  pd.read_csv(f"datasets/{hp.dataset}/naming.csv").iterrows()}
 
-    new_cluster_dict = name_types(cluster_dict, name_dict)
-    print(new_cluster_dict.keys())
+    cluster_dict_all = type_info(cluster_dict, name_dict)
     del cluster_dict
-    hierarchy(new_cluster_dict, hp, name_dict)
-    P4Embed = hp.P4Embed
+    # for key, info in cluster_dict_all.items():
+    #  print(key, len(info["cluster"]), info["TopLabel"], info["TPurity"], info["LowLabel"], info["name"][0])
+    hierarchy(cluster_dict_all, hp, name_dict)"""

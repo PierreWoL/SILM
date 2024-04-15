@@ -1,9 +1,10 @@
 import os
 
+import numpy as np
 import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModel, AutoConfig
-
+from d3l.utils.functions import token_stop_word
 import TableAnnotation as TA
 from SubjectColumnDetection import ColumnType
 
@@ -84,7 +85,15 @@ import nltk
 from nltk.corpus import wordnet
 from collections import defaultdict, Counter
 
-
+def calculate_similarity(e1, e2, Euclidean=False):
+    if Euclidean is False:
+        dot_product = np.dot(e1, e2)
+        norm_e1 = np.linalg.norm(e1)
+        norm_e2 = np.linalg.norm(e2)
+        similarity = dot_product / (norm_e1 * norm_e2)
+    else:
+        similarity = np.linalg.norm(e1- e2)
+    return similarity
 def findSubCol(SE, table_name):
     NE_list, headers, types = SE[table_name]
     if NE_list:
@@ -114,15 +123,24 @@ def synonyms(entity):
         for lemma in syn.lemmas():
             syns.add(lemma.name())
     return syns
-
+def name_type(cluster, name_dict=None):
+    if name_dict is None:
+        name_i = naming(cluster, threshold=5)
+    else:
+        names = [str(name_dict[i + ".csv"]) for i in cluster]
+        name_i = naming(names, threshold=5)
+    return name_i
 
 def naming(InitialNames, threshold=0):
     # Given data
+    ### TODO top K name
     GivenEntities = {}
-
     for name in InitialNames:
-        tokens = nltk.word_tokenize(name)
-        Entities = namedEntityRecognition(tokens)
+        #tokens = nltk.word_tokenize(name)
+        #Entities = namedEntityRecognition(tokens)
+        Entities = token_stop_word(name)
+        if Entities == ['']:
+            continue
         Synonyms = set()
         for entity in Entities:
             Synonyms.update(synonyms(entity))
@@ -143,6 +161,6 @@ def naming(InitialNames, threshold=0):
         threshold = len(InitialNames) / 2
     most_frequent_terms = [term for term, freq in sorted_frequency if freq > threshold]
     if len(most_frequent_terms) == 0:
-        most_frequent_terms = [term for term, freq in sorted_frequency if freq > 0]
+        most_frequent_terms = [term for term, freq in sorted_frequency if freq > 0][:5]
     # Given data
     return most_frequent_terms
