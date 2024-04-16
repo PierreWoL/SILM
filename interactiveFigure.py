@@ -1,6 +1,7 @@
 import networkx as nx
 import plotly.graph_objs as go
-
+import os
+os.environ['PATH'] += r';C:\Program Files\Graphviz\bin'
 def draw_interactive_graph(graph,file_path=None):
     """
     绘制交互式图表的函数。
@@ -67,7 +68,8 @@ def draw_interactive_graph(graph,file_path=None):
 
     # 显示图形
     fig.show()
-    fig.write_html(file_path)
+    if file_path is not None:
+        fig.write_html(file_path)
 
 
 # 使用示例

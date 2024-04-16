@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser.add_argument("--estimateNumber", type=int, default=8)
     parser.add_argument("--P1Embed", type=str, default='cl_SCT8_lm_sbert_head_column_0_none_subCol.pkl')
     parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')
-    parser.add_argument("--P4Embed", type=str, default='Pretrain_sbert_head_column_none_False.pkl')
+    parser.add_argument("--P4Embed", type=str, default='cl_SC8_lm_bert_head_column_0_none_column.pkl')
     # TODO Needs to delete later/ or re-code
 
     hp = parser.parse_args()

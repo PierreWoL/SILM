@@ -8,6 +8,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pickle
+
+from TableCluster.tableClustering import column_gts
 #from plotly.figure_factory._dendrogram import sch
 
 from d3l.utils.functions import unpickle_python_object
@@ -478,5 +480,5 @@ def relationshipGT(dataset):
 
 relationshipGT("WDC")"""
 
-
-
+a = {('a1', 'b2'): 3,('a2', 'b2'): 34, ('a4', 'b2'):3 }
+print([i for i in a])
