@@ -2,7 +2,7 @@ import os
 import pickle
 EMBEDDING_FOLDER = os.path.join(os.getcwd(), "result/embedding", "TabFact")
 for embedding in [i for i in os.listdir(EMBEDDING_FOLDER) if i.endswith("pkl") ]: #and  "roberta" in i
-            result_folder  = os.path.join("result/Valerie","TabFact")
+            result_folder  = os.path.join("../result/Valerie", "TabFact")
 
             with open(os.path.join(EMBEDDING_FOLDER, embedding), 'rb') as file:
                 data = pickle.load(file)

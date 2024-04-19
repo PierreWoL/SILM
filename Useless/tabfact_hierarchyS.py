@@ -1,19 +1,11 @@
 # Iterating through groups and displaying rows
-import ast
 import os
 import pickle
 
-import numpy as np
 import pandas as pd
-from collections import deque
-from Graph import compute_max_distance, compute_maxD, close_child
-from matplotlib import pyplot as plt
-
-from ClusterHierarchy.ClusterDecompose import find_frequent_labels
+from Useless.Graph import close_child
 
 import networkx as nx
-
-from clustering import data_classes
 
 target_path = os.path.join(os.getcwd(), "datasets/TabFact/")
 

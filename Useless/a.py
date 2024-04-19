@@ -345,7 +345,7 @@ print(len(embedding_i),embedding_i[0])"""
     print(df_B)
     df_B.to_csv(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/Subject_Col/{i}/overall_clusteringNew.csv")
 """
-path = 'result/embedding/WDC/'
+path = '../result/embedding/WDC/'
 pre = ['Pretrain_bert_head_column_header_False', 'Pretrain_bert_head_column_none_False']
 lefts = []
 

@@ -153,7 +153,7 @@ no_labels = [i for i in names if i not in labels]
 ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
 
 similar_words = {}
-with open("filter_sim_all.pkl", "rb") as file:
+with open("../filter_sim_all.pkl", "rb") as file:
     all_sims = pickle.load(file)
 for key, value in all_sims.items():
     # print(value)

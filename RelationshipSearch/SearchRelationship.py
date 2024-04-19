@@ -60,8 +60,6 @@ def find_conceptualAttri(cols_dict, table, attributes, gtclusters=None):
     return conceptualAttributes
 
 
-
-
 def MetricType(groundTruth, results):
     TP = [i for i in results if i in groundTruth]
     FP = [i for i in results if i not in groundTruth]
@@ -75,7 +73,6 @@ def MetricType(groundTruth, results):
 
 def readEmbedding(embedding_file, dataset, selected_tables=None):
     print("embedding_file", embedding_file)
-
     data_path = os.path.join(f"datasets/{dataset}", "Test")
     datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
     if selected_tables is None:
@@ -391,7 +388,3 @@ def attributeRelation(dataset, target_path, cluster_relationships, file_target):
     # print(column_relationships)
     column_relationships.to_csv(os.path.join(target_path, file_target), index=False)
     # types.to_csv("datasets/WDC/clusterRelationships.csv",index=False)
-
-
-
-

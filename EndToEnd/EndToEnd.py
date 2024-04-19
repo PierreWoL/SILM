@@ -6,14 +6,37 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from EndToEnd.T import generateUML
-from EndToEnd.UML import savefig_uml
-#from interactiveFigure import draw_interactive_graph
+# from EndToEnd.T import generateUML
+# from EndToEnd.UML import savefig_uml
+# from interactiveFigure import draw_interactive_graph
 from clustering import most_frequent_list, clustering, data_classes
 from ClusterHierarchy.ClusterDecompose import tree_consistency_metric
 from TableCluster.tableClustering import typeInference
 from Utils import findSubCol, name_type, mkdir, calculate_similarity
 from ClusterHierarchy.JaccardMetric import JaccardMatrix
+
+
+def read_col_Embeddings(embedding_file, dataset, selected_tables=None):
+    # print("embedding_file", embedding_file)
+    data_path = os.path.join(f"datasets/{dataset}", "Test")
+    datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
+    if selected_tables is None:
+        selected_tables = [i for i in os.listdir(data_path) if i.endswith(".csv")]
+    F = open(os.path.join(datafile_path, embedding_file), 'rb')
+    if embedding_file.endswith("_column.pkl"):
+        content = pickle.load(F)
+        content = {i[0]: i[1][0] for i in content}
+    else:
+        original_content = pickle.load(F)
+        content_dict = {i[0]: i[1] for i in original_content}
+        content = {}
+        for fileName in selected_tables:
+            table_embedding = content_dict[fileName]
+            table = pd.read_csv(os.path.join(data_path, fileName))
+            for index, col in enumerate(table.columns):
+                content[f"{fileName}.{col}"] = table_embedding[
+                    0]  # content[f"{fileName[:-4]}.{col}"] = table_embedding[0]
+    return content
 
 
 def find_node_tables(G, N):
@@ -26,10 +49,10 @@ def find_node_tables(G, N):
 
 
 def checkTree(tree: nx.DiGraph()):
-    #draw_interactive_graph(tree)
+    # draw_interactive_graph(tree)
     for node in tree.nodes():
         if tree.nodes[node].get("type") != 'data':
-            tables = find_node_tables(tree,node )
+            tables = find_node_tables(tree, node)
             print(tables)
             print(node, tree.nodes[node])
 
@@ -58,7 +81,7 @@ def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
                 attribute_index_dict[attribute_index] = 1
             else:
                 attribute_index_dict[attribute_index] += 1
-    limit_attri = 0###TODO maybe need to be soft coded later  len(node_tables) / 2
+    limit_attri = 0  ###TODO maybe need to be soft coded later  len(node_tables) / 2
     keep_keys = [key for key in attribute_index_dict.keys() if attribute_index_dict[key] >= limit_attri]
     return keep_keys
 
@@ -72,31 +95,35 @@ def update_attributes(tree: nx.DiGraph(), colDict, SubcolDict, filePath, name_di
         tree.nodes[node]['name'] = names_node
 
 
+def find_cluster_embeddings(cluster, content, subjectColDict, filepath):
+    names = []
+    input_data = []
+    for table_name in cluster:
+        column_table = pd.read_csv(os.path.join(filepath, table_name + ".csv")).columns
+        subcol = findSubCol(subjectColDict, table_name + ".csv")
+        column_table_combine = [f"{table_name}.{i}" for i in column_table if i != subcol]
+        # names.extend(column_table)
+        names.extend(column_table_combine)
+        input_data.extend([embed for key, embed in content.items() if key in column_table_combine])
+    return input_data, names
+
+
 def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
     F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
     SE = pickle.load(F)
-    datafile_path = f"result/embedding/{hp.dataset}/"
     filepath = f"datasets/{hp.dataset}/Test/"
-    F = open(datafile_path + hp.P23Embed, 'rb')
-    content = pickle.load(F)
+
+    content = read_col_Embeddings(hp.P23Embed, hp.dataset)
     store_path = f"/result/EndToEnd/{hp.dataset}/"
     mkdir(store_path)
+
     for name in cluster_dict.keys():
         cluster_info = cluster_dict[name]
         cluster = cluster_info["cluster"]
-        names = []
-        input_data = []
-        for table_name in cluster:
-            column_table = pd.read_csv(os.path.join(filepath, table_name + ".csv")).columns
-            subcol = findSubCol(SE, table_name + ".csv")
-            column_table_combine = [f"{table_name}.{i}" for i in column_table if i != subcol]
-            # names.extend(column_table)
-            names.extend(column_table_combine)
-            if hp.P23Embed.endswith("_column.pkl"):
-                input_data.extend([i[1][0] for i in content if i[0] in column_table_combine])
-        MIN =  math.ceil(len(input_data) / 40) if  math.ceil(len(input_data) / 40)  >2 else 2
-        colcluster_dict = clustering(input_data, names,MIN,"Agglomerative",
-                                     max=2 *MIN )
+        input_data, names = find_cluster_embeddings(cluster, content, SE, filepath)
+        MIN = math.ceil(len(input_data) / 40) if math.ceil(len(input_data) / 40) > 2 else 2
+        colcluster_dict = clustering(input_data, names, MIN, hp.clustering,
+                                     max=2 * MIN)
         print("attribute clusters ", len(colcluster_dict))
         colCluster = {index: {'name': name_type([i.split(".")[1] for i in cluster]), 'cluster': cluster} for
                       index, cluster in colcluster_dict.items()}
@@ -109,35 +136,14 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
             TCS, ALL_path, simple_tree = tree_consistency_metric(cluster, jaccard_score, hp.P23Embed,
                                                                  hp.dataset, sliceInterval=hp.intervalSlice,
                                                                  delta=hp.delta,
-                                                                 endtoEnd=True)
-            update_attributes(simple_tree, colcluster_dict, SE, filepath, name_dict)
+                                                                 store_results=False)
+            if simple_tree is not None:
+                update_attributes(simple_tree, colcluster_dict, SE, filepath, name_dict)
         cluster_dict[name]["attributes"] = colCluster
         cluster_dict[name]["tree"] = simple_tree
-        #if simple_tree is not None:
-           # checkTree(simple_tree)
+        # if simple_tree is not None:
+        # checkTree(simple_tree)
         # break
-
-
-def read_col_Embeddings(embedding_file, dataset, selected_tables=None):
-    print("embedding_file", embedding_file)
-    data_path = os.path.join(f"datasets/{dataset}", "Test")
-    datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
-    if selected_tables is None:
-        selected_tables = [i for i in os.listdir(data_path) if i.endswith(".csv")]
-    F = open(os.path.join(datafile_path, embedding_file), 'rb')
-    if embedding_file.endswith("_column.pkl"):
-        content = pickle.load(F)
-        content = {i[0]: i[1][0] for i in content}
-    else:
-        original_content = pickle.load(F)
-        content_dict = {i[0]: i[1] for i in original_content}
-        content = {}
-        for fileName in selected_tables:
-            table_embedding = content_dict[fileName]
-            table = pd.read_csv(os.path.join(data_path, fileName))
-            for index, col in enumerate(table.columns):
-                content[f"{fileName[:-4]}.{col}"] = table_embedding[0]
-    return content
 
 
 def endToEndRelationship(hp: Namespace, Types_clusters: dict):
@@ -197,10 +203,10 @@ def endToEndRelationship(hp: Namespace, Types_clusters: dict):
                                                        hp.portion)
             if relationship_indexI:
                 Types_clusters[index_i]["relationship"][index_j] = relationship_indexI
-                print(f"Type{index_i} to Type {index_j}'s relationship lies in attributes index {relationship_indexI}")
+                # print(f"Type{index_i} to Type {index_j}'s relationship lies in attributes index {relationship_indexI}")
             if relationship_indexJ:
                 Types_clusters[index_j]["relationship"][index_i] = relationship_indexJ
-                print(f"Type{index_j} to Type {index_i}'s relationship lies in attributes index {relationship_indexJ}")
+                # print(f"Type{index_j} to Type {index_i}'s relationship lies in attributes index {relationship_indexJ}")
 
 
 def check_model_num(Type_dict):
@@ -217,51 +223,56 @@ def check_model_num(Type_dict):
     return total_num
 
 
-def endToEnd(hp: Namespace):
-    def name_types(cluster_dict, name_dict=None):
-        new_cluster_dict = {}
-        for i, cluster in cluster_dict.items():
-            name_i = name_type(cluster, name_dict)
-            new_cluster_dict[i] = {'cluster': cluster, 'name': name_i}
-        return new_cluster_dict
+def name_types(cluster_dict, name_dict=None):
+    new_cluster_dict = {}
+    for i, cluster in cluster_dict.items():
+        name_i = name_type(cluster, name_dict)
+        new_cluster_dict[i] = {'cluster': cluster, 'name': name_i}
+    return new_cluster_dict
 
-    def type_info(typeDict, nameDict, subcol_dict):
-        gt_clusters = data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv")[0]
-        gt_clusters_low = \
-            data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv", superclass=False)[0]
-        new_cluster_dict = name_types(typeDict, nameDict)
-        for index in new_cluster_dict.keys():
-            info_dict = new_cluster_dict[index]
-            tables = new_cluster_dict[index]['cluster']
-            subCols = [f"{table_name}.{findSubCol(subcol_dict, table_name + '.csv')}" for table_name in tables if
-                       findSubCol(subcol_dict, table_name + '.csv') is not None]
-            subcol_name = name_type([i.split(".")[1] for i in subCols])
-            new_cluster_dict[index]["subjectAttribute"] = {'name': subcol_name, 'attributes': subCols}
+
+def type_info(typeDict, subcol_dict, dataset, nameDict=None, noLabel=False):
+    gt_clusters = data_classes(f"datasets/{dataset}/Test", f"datasets/{dataset}/groundTruth.csv")[0]
+    gt_clusters_low = \
+        data_classes(f"datasets/{dataset}/Test", f"datasets/{dataset}/groundTruth.csv", superclass=False)[0]
+    new_cluster_dict = name_types(typeDict, nameDict) if nameDict is not None\
+        else {i: {'cluster': cluster, 'name': None} for i, cluster in typeDict.items()}
+    for index in new_cluster_dict.keys():
+        info_dict = new_cluster_dict[index]
+        tables = new_cluster_dict[index]['cluster']
+        subCols = [f"{table_name}.{findSubCol(subcol_dict, table_name + '.csv')}" for table_name in tables if
+                   findSubCol(subcol_dict, table_name + '.csv') is not None]
+        subcol_name = name_type([i.split(".")[1] for i in subCols])
+        new_cluster_dict[index]["subjectAttribute"] = {'name': subcol_name, 'attributes': subCols}
+        if noLabel is False:
             gt_labels = most_frequent_list([gt_clusters[i] for i in info_dict["cluster"]])
             gt_labels_low = most_frequent_list([[gt_clusters_low[i]] for i in info_dict["cluster"]])
             info_dict["TopLabel"] = gt_labels
             info_dict["TPurity"] = len(
                 [i for i in info_dict["cluster"] if bool(set(gt_clusters[i]).intersection(set(gt_labels)))])
             info_dict["LowLabel"] = gt_labels_low
-        return new_cluster_dict
+        new_cluster_dict[index] = info_dict
+    return new_cluster_dict
+
+
+def endToEnd(hp: Namespace):
 
     # TODO hard coded part needs to change later
-    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
-    dict_file = typeInference(hp.P1Embed, hp, datafile_path)
+    dict_file = typeInference(hp.P1Embed, hp)
     cluster_dict = dict_file[hp.clustering]
     name_dict = {row["table"]: row["name"] for index, row in
                  pd.read_csv(f"datasets/{hp.dataset}/naming.csv").iterrows()}
     F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
     SE = pickle.load(F)
-    cluster_dict_all = type_info(cluster_dict, name_dict, SE)
-    print("top level type number: ", len(cluster_dict),len(cluster_dict_all))
+    cluster_dict_all = type_info(cluster_dict, SE, hp.dataset, nameDict=name_dict)
+    print("top level type number: ", len(cluster_dict), len(cluster_dict_all))
     del cluster_dict
     hierarchy(cluster_dict_all, hp, name_dict)
     print("endtoEnd ...")
     endToEndRelationship(hp, cluster_dict_all)
     number = check_model_num(cluster_dict_all)
     print("infer model number", number)
-    path = os.path.join(os.getcwd(),f"result\WDCEndtoEnd.xlsx")
+    path = os.path.join(os.getcwd(), f"result\WDCEndtoEnd.xlsx")
     print(path)
     with open(path, 'wb') as f:
-          pickle.dump(cluster_dict_all, f)
+        pickle.dump(cluster_dict_all, f)

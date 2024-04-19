@@ -144,7 +144,7 @@ def generateUML(TypeDict):
             uml_code_inside += relationship_inside
             uml_code_inside += '@enduml'
             print(uml_code_inside)
-            savefig_uml(uml_code_inside, os.path.join(os.getcwd(),"Decomposition"), fileName=f"{key}_inside.uml")
+            #savefig_uml(uml_code_inside, os.path.join(os.getcwd(),"Decomposition"), fileName=f"{key}_inside.uml")
             sub_umls[key] = uml_code_inside
 
     uml_code +=relationship_code
@@ -156,8 +156,8 @@ def generateUML(TypeDict):
 path = os.path.join(os.getcwd(),f"E:\\Project\CurrentDataset\\result\WDCEndtoEnd.xlsx")
 with open(path, 'rb') as f:
     cluster_dict_all=   pickle.load(f)
-from UML import savefig_uml
-uml_code,sub_umls = generateUML(cluster_dict_all)
+#from UML import savefig_uml
+#uml_code,sub_umls = generateUML(cluster_dict_all)
 #savefig_uml(uml_code, os.getcwd(), fileName="try.uml")
 #for key, sub_uml in sub_umls.items():
  #   print(key, sub_uml)

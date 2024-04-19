@@ -178,7 +178,7 @@ def run_hierarchy():
     ground_truth = dict(zip(ground_truth_csv.iloc[:, 0], ground_truth_csv.iloc[:, 4]))
 
     similar_words = {}
-    with open("filter_sim_all.pkl", "rb") as file:
+    with open("../filter_sim_all.pkl", "rb") as file:
         all_sims = pickle.load(file)
     for key, value in all_sims.items():
         for tuple in value.keys():

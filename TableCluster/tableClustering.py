@@ -1,4 +1,4 @@
-
+import random
 import time
 import pandas as pd
 import numpy as np
@@ -7,12 +7,12 @@ import pickle
 from argparse import Namespace
 import os
 from clustering import clustering_results, data_classes, clusteringColumnResults, inputData, clustering
-from Utils import mkdir,  findSubCol
+from Utils import mkdir, findSubCol
 from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
 
 
 def P1(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"  # /Subject attribute/None
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"  # /Subject attribute/None
     # Read the groung truth hierarchy
     # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
     # graph_gt = pickle.load(F_graph)
@@ -20,38 +20,28 @@ def P1(hp: Namespace):
              '.pkl' in fn and f"_{hp.embed}_" in fn and not fn.endswith('_column.pkl')]
     print(files)
     for file in files:
-        typeInference(file, hp, datafile_path)
+        typeInference(file, hp)
 
 
-def typeInference(embedding_file, hp: Namespace, datafile_path):
-    print(embedding_file, hp.subjectCol)
-    data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    if hp.subjectCol:
-        F_cluster = open(os.path.join(os.getcwd(), "datasets/" + hp.dataset, "SubjectCol.pickle"), 'rb')
+def read_embeddings_P1(embedding_file, isSubCol, dataset, SelectType="", SelectedNumber=0):
+    print(embedding_file, isSubCol)
+    datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
+    if isSubCol:
+        F_cluster = open(os.path.join(os.getcwd(), "datasets/" + dataset, "SubjectCol.pickle"), 'rb')
         SE = pickle.load(F_cluster)
     else:
         SE = {}
-
-    ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
+    ground_truth = os.getcwd() + "/datasets/" + dataset + "/groundTruth.csv"
     gt_csv = pd.read_csv(ground_truth)
-    numE = hp.estimateNumber  # len(gt_csv['superclass'].unique())
-
     gt_csv['superclass'] = gt_csv['superclass'].apply(eval)
     available_data = pd.read_csv(ground_truth)["fileName"].unique().tolist()
-    selectType = hp.SelectType.split(",")
-
-    if hp.SelectType != "":
+    selectType = SelectType.split(",")
+    if SelectType != "":
         filtered_df = gt_csv[gt_csv['superclass'].apply(lambda cell: bool(set(cell) & set(selectType)))]
         available_data = filtered_df["fileName"].unique().tolist()
-        numE = len(selectType)
-
-    store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
-    if hp.subjectCol is True:
-        store_path += "Subject_Col/"
-    else:
-        store_path += "All/"
-    mkdir(store_path)
-    dict_file = {}
+    if SelectedNumber > 0:
+        available_data = random.sample(available_data, SelectedNumber)
+        print("length of tables", len(available_data))
     F = open(datafile_path + embedding_file, 'rb')
     content = pickle.load(F)
     Z = []
@@ -60,8 +50,7 @@ def typeInference(embedding_file, hp: Namespace, datafile_path):
     # for showing the first item in content
     for vectors in content:
         T.append(vectors[0][:-4])
-        # table = pd.read_csv(data_path + vectors[0], encoding="latin1")
-        if hp.subjectCol:
+        if isSubCol:
             if embedding_file.endswith("subCol.pkl"):
                 vec_table = np.mean(vectors[1], axis=0)
             else:
@@ -74,6 +63,21 @@ def typeInference(embedding_file, hp: Namespace, datafile_path):
             vec_table = np.mean(vectors[1], axis=0)
         Z.append(vec_table)
     Z = np.array(Z)
+    return Z, T
+
+
+def typeInference(embedding_file, hp: Namespace):
+    Z, T = read_embeddings_P1(embedding_file, hp.subjectCol, hp.dataset, SelectType=hp.SelectType)
+    ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
+    numE = hp.estimateNumber  # len(gt_csv['superclass'].unique())
+    data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
+    dict_file = {}
+    store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+    if hp.subjectCol is True:
+        store_path += "Subject_Col/"
+    else:
+        store_path += "All/"
+    mkdir(store_path)
     try:
         clustering_method = ["Agglomerative"]
         methods_metrics = {}
@@ -86,7 +90,7 @@ def typeInference(embedding_file, hp: Namespace, datafile_path):
                 new_path = os.path.join(store_path, embedding_file[:-4])
                 mkdir(new_path)
                 print("numE", numE)
-                cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth, method,
+                cluster_dict, metric_dict = clustering_results(Z, T, data_path, method, groundTruth=ground_truth,
                                                                folderName=new_path,
                                                                numEstimate=numE)  # , graph=graph_gt
                 # print(cluster_dict)
@@ -131,8 +135,7 @@ def baselineP1(hp: Namespace):
             for i in range(0, hp.iteration):
                 new_path = os.path.join(store_path, "D3L")
                 mkdir(new_path)
-                cluster_dict, metric_dict = clustering_results(Z, T, data_path, ground_truth,
-                                                               method)  # , graph=graph_gtv
+                cluster_dict, metric_dict = clustering_results(Z, T, data_path, method, groundTruth=ground_truth)
                 # print(cluster_dict)
                 metric_df = pd.DataFrame([metric_dict])
                 metric_value_df = pd.concat([metric_value_df, metric_df])
@@ -400,46 +403,3 @@ def P3(hp: Namespace):
     for file in files:  # [hp.slice_start:hp.slice_stop]:
         inferenceHierarchy(file, hp)
 
-
-
-
-
-# from interactiveFigure import draw_interactive_graph
-"""
-def endToEnd(hp: Namespace):
-    def name_types(cluster_dict, name_dict=None):
-        new_cluster_dict = {}
-        for i, cluster in cluster_dict.items():
-            name_i = name_type(cluster, name_dict)
-            new_cluster_dict[i] = {'cluster': cluster, 'name': name_i}
-        return new_cluster_dict
-
-    def type_info(typeDict, nameDict):
-        gt_clusters = data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv")[0]
-        gt_clusters_low = \
-            data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv", superclass=False)[0]
-
-        new_cluster_dict = name_types(typeDict, nameDict)
-        for index in new_cluster_dict.keys():
-            info_dict = new_cluster_dict[index]
-            gt_labels = most_frequent_list([gt_clusters[i] for i in info_dict["cluster"]])
-            gt_labels_low = most_frequent_list([[gt_clusters_low[i]] for i in info_dict["cluster"]])
-            info_dict["TopLabel"] = gt_labels
-            info_dict["TPurity"] = len(
-                [i for i in info_dict["cluster"] if bool(set(gt_clusters[i]).intersection(set(gt_labels)))])
-            info_dict["LowLabel"] = gt_labels_low
-
-        return new_cluster_dict
-
-    # TODO hard coded part needs to change later
-    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
-    dict_file = typeInference(hp.P1Embed, hp, datafile_path)
-    cluster_dict = dict_file[hp.clustering]
-    name_dict = {row["table"]: row["name"] for index, row in
-                 pd.read_csv(f"datasets/{hp.dataset}/naming.csv").iterrows()}
-
-    cluster_dict_all = type_info(cluster_dict, name_dict)
-    del cluster_dict
-    # for key, info in cluster_dict_all.items():
-    #  print(key, len(info["cluster"]), info["TopLabel"], info["TPurity"], info["LowLabel"], info["name"][0])
-    hierarchy(cluster_dict_all, hp, name_dict)"""

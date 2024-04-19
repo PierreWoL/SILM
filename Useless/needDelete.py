@@ -275,7 +275,7 @@ def tree_consistency_metric(embedding_file, dataset):
     linkage_matrix = sch.linkage(encodings, method='complete', metric='euclidean')
 
     folder = "fig/" + dataset
-    result_folder = os.path.join("result/Valerie", dataset)
+    result_folder = os.path.join("../result/Valerie", dataset)
 
     dendrogra = PKL.plot_tree(linkage_matrix, folder, node_labels=table_names)
     tree_test = PKL.dendrogram_To_DirectedGraph(encodings, linkage_matrix, table_names)

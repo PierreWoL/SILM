@@ -20,7 +20,7 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
-#from Graph import consistency_of_cluster
+# from Graph import consistency_of_cluster
 from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
 from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.querying.query_engine import QueryEngine
@@ -241,9 +241,6 @@ def dbscan_param_search(input_data):
     return best_dbscan, best_dbscan.labels_
 
 
-
-
-
 def OPTICS_param_search(input_data):
     score = -1
     best_optics = OPTICS()
@@ -304,15 +301,15 @@ def AgglomerativeClustering_param_search(input_data, cluster_num_min, cluster_nu
     input_data = np.array(input_data, dtype=np.float32)
     score = -1
     best_model = AgglomerativeClustering()
-    #at_least = math.ceil(cluster_num // 4 * 3) + 2
-    for n_clusters in range(cluster_num_min,cluster_num_max, 1):  # math.ceil(2.5* cluster_num), 3* cluster_num+10
+    # at_least = math.ceil(cluster_num // 4 * 3) + 2
+    for n_clusters in range(cluster_num_min, cluster_num_max, 1):  # math.ceil(2.5* cluster_num), 3* cluster_num+10
         agg_clustering = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
         agg_clustering.fit(input_data)
         labels = agg_clustering.labels_
         if score <= silhouette_score(input_data, labels):
             score = silhouette_score(input_data, labels)
             best_model = agg_clustering
-    print(best_model.n_clusters, score)
+    # print(best_model.n_clusters, score)
     return best_model, best_model.labels_
 
 
@@ -409,9 +406,6 @@ def most_frequent_list(nested_list):
     most_common_tuple = count.most_common(1)[0][0]
     most_common_list = list(most_common_tuple)
     return most_common_list
-
-
-
 
 
 def data_classes(data_path, groundTruth_file, superclass=True, Nochange=False):
@@ -655,7 +649,7 @@ def clustering(input_data, data_names, number_estimate, clustering_method, max=N
     if clustering_method == "GMM":
         parameters = gaussian_m_param_search(input_data, number_estimate)
     if clustering_method == "Agglomerative":
-        parameters = AgglomerativeClustering_param_search(input_data, number_estimate,max)
+        parameters = AgglomerativeClustering_param_search(input_data, number_estimate, max)
     if clustering_method == "OPTICS":
         parameters = OPTICS_param_search(input_data)
     if clustering_method == "KMeans":
@@ -667,26 +661,29 @@ def clustering(input_data, data_names, number_estimate, clustering_method, max=N
     return cluster_dict
 
 
-def clustering_results(input_data, tables, data_path, groundTruth, clusteringName, folderName=None, numEstimate=0):  # , graph = None
+def clustering_results(input_data, tables, data_path, clusteringName, groundTruth=None, folderName=None,
+                       numEstimate=0):  # , graph = None
     star_time = time.time()
-    gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
-    gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
-    del ground_t0, gt_cluster_dict0
-    number_estimate = len(gt_cluster_dict) if numEstimate==0 else numEstimate
+
+    number_estimate = numEstimate  # len(gt_cluster_dict) if numEstimate==0 else numEstimate
     # print(number_estimate)
 
     min = number_estimate
-    max = 3* number_estimate
-    cluster_dict = clustering(input_data, tables, min, clusteringName,max=max)
-
-    # table_dict = {tables[i]: input_data[i] for i in range(0, len(tables))}
+    max = 3 * number_estimate
+    cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
     end_time = time.time()
     time_difference_run = end_time - star_time
+    if groundTruth is None:
+        return cluster_dict, {"Clustering time": time_difference_run}
 
     star_time_eva = time.time()
+    gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, groundTruth)
+    gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, groundTruth, superclass=False)
+    del ground_t0, gt_cluster_dict0
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName,
                                      gt_clusters0)  # ,graph = graph
     end_time_eva = time.time()
+
     time_difference_eva = end_time_eva - star_time_eva
     metrics_value["Clustering time"] = time_difference_run
     metrics_value["Evaluation time"] = time_difference_eva
@@ -715,13 +712,14 @@ def clustering_results(input_data, tables, data_path, groundTruth, clusteringNam
 
    fig.write_html("output_plot2.html")"""
 
+
 def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     star_time = time.time()
     number_estimate = len(gt_cluster_dict) // 3
     min = number_estimate
-    max = 2*number_estimate
-    cluster_dict = clustering(input_data, columns, min, clusteringName,max=max )
+    max = 2 * number_estimate
+    cluster_dict = clustering(input_data, columns, min, clusteringName, max=max)
     end_time = time.time()
     time_difference_run = end_time - star_time
 
