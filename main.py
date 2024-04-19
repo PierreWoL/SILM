@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     ### Parameter for slicing the dendrogram in Step3
     parser.add_argument("--intervalSlice", type=int, default=10)
-    parser.add_argument("--delta", type=float, default=0.15)
+    parser.add_argument("--delta", type=float, default=0.05)
     ### Step 4 parameter
     parser.add_argument("--similarity", type=float, default=0.8)
     parser.add_argument("--portion", type=float, default=0.8)

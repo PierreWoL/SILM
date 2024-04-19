@@ -309,7 +309,7 @@ def AgglomerativeClustering_param_search(input_data, cluster_num_min, cluster_nu
         if score <= silhouette_score(input_data, labels):
             score = silhouette_score(input_data, labels)
             best_model = agg_clustering
-    # print(best_model.n_clusters, score)
+    print(best_model.n_clusters, score)
     return best_model, best_model.labels_
 
 
