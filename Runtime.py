@@ -60,6 +60,7 @@ def Running(hp: Namespace):
         elif 15<len(input_data) <60:
             MIN = random.randint(3, 8)
         else:
+            cluster_dict_all[name]["attributes"] = {}
             continue
         print(f"index cluster {name} and # of its attributes",len(input_data), "minumum attributes", MIN)
         start_time_P2 = time.time()
@@ -85,9 +86,13 @@ def Running(hp: Namespace):
         P3_time += P3_time_cluster
 
     start_time_P4 = time.time()
-    endToEndRelationship(hp, cluster_dict_all)
+    try:
+        endToEndRelationship(hp, cluster_dict_all)
+    except:
+        print("P4 fails")
     end_time_P4 = time.time()
     P4_time = end_time_P4 - start_time_P4
+    print(f"Total 2 3  time {P2_time} and {P3_time} ")
     print(f"P4 time {P4_time}")
 
     if "runningTime.csv" not in os.listdir(store_path):
