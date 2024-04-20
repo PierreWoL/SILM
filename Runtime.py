@@ -40,6 +40,7 @@ def Running(hp: Namespace):
     print("size of tables: ",size,"total columns: ", total_cols )
     cluster_dict, metric_dict = clustering_results(Z, T, data_path, clustering_method, numEstimate=hp.estimateNumber)
     P1_time = metric_dict["Clustering time"]
+    print(f"P1 time {P1_time}")
     cluster_dict_all = type_info(cluster_dict, SE, hp.dataset, noLabel=True)
 
     filepath = f"datasets/{hp.dataset}/Test/"
@@ -56,15 +57,19 @@ def Running(hp: Namespace):
         input_data, names = find_cluster_embeddings(cluster, content, SE, filepath)
         if len(input_data)> 60:
             MIN = random.randint(10, 30) # math.ceil(len(input_data) / 100) if math.ceil(len(input_data) / 100) > 2 else 3
+        elif 15<len(input_data) <60:
+            MIN = random.randint(3, 8)
         else:
-            MIN = random.randint(3, 10)
+            continue
         print(f"index cluster {name} and # of its attributes",len(input_data), "minumum attributes", MIN)
         start_time_P2 = time.time()
         colcluster_dict = clustering(input_data, names, MIN, clustering_method,
                                      max= 2*MIN+3)
         end_time_P2 = time.time()
         P2_time_cluster = end_time_P2 - start_time_P2
+        print(f"P2 time {P2_time_cluster}")
         P2_time += P2_time_cluster
+
         colCluster = {index: {'name': None, 'cluster': cluster} for index, cluster in colcluster_dict.items()}
         cluster_dict_all[name]["attributes"] = colCluster
 
@@ -76,12 +81,14 @@ def Running(hp: Namespace):
                                                              store_results=False, Test=False)
         end_time_P3 = time.time()
         P3_time_cluster = end_time_P3 - start_time_P3
+        print(f"P3 time {P3_time_cluster}")
         P3_time += P3_time_cluster
 
     start_time_P4 = time.time()
     endToEndRelationship(hp, cluster_dict_all)
     end_time_P4 = time.time()
     P4_time = end_time_P4 - start_time_P4
+    print(f"P4 time {P4_time}")
 
     if "runningTime.csv" not in os.listdir(store_path):
         data = {
