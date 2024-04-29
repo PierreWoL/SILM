@@ -50,5 +50,5 @@ def P1(metric):
                              os.path.join(f"result/starmie/"),
                              metric + f"BarChartALL_Whole{metric}.png"))
     plt.show()
-#metric = metrics[1]
-#P1(metric)
+metric = metrics[0]
+P1(metric)

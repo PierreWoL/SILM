@@ -1,1 +1,1 @@
-/mnt/c/Users/Pierre/AppData/Local/Programs/Python/Python311/python.exe main.py --step 0 --dataset GoogleSearch --subjectCol --tableNumber 2000 --P23Embed cl_SCT8_lm_bert_head_column_0_none_column.pkl --P4Embed cl_SCT8_lm_bert_head_column_0_none_column.pkl
+/mnt/c/Users/Pierre/AppData/Local/Programs/Python/Python311/python.exe main.py --step 0 --dataset GoogleSearch --subjectCol --tableNumber 8000 --estimateNumber 50 --P23Embed cl_SCT8_lm_bert_head_column_0_none_column.pkl --P4Embed cl_SCT8_lm_bert_head_column_0_none_column.pkl

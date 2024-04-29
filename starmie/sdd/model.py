@@ -205,20 +205,3 @@ class BarlowTwinsSimCLR(nn.Module):
                 off_diag = (off_diagonal(c) ** 2).sum() * self.hp.scale_loss
                 loss = on_diag + self.hp.lambd * off_diag
                 return loss
-        elif mode == "finetune":
-            pass
-            # TODO
-            # x1 = x1.to(self.device) # (batch_size, seq_len)
-            # x2 = x2.to(self.device) # (batch_size, seq_len)
-            # x12 = x12.to(self.device) # (batch_size, seq_len)
-            # # left+right
-            # enc_pair = self.projector(self.bert(x12)[0][:, 0, :]) # (batch_size, emb_size)
-            # batch_size = len(x1)
-
-            # # left and right
-            # enc = self.projector(self.bert(torch.cat((x1, x2)))[0][:, 0, :])
-            # #enc = self.bert(torch.cat((x1, x2)))[0][:, 0, :]
-            # enc1 = enc[:batch_size] # (batch_size, emb_size)
-            # enc2 = enc[batch_size:] # (batch_size, emb_size)
-
-            # return self.fc(torch.cat((enc_pair, (enc1 - enc2).abs()), dim=1))

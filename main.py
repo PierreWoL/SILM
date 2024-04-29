@@ -6,7 +6,7 @@ from Runtime import Running
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="SILM")  #
-    parser.add_argument("--dataset", type=str, default="WDC")  # WDC TabFact
+    parser.add_argument("--dataset", type=str, default="GDS")  # WDC TabFact
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -36,9 +36,9 @@ if __name__ == '__main__':
 
     ### Parameter for slicing the dendrogram in Step3
     parser.add_argument("--intervalSlice", type=int, default=10)
-    parser.add_argument("--delta", type=float, default=0.05)
+    parser.add_argument("--delta", type=float, default=0.08)
     ### Step 4 parameter
-    parser.add_argument("--similarity", type=float, default=0.8)
+    parser.add_argument("--similarity", type=float, default=0.85)
     parser.add_argument("--portion", type=float, default=0.8)
 
     parser.add_argument("--Euclidean", dest="Euclidean", action="store_true")
@@ -54,8 +54,8 @@ if __name__ == '__main__':
     ### Parameter for End To End
     parser.add_argument("--SelectType", type=str, default='')
     parser.add_argument("--P1Embed", type=str, default='cl_SCT8_lm_sbert_head_column_0_none_subCol.pkl')
-    parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')
-    parser.add_argument("--P4Embed", type=str, default='cl_SC8_lm_bert_head_column_0_none_column.pkl')
+    parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')# cl_SC8_lm_sbert_head_column_0_header_column cl_SCT8_lm_sbert_head_column_0_none_column
+    parser.add_argument("--P4Embed", type=str, default='cl_SC8_lm_bert_head_column_0_none_column.pkl') #cl_SC8_lm_bert_head_column_0_none_column cl_SCT8_lm_sbert_head_column_0_none_column
     # TODO Needs to delete later/ or re-code
 
     hp = parser.parse_args()

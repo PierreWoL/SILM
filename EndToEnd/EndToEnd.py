@@ -6,9 +6,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-# from EndToEnd.T import generateUML
-# from EndToEnd.UML import savefig_uml
-# from interactiveFigure import draw_interactive_graph
+from EndToEnd.T import generateUML
+from EndToEnd.UML import savefig_uml
+from interactiveFigure import draw_interactive_graph
 from clustering import most_frequent_list, clustering, data_classes
 from ClusterHierarchy.ClusterDecompose import tree_consistency_metric
 from TableCluster.tableClustering import typeInference
@@ -48,13 +48,21 @@ def find_node_tables(G, N):
     return children_with_type_data
 
 
-def checkTree(tree: nx.DiGraph()):
-    # draw_interactive_graph(tree)
+def checkTree(tree: nx.DiGraph(), colDict):
+    draw_interactive_graph(tree)
     for node in tree.nodes():
         if tree.nodes[node].get("type") != 'data':
             tables = find_node_tables(tree, node)
-            print(tables)
-            print(node, tree.nodes[node])
+            attribute_dict = tree.nodes[node]["attributes_dict"]
+            name = tree.nodes[node]["name"]
+            label = tree.nodes[node]["label"]
+            Purity = tree.nodes[node]["Purity"]
+
+            print("\n", node, " ", name, f"{label} Purity {Purity} ({len(tables)})")
+            for key, number in attribute_dict.items():
+                names = colDict[key]['name']
+                attri_name = names[0] if len(names) > 0 else 'unnamed'
+                print(f"{attri_name} ({number})")
 
 
 def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
@@ -67,7 +75,7 @@ def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
         return index_attri
 
     if len(node_tables) == 0:
-        return [], []
+        return [], {}
     attribute_index_dict = {}
     for table in node_tables:
         subject_col = findSubCol(SubcolDict, table + ".csv")
@@ -83,14 +91,15 @@ def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
                 attribute_index_dict[attribute_index] += 1
     limit_attri = 0  ###TODO maybe need to be soft coded later  len(node_tables) / 2
     keep_keys = [key for key in attribute_index_dict.keys() if attribute_index_dict[key] >= limit_attri]
-    return keep_keys
+    return keep_keys, attribute_index_dict
 
 
 def update_attributes(tree: nx.DiGraph(), colDict, SubcolDict, filePath, name_dict):
     for node in tree.nodes():
         tables = find_node_tables(tree, node)
-        co_index = find_attribute(tables, colDict, SubcolDict, filePath)
+        co_index, attri_keys = find_attribute(tables, colDict, SubcolDict, filePath)
         tree.nodes[node]['attributes'] = co_index
+        tree.nodes[node]['attributes_dict'] = {key: value for key, value in attri_keys.items() if key in co_index}
         names_node = name_type(tables, name_dict)
         tree.nodes[node]['name'] = names_node
 
@@ -112,27 +121,47 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
     F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
     SE = pickle.load(F)
     filepath = f"datasets/{hp.dataset}/Test/"
-
     content = read_col_Embeddings(hp.P23Embed, hp.dataset)
     store_path = f"/result/EndToEnd/{hp.dataset}/"
     mkdir(store_path)
-
+    topType_dict = {}
     for name in cluster_dict.keys():
         cluster_info = cluster_dict[name]
         cluster = cluster_info["cluster"]
         input_data, names = find_cluster_embeddings(cluster, content, SE, filepath)
         MIN = math.ceil(len(input_data) / 40) if math.ceil(len(input_data) / 40) > 2 else 2
         colcluster_dict = clustering(input_data, names, MIN, hp.clustering,
-                                     max=2 * MIN)
-        print("attribute clusters ", len(colcluster_dict))
+                                     max=2 * MIN + 5)
+        # print("attribute clusters ", len(colcluster_dict))
+        colcluster_dict = dict(sorted(colcluster_dict.items(), key=lambda item: len(item[1]), reverse=True))
+        SA_name_attri = cluster_dict[name]["subjectAttribute"]["name"][0] if len(
+            cluster_dict[name]["subjectAttribute"]["name"]) > 0 else "? Name"
+        gt_clusters_low = \
+            data_classes(f"datasets/WDC/Test", f"datasets/WDC/groundTruth.csv", superclass=False)[0]
+        tables = {i: gt_clusters_low[i] for i in cluster_dict[name]["cluster"]}
+        topType_dict[name] = {'name':cluster_dict[name]["name"][0], 'Size':len(cluster_dict[name]["cluster"]), 'TopLabel':cluster_dict[name]["TopLabel"],
+                              'TPurity':cluster_dict[name]["TPurity"] / len(cluster_dict[name]["cluster"]),
+                              'LowLabel':cluster_dict[name]["LowLabel"],
+                              'LPurity':cluster_dict[name]["LPurity"] / len(cluster_dict[name]["cluster"])}
+
         colCluster = {index: {'name': name_type([i.split(".")[1] for i in cluster]), 'cluster': cluster} for
                       index, cluster in colcluster_dict.items()}
+
+
         data_path = os.getcwd() + "/datasets/%s/Test/" % hp.dataset
         jaccard_score = JaccardMatrix(colcluster_dict, data_path)[2]
         simple_tree = None
         if len(cluster) > limit:
-            print("\n", name, len(cluster_info["cluster"]), cluster_info["TopLabel"], cluster_info["TPurity"],
-                  cluster_info["LowLabel"], cluster_info["name"][0])
+            print(f'\n{cluster_dict[name]["name"][0]} \n {cluster_dict[name]["TopLabel"]}  '
+                  f'{cluster_dict[name]["TPurity"] / len(cluster_dict[name]["cluster"])} '
+                  f'{cluster_dict[name]["LowLabel"]} {cluster_dict[name]["LPurity"] / len(cluster_dict[name]["cluster"])} \n '  # {tables} \n
+                  f'{SA_name_attri} ({len(cluster_dict[name]["subjectAttribute"]["attributes"])})')
+            for index, colcluster_info in colCluster.items():
+                name_attri = colcluster_info['name'][0] if len(colcluster_info['name']) > 0 else "Unnamed attribute"
+                print(f"{name_attri} ({len(colcluster_info['cluster'])})")
+            # print(len(colCluster), colCluster, )
+            # print("\n", name, cluster_info["TopLabel"], cluster_info["LowLabel"], cluster_info["name"][0])
+
             TCS, ALL_path, simple_tree = tree_consistency_metric(cluster, jaccard_score, hp.P23Embed,
                                                                  hp.dataset, sliceInterval=hp.intervalSlice,
                                                                  delta=hp.delta,
@@ -141,8 +170,15 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
                 update_attributes(simple_tree, colcluster_dict, SE, filepath, name_dict)
         cluster_dict[name]["attributes"] = colCluster
         cluster_dict[name]["tree"] = simple_tree
-        # if simple_tree is not None:
-        # checkTree(simple_tree)
+        if simple_tree is not None:
+            checkTree(simple_tree, colCluster)
+    #print(topType_dict)
+    df = pd.DataFrame.from_dict(topType_dict, orient='index')
+    df.reset_index(inplace=True)
+    df.rename(columns={'index': 'ID'}, inplace=True)
+    #print(df)
+    #df.to_csv(os.getcwd() + "/result/EndToEnd/TopTypes.csv", index=False)
+
         # break
 
 
@@ -203,10 +239,12 @@ def endToEndRelationship(hp: Namespace, Types_clusters: dict):
                                                        hp.portion)
             if relationship_indexI:
                 Types_clusters[index_i]["relationship"][index_j] = relationship_indexI
-                # print(f"Type{index_i} to Type {index_j}'s relationship lies in attributes index {relationship_indexI}")
+                name_i = Types_clusters[index_i]['name']
+                print(f"Type{index_i} to Type {index_j}'s relationship lies in attributes index {relationship_indexI}")
             if relationship_indexJ:
                 Types_clusters[index_j]["relationship"][index_i] = relationship_indexJ
-                # print(f"Type{index_j} to Type {index_i}'s relationship lies in attributes index {relationship_indexJ}")
+                name_j = Types_clusters[index_j]['name']
+                print(f"Type{index_j} to Type {index_i}'s relationship lies in attributes index {relationship_indexJ}")
 
 
 def check_model_num(Type_dict):
@@ -233,9 +271,10 @@ def name_types(cluster_dict, name_dict=None):
 
 def type_info(typeDict, subcol_dict, dataset, nameDict=None, noLabel=False):
     gt_clusters = data_classes(f"datasets/{dataset}/Test", f"datasets/{dataset}/groundTruth.csv")[0]
+
     gt_clusters_low = \
         data_classes(f"datasets/{dataset}/Test", f"datasets/{dataset}/groundTruth.csv", superclass=False)[0]
-    new_cluster_dict = name_types(typeDict, nameDict) if nameDict is not None\
+    new_cluster_dict = name_types(typeDict, nameDict) if nameDict is not None \
         else {i: {'cluster': cluster, 'name': None} for i, cluster in typeDict.items()}
     for index in new_cluster_dict.keys():
         info_dict = new_cluster_dict[index]
@@ -244,19 +283,23 @@ def type_info(typeDict, subcol_dict, dataset, nameDict=None, noLabel=False):
                    findSubCol(subcol_dict, table_name + '.csv') is not None]
         subcol_name = name_type([i.split(".")[1] for i in subCols])
         new_cluster_dict[index]["subjectAttribute"] = {'name': subcol_name, 'attributes': subCols}
+
         if noLabel is False:
             gt_labels = most_frequent_list([gt_clusters[i] for i in info_dict["cluster"]])
             gt_labels_low = most_frequent_list([[gt_clusters_low[i]] for i in info_dict["cluster"]])
+
             info_dict["TopLabel"] = gt_labels
+            info_dict["LowLabel"] = gt_labels_low
             info_dict["TPurity"] = len(
                 [i for i in info_dict["cluster"] if bool(set(gt_clusters[i]).intersection(set(gt_labels)))])
-            info_dict["LowLabel"] = gt_labels_low
+            info_dict["LPurity"] = len(
+                [i for i in info_dict["cluster"] if bool({gt_clusters_low[i]}.intersection(set(gt_labels_low)))])
+
         new_cluster_dict[index] = info_dict
     return new_cluster_dict
 
 
 def endToEnd(hp: Namespace):
-
     # TODO hard coded part needs to change later
     dict_file = typeInference(hp.P1Embed, hp)
     cluster_dict = dict_file[hp.clustering]
@@ -265,6 +308,7 @@ def endToEnd(hp: Namespace):
     F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
     SE = pickle.load(F)
     cluster_dict_all = type_info(cluster_dict, SE, hp.dataset, nameDict=name_dict)
+
     print("top level type number: ", len(cluster_dict), len(cluster_dict_all))
     del cluster_dict
     hierarchy(cluster_dict_all, hp, name_dict)
@@ -272,7 +316,10 @@ def endToEnd(hp: Namespace):
     endToEndRelationship(hp, cluster_dict_all)
     number = check_model_num(cluster_dict_all)
     print("infer model number", number)
-    path = os.path.join(os.getcwd(), f"result\WDCEndtoEnd.xlsx")
+    path = os.path.join(os.getcwd(), f"result\WDCEndtoEnd.pkl")
     print(path)
     with open(path, 'wb') as f:
         pickle.dump(cluster_dict_all, f)
+    #uml_code,sub_umls = generateUML(cluster_dict_all, hp.dataset, hp.estimateNumber)
+    #mkdir(f"result/EndToEnd/{hp.dataset}/{hp.estimateNumber}")
+    #savefig_uml(uml_code, os.getcwd(), fileName=f"result/EndToEnd/{hp.dataset}/{hp.estimateNumber}/all.uml")

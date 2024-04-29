@@ -1,43 +1,14 @@
 import os
 import pickle
-#from UML import savefig_uml,save_svg_from_plantuml
 
-def generateU(classes):
-    """
-    Generate a PlantUML class diagram from a dictionary of classes.
-
-    :param classes: A dictionary where keys are class names and values are tuples containing
-                    a list of attributes and a dictionary of relationships.
-                    Format: {'ClassName': (['attribute1', 'attribute2'], {'RelatedClassName': '1..*'})}
-    :return: A string containing the PlantUML code.
-    """
-    uml_code = '@startuml\n'
-    # Define classes and attributes
-    for class_name, class_info in classes.items():
-        attributes, relationships = class_info
-        uml_code += f'class {class_name} {{\n'
-        for attr in attributes:
-            uml_code += f'    +{attr}\n'
-        uml_code += '}\n'
-
-    # Define relationships
-    for class_name, class_info in classes.items():
-        _, relationships = class_info
-        for related_class, multiplicity in relationships.items():
-            uml_code += f'{class_name} --> "{multiplicity}" {related_class}\n'
-
-    uml_code += '@enduml'
-    # print(uml_code)
-    return uml_code
+from EndToEnd.UML import savefig_uml
+from Utils import mkdir
 
 
-# Example usage:
-classes = {
-    'Customer': (['id', 'name', 'email'], {'Order': '1..*'}),
-    'Order': (['order_id', 'order_date', 'customer_id'], {})
-}
+# from UML import savefig_uml,save_svg_from_plantuml
 
-#generateU(classes)
+
+# generateU(classes)
 
 
 def class_define(class_name, attributes):
@@ -73,19 +44,19 @@ def subType(G, N, attribute_dict, subAttribute_name):
         if len(attris) > 0:
             if attris[0] not in attributes_subType:
                 attributes_subType.append(attris[0])
-    subtype_code = class_define(subType_name, attributes_subType)
+    subtype_code = class_define(subType_name,  list(set(attributes_subType)))
     return subtype_code
+
 
 def childRelationship(G, N, ParentNode):
     subType_name = G.nodes[N].get('name')[0].title() if len(G.nodes[N]['name']) > 0 else 'UnnamedClass'
     print(N, subType_name)
     Parent_name = G.nodes[ParentNode].get('name')[0].title() if len(G.nodes[ParentNode]['name']) > 0 else 'UnnamedClass'
-    relationship = relationship_define(Parent_name, subType_name,relationship_type=2)
+    relationship = relationship_define(Parent_name, subType_name, relationship_type=2)
     return relationship
 
 
-
-def generateUML(TypeDict):
+def generateUML(TypeDict, dataset, number):
     """
     Generate a PlantUML class diagram from a dictionary of classes.
 
@@ -102,7 +73,7 @@ def generateUML(TypeDict):
         tree = type_info['tree']
         class_name = type_info["name"][0]
         test_num += 1
-        #print("class_name",class_name)
+        # print("class_name",class_name)
         subject_attribute_names = type_info["subjectAttribute"]['name']
         subAttri_name = subject_attribute_names[0] if subject_attribute_names else class_name + ' name'
         attributes_info = type_info["attributes"]
@@ -111,13 +82,14 @@ def generateUML(TypeDict):
             names = info["name"]
             if names:
                 attributes.append(names[0])
-        class_type = class_define(class_name, list(set(attributes)))
+        class_naming = class_name+"_P" # if tree is None else class_name + "_Parent"
+        class_type = class_define(class_naming, list(set(attributes)))
         uml_code += class_type
         types_id = type_info["relationship"].keys()
 
         for type_id in types_id:
-            class_name_other = TypeDict[type_id]["name"][0]
-            relationship = relationship_define(class_name, class_name_other)
+            class_name_other = TypeDict[type_id]["name"][0]+"_P"
+            relationship = relationship_define(class_naming, class_name_other)
             if relationship not in relationship_code:
                 relationship_code += relationship
 
@@ -129,35 +101,30 @@ def generateUML(TypeDict):
             for node in nodes:
                 uml_code_inside += subType(tree, node, attributes_info, subAttri_name)
                 successors = tree.successors(node)
-                successors = [i for i in successors if  tree.nodes[i].get('type') != 'data']
+                successors = [i for i in successors if tree.nodes[i].get('type') != 'data']
                 for successor in successors:
                     child_relationship = childRelationship(tree, successor, node)
                     if child_relationship not in relationship_inside:
                         relationship_inside += child_relationship
-            top_nodes = [i for i in nodes if tree.in_degree(i) ==0]
+            top_nodes = [i for i in nodes if tree.in_degree(i) == 0]
             for node in top_nodes:
-                Type_name = tree.nodes[node].get('name')[0].title() if len(tree.nodes[node]['name']) > 0 else 'UnnamedClass'
+                Type_name = tree.nodes[node].get('name')[0].title() if len(
+                    tree.nodes[node]['name']) > 0 else 'UnnamedClass'
 
-                relationship = relationship_define(class_name, Type_name, relationship_type=2)
+                relationship = relationship_define(class_naming, Type_name, relationship_type=2)
                 if relationship not in relationship_inside:
                     relationship_inside += relationship
             uml_code_inside += relationship_inside
             uml_code_inside += '@enduml'
             print(uml_code_inside)
-            #savefig_uml(uml_code_inside, os.path.join(os.getcwd(),"Decomposition"), fileName=f"{key}_inside.uml")
+            path_target = os.path.join(os.getcwd(), f"result/EndToEnd/Decomposition/{dataset}/{number}")
+            mkdir(path_target)
+            savefig_uml(uml_code_inside, path_target, fileName=f"{key}_inside.uml")
             sub_umls[key] = uml_code_inside
 
-    uml_code +=relationship_code
+    uml_code += relationship_code
     uml_code += '@enduml'
-    #print(relationship_code)
-    #print(uml_code, test_num)
-    return uml_code,sub_umls
+    # print(relationship_code)
+    print(uml_code)
+    return uml_code, sub_umls
 
-path = os.path.join(os.getcwd(),f"E:\\Project\CurrentDataset\\result\WDCEndtoEnd.xlsx")
-with open(path, 'rb') as f:
-    cluster_dict_all=   pickle.load(f)
-#from UML import savefig_uml
-#uml_code,sub_umls = generateUML(cluster_dict_all)
-#savefig_uml(uml_code, os.getcwd(), fileName="try.uml")
-#for key, sub_uml in sub_umls.items():
- #   print(key, sub_uml)
