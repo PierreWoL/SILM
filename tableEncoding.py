@@ -1,7 +1,12 @@
 from Method1 import SBERT_T
 import os
-DATA_PATH = ['Test_corpus'] #'T2DV2', 'SOTAB','open_data',
+DATA_PATH = ['WDC'] #'T2DV2', 'SOTAB','open_data',,"TabFact"
 
-for path in DATA_PATH:
-    samplePath = os.getcwd() + "/datasets/" + path + "/Test/"
-    SBERT_T(samplePath, os.getcwd() + "/datasets/" + path + "/"+ "featureAll.csv")
+
+
+for dataset in DATA_PATH:
+    target_path = 'result/embedding/%s' %  dataset
+    filename =   "SBERT_.pickle"
+    store_path = os.path.join(os.getcwd(), target_path, filename)
+    samplePath = "datasets/%s/Test/" %  dataset
+    SBERT_T(samplePath, store_path)

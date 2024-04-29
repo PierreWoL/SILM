@@ -1,4 +1,5 @@
-import math
+import pickle
+
 import pandas as pd
 import os
 import experimentalData as ed
@@ -6,7 +7,7 @@ import numpy as np
 import SubjectColumnDetection as scd
 from sentence_transformers import SentenceTransformer
 import d3l.utils.functions as fun
-import JSON
+from preprocess_unnecessary import JSON
 from Utils import mkdir
 
 
@@ -35,7 +36,7 @@ def SBERT(data_path, feature_csv):
             column = pd.Series(table.iloc[:, 0])
         encoding_col = encoding(column)
         if encoding_col is not None and type(encoding_col) != np.float64:
-            JSON.write_line(feature_csv, [table_name, list(encoding_col)])
+            #JSON.write_line(feature_csv, [table_name, list(encoding_col)])
             table_names.append(table_name)
             encodings.append(list(encoding_col))
         else:
@@ -44,54 +45,63 @@ def SBERT(data_path, feature_csv):
 
 
 def SBERT_T(data_path, feature_csv):
-    T = ed.get_files(data_path)
+    T = [fn for fn in os.listdir(data_path)]
     exception = []
     table_names = []
     encodings = []
     print(T)
-    index = T.index("Event_calvados-tourisme.com_September2020")
+    #index = T.index("T2DV2_27.csv")
+    index = 0
     T = T[index:]
     for table_name in T:
-        print(data_path + table_name + ".csv")
-        f = open(data_path + table_name + ".csv", errors='ignore')
+        print(os.path.join(data_path, table_name))
+        f = open(os.path.join(data_path, table_name), errors='ignore')
         table = pd.read_csv(f)
-        rows = []
-        if table.shape[0] > 10000:
-           table = table[:200]
-        for index, row in table.iterrows():
+        columns = table.columns.tolist()
+        """if table.shape[0] > 10000:
+           table = table[:200]"""
+        """for index, row in table.iterrows():
             value = []
             for column in table.columns:
                 value.append(str(column)+" "+str(row[column]))
-            rows.append(" ".join(value))
+            rows.append(" ".join(value))"""
+
             #print(" ".join(value))
-        encoding_col = encoding(rows)
+        encoding_col = encoding(columns)
+        """
         if encoding_col is not None and type(encoding_col) != np.float64:
             JSON.write_line(feature_csv, [table_name, list(encoding_col)])
             table_names.append(table_name)
             encodings.append(list(encoding_col))
         else:
             exception.append(table_name)
+        """
+        if encoding_col is not None and type(encoding_col) != np.float64:
+            encodings.append((table_name,encoding_col))
+    with open(feature_csv, 'wb') as handle:
+        pickle.dump(encodings, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return pd.DataFrame(encodings), table_names, exception
 
 
 def encoding(column):
-    model = SentenceTransformer('bert-base-nli-mean-tokens')
+    model = SentenceTransformer('all-mpnet-base-v2')
     # try:
     column = fun.remove_blank(column)
     column_token = fun.token_list(column)
+    print(column_token,len(column_token))
     column_embeddings = model.encode(column_token)
+    print(column_embeddings,len(column_embeddings),len(column_embeddings[0]))
     average = np.mean(column_embeddings, axis=0)
-    # print(average)
     return average
     # except ValueError:
     #   return None
 
 
-# table = pd.read_csv(
+table = pd.read_csv("datasets/WDC/Test/Test_corpus_136.csv")
+print(table)
 #   "/Users/user/My Drive/CurrentDataset/datasets/open_data/SubjectColumn/Higher_Education_UKtable-13.csv")
 
-#samplePath = os.getcwd() + "/datasets/Test_corpus/SubjectColumn/"  # Table/Test/
-#SBERT(samplePath, os.getcwd() + "/datasets/Test_corpus/" + "feature.csv")
+SBERT("datasets/WDC/Test/","Test_corpus_136.csv")
 
 """
 samplePath = os.getcwd() + "/datasets/SOTAB/SubjectColumn/"  # Table/Test/

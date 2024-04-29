@@ -9,9 +9,9 @@ from d3l.indexing.feature_extraction.values.distribution_transformer import (
 from SubjectColumnDetection import ColumnDetection as detection
 from SubjectColumnDetection import ColumnType
 from d3l.indexing.feature_extraction.values.fd_transformer import FDTransformer
+
+from d3l.indexing.feature_extraction.values.LM_transformer import LM_Transformer
 from d3l.indexing.feature_extraction.values.glove_embedding_transformer import GloveTransformer
-from d3l.indexing.feature_extraction.values.fasttext_embedding_transformer import FasttextTransformer
-from d3l.indexing.feature_extraction.values.SBERT_transformer import SBERTTransformer
 from d3l.indexing.feature_extraction.values.token_transformer import TokenTransformer
 from d3l.indexing.lsh.lsh_index import LSHIndex
 from d3l.input_output.dataloaders import DataLoader
@@ -90,6 +90,7 @@ class NameIndex(SimilarityIndex):
             index_similarity_threshold: float = 0.6,
             index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
             index_seed: int = 12345,
+            model: Optional[str] = 'bert'
     ):
         """
 
@@ -124,8 +125,8 @@ class NameIndex(SimilarityIndex):
         self.index_fp_fn_weights = index_fp_fn_weights
         self.index_seed = index_seed
 
-        # self.transformer = QGramTransformer(qgram_size=self.transformer_qgram_size)
-        self.transformer = SBERTTransformer(max_df=1, min_df=1)
+        self.transformer = QGramTransformer(qgram_size=self.transformer_qgram_size)
+        #self.transformer = LM_Transformer(max_df=1, min_df=1,model_name=model)
         self.lsh_index = self.create_index()
 
     def create_index(self) -> LSHIndex:
@@ -444,7 +445,7 @@ class EmbeddingIndex(SimilarityIndex):
             index_fp_fn_weights: Tuple[float, float] = (0.5, 0.5),
             index_seed: int = 12345,
             index_cache_dir: Optional[str] = None,
-            mode: Optional[int] = 0
+            model: Optional[str] = 'bert'
     ):
         """
 
@@ -493,30 +494,23 @@ class EmbeddingIndex(SimilarityIndex):
         self.index_fp_fn_weights = index_fp_fn_weights
         self.index_seed = index_seed
         self.index_cache_dir = index_cache_dir
-        self.mode = mode
-        if self.mode == 0:
-            self.transformer = FasttextTransformer(
-                token_pattern=self.transformer_token_pattern,
-                max_df=self.transformer_max_df,
-                stop_words=self.transformer_stop_words,
-                embedding_model_lang=self.transformer_embedding_model_lang,
-                cache_dir=self.index_cache_dir
-            )
 
-        if self.mode == 1:
+
+
+        if model =='glove':
             self.transformer = GloveTransformer(
-                token_pattern=self.transformer_token_pattern,
-                max_df=self.transformer_max_df,
-                min_df=self.transformer_min_df,
-                stop_words=self.transformer_stop_words,
-                cache_dir=self.index_cache_dir
+            token_pattern=self.transformer_token_pattern,
+            max_df=self.transformer_max_df,
+            stop_words=self.transformer_stop_words,
+            cache_dir=self.index_cache_dir
             )
-        if self.mode == 2:
-            self.transformer = SBERTTransformer(
+        else:
+            self.transformer = LM_Transformer(
                 token_pattern=self.transformer_token_pattern,
                 max_df=self.transformer_max_df,
                 stop_words=self.transformer_stop_words,
-                cache_dir=self.index_cache_dir
+                cache_dir=self.index_cache_dir,
+                model_name=model
             )
 
         self.lsh_index = self.create_index()
@@ -560,7 +554,6 @@ class EmbeddingIndex(SimilarityIndex):
             for c, signature in column_signatures:
                 if len(signature) > 0:
                     lsh_index.add(input_id=str(table) + "." + str(c), input_set=signature)
-
         return lsh_index
 
     def query(

@@ -1,14 +1,16 @@
 import pandas as pd
 import SubjectColumnDetection as SCD
-import webSearchAPI as Search
+# import webSearchAPI as Search
 import d3l.utils.functions as util
 import numpy as np
 import math
-from typing import Iterable
+
+
+# from typing import Iterable
 
 
 class TableColumnAnnotation:
-    def __init__(self, table: pd.DataFrame):
+    def __init__(self, table: pd.DataFrame, isCombine=False):
 
         if isinstance(table, pd.DataFrame) is False:
             print("input should be dataframe!")
@@ -38,7 +40,8 @@ class TableColumnAnnotation:
         """
         # self.table.shape[1] is the length of columns
         for i in range(self.table.shape[1]):
-            column_detection = SCD.ColumnDetection(self.table.iloc[:, i])
+            column = self.table.iloc[:, i]
+            column_detection = SCD.ColumnDetection(column)
             candidate_type = column_detection.column_type_judge(100)
             self.annotation[i] = candidate_type
         """
@@ -59,7 +62,7 @@ class TableColumnAnnotation:
             if value == SCD.ColumnType.named_entity:
                 self.NE_cols.append(key)
         self.NE_table = self.NE_table.iloc[:, self.NE_cols]
-        self.NE_table = self.NE_table.applymap(convert_to_tuple)  # + ":[]"
+        self.NE_table = self.NE_table.map(convert_to_tuple)  # + ":[]" #applymap
 
         """
         NE_Table should be like this:
@@ -77,41 +80,43 @@ class TableColumnAnnotation:
         self.vocabulary = list(vocabulary_set)
         return self.vocabulary
 
-    def ws_cal(self, top_n: int, cseid="87f5671ca9e2242a9"):
-        """
-        todo: fetch result but still in the progress
-        calculate the context match score:
-        TableMiner+ explanation: the frequency of the column header's composing words in the header's context
-        Returns
-        -------
-        none but update the results self.ws
-        """
+    """
+            todo: fetch result but still in the progress
+            calculate the context match score:
+            TableMiner+ explanation: the frequency of the column header's composing words in the header's context
+            Returns
+            -------
+            none but update the results self.ws
+            """
+    """def ws_cal(self, top_n: int, cseid="87f5671ca9e2242a9"):
+        
         if self.NE_cols:
             self.NE_table = I_inf(self.table, self.NE_table, self.ws_table_cal, have_converged, top_K=top_n,
                                   cse_id=cseid)
 
         # print(self.NE_table)
         for row in self.table.iterrows():
-            self.ws_table_cal(row, top_n)
+            self.ws_table_cal(row, top_n)"""
 
-    def ws_table_cal(self, row: tuple, pairs: pd.DataFrame, top_K=3, cse_id="87f5671ca9e2242a9"):
+    """
+          this function calculates the ws score of each cell in the
+          row
+
+          Parameters
+          ----------
+          cse_id
+          pairs : key value pairs
+          row: row in table.iterrows()
+          top_K: number of top searched web pages
+
+          Returns
+          -------
+          should return or update the cells' ws score
+          """
+    """def ws_table_cal(self, row: tuple, pairs: pd.DataFrame, top_K=3, cse_id="87f5671ca9e2242a9"):
         # TODO  you forget about the returning value
         # in this case: pairs is the self.NE_table
-        """
-        this function calculates the ws score of each cell in the
-        row
-
-        Parameters
-        ----------
-        cse_id
-        pairs : key value pairs
-        row: row in table.iterrows()
-        top_K: number of top searched web pages
-
-        Returns
-        -------
-        should return or update the cells' ws score
-        """
+      
         # series of all named_entity columns, the index of named entity columns
         # is obtained when detecting the type of table
         # row[0]: the index of the row of cell
@@ -132,7 +137,7 @@ class TableColumnAnnotation:
             ws = ws_Tij(cell, results, bow)
             # print(pairs.iloc[row[0]][column_index][1])
             pairs.iloc[row[0]][column_index][1] = ws
-            # print(pairs.iloc[row[0]][column_index][1], pairs.iloc[row[0] - 1][column_index][1])
+            # print(pairs.iloc[row[0]][column_index][1], pairs.iloc[row[0] - 1][column_index][1])"""
 
     def bow_column(self, row_index, column_index) -> np.array:
         """
@@ -235,7 +240,7 @@ def ws_Tij(cell_text: str, webpages: list, bow_cell: np.array):
     for webpage in webpages:
         # todo need to check if there is no return, freq still the same after the function runs
         freq_count_web_page(cell_token, webpage, freq_title, freq_snippet)
-    #print(freq_title, freq_snippet)
+    # print(freq_title, freq_snippet)
     countP = freq_title[0] * 2 + freq_snippet[0]
     countW = countw(freq_title, freq_snippet, bow_cell)
     return countP + countW

@@ -7,19 +7,22 @@ import sklearn.metrics as metrics
 import mlflow
 import pandas as pd
 import os
-
+from Utils import simplify_string
 from .utils import evaluate_column_matching, evaluate_clustering
 from .model import BarlowTwinsSimCLR
-from .dataset import PretrainTableDataset
-
+# from .dataset import PretrainTableDataset
+from pretrainData import PretrainTableDataset
 from tqdm import tqdm
 from torch.utils import data
 from transformers import AdamW, get_linear_schedule_with_warmup
 from typing import List
+from Utils import subjectCol
 
 
+ 
 def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
-    """Perform a single training step
+    """
+    Perform a single training step
 
     Args:
         train_iter (Iterator): the train data loader
@@ -32,25 +35,59 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     Returns:
         None
     """
+
+    def loss_model_fp16(loss):
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
+    def loss_model(loss):
+        loss.backward()
+        optimizer.step()
+
+    num_augs = 2  # default value
+    if "," in hp.augment_op:
+        num_augs = len(hp.augment_op.split(','))
+
     for i, batch in enumerate(train_iter):
-        x_ori, x_aug, cls_indices = batch
         optimizer.zero_grad()
+        if num_augs <= 2:
+            x_ori, x_aug, cls_indices = batch
+            #print(cls_indices)
+            losses = [model(x_ori, x_aug, cls_indices, mode='simclr')]
+        else:
+            x_vals = batch[:-1]  # Separate out cls_indices
+            cls_indices = batch[-1]
+            #print(cls_indices)
+            # Compute all unique combinations of x_vals and calculate loss
+            #losses = [model(x_vals[j], x_vals[k],tuple(cls_indices[j],cls_indices[k]), mode='simclr') for j in range(len(x_vals)) for k in
+                   #   range(j + 1, len(x_vals))] 
+            losses = []
+            for j in range(len(x_vals)):
+               for k in range(j + 1, len(x_vals)):
+                   cls_indices_ij = (cls_indices[j],cls_indices[k])
+                   #print(cls_indices_ij)
+                   loss = model(x_vals[j], x_vals[k],cls_indices_ij, mode='simclr')
+                   losses.append(loss)
+                   
+            
+
+        avg_loss = sum(losses) / len(losses)
 
         if hp.fp16:
             with torch.cuda.amp.autocast():
-                loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
+                loss_model_fp16(avg_loss)
         else:
-            loss = model(x_ori, x_aug, cls_indices, mode='simclr')
-            loss.backward()
-            optimizer.step()
+            loss_model(avg_loss)
 
         scheduler.step()
+
         if i % 10 == 0:  # monitoring
-            print(f"step: {i}, loss: {loss.item()}")
-        del loss
+            print(f"step: {i}, losses: {tuple(l.item() for l in losses)}")
+
+        for loss in losses:
+            del loss
+
 
 
 def train(trainset, hp):
@@ -74,8 +111,7 @@ def train(trainset, hp):
 
     # initialize model, optimizer, and LR scheduler
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=len(trainset.tokenizer))
-
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=len(trainset.tokenizer)) #
     model = model.cuda()
     optimizer = AdamW(model.parameters(), lr=hp.lr)
     if hp.fp16:
@@ -93,35 +129,46 @@ def train(trainset, hp):
         # train
         model.train()
         train_step(train_iter, model, optimizer, scheduler, scaler, hp)
-
+        
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
-
             directory = os.path.join(hp.logdir, hp.method, hp.dataset)
+            op_augment_new =simplify_string(hp.augment_op)
             if not os.path.exists(directory):
                 os.makedirs(directory)
+                
 
             # save the checkpoints for each component
+            ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                     op_augment_new + "_lm_" + str(
+                hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                hp.table_order) + '_' + str(
+                hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
             if hp.single_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "singleCol.pt")
-            if hp.subject_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column)+ "subCol.pt")
-            else:
-                # ckpt_path = os.path.join(hp.logdir, hp.method, 'model_'+str(hp.augment_op)+'_'+str(hp.sample_meth)+'_'+str(hp.table_order)+'_'+str(hp.run_id)+'.pt')
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_'+
-                                         str(hp.augment_op) +"lm_"+ str(
-                                             hp.lm)+ "_" + str(hp.sample_meth) + "_" + str(
-                                             hp.table_order) + '_' + str(
-                                             hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
-
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                        op_augment_new + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_singleCol.pt")
+            elif hp.subject_column:
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                        op_augment_new + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_subCol.pt")
+                print(ckpt_path)
+            elif hp.header:
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                        op_augment_new + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_header.pt")
+            elif hp.column:
+                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                                         op_augment_new + "_lm_" + str(
+                    hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
+                    hp.table_order) + '_' + str(
+                    hp.run_id) + "_" + str(hp.check_subject_Column) + "_column.pt")
             ckpt = {'model': model.state_dict(),
                     'hp': hp}
             torch.save(ckpt, ckpt_path)
@@ -155,7 +202,9 @@ def inference_on_tables(tables: List[pd.DataFrame],
                         model: BarlowTwinsSimCLR,
                         unlabeled: PretrainTableDataset,
                         batch_size=128,
-                        total=None):
+                        total=None,
+                        subject_column=False,
+                        isCombine=False):
     """Extract column vectors from a table.
 
     Args:
@@ -172,13 +221,17 @@ def inference_on_tables(tables: List[pd.DataFrame],
     results = []
     for tid, table in tqdm(enumerate(tables), total=total):
         # print(tid, table)
+        if subject_column is True:
+            cols = subjectCol(table, isCombine)
+            if len(cols) > 0:
+                    table = table[cols]
         x, _ = unlabeled._tokenize(table)
         batch.append((x, x, []))
         if tid == total - 1 or len(batch) == batch_size:
             # model inference
             with torch.no_grad():
                 x, _, _ = unlabeled.pad(batch)
-                # print(x, _, _)
+                # print("All",x, _, _)
                 # all column vectors in the batch
                 column_vectors = model.inference(x)
                 # print("column_vectors ", column_vectors)
@@ -206,27 +259,21 @@ def load_checkpoint(ckpt):
         PretrainDataset: the dataset for pre-training the model
     """
     hp = ckpt['hp']
-
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # print(device)
-    #todo change the resize by passing a parameter
-    if hp.lm=='roberta':
-      Resize=50269
-    else:
-       Resize=30531
-    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm, resize=Resize)#50269 30529
+    # todo change the resize by passing a parameter
+    Resize = -1
+    if hp.lm == 'roberta':
+        Resize = 50269
+    elif hp.lm == 'sbert':
+        Resize = 30529
+    elif hp.lm == 'bert':
+        Resize = 30526
+  
+    model = BarlowTwinsSimCLR(hp, device=device, lm=hp.lm,resize=Resize)  # 50269 30529  
     model = model.to(device)
     model.load_state_dict(ckpt['model'])
-
-    # dataset paths, depending on benchmark for the current task
-    ds_path = os.getcwd() + '/datasets/Test_corpus/Test'
-    if hp.dataset == "open_data":
-        # Change the data paths to where the benchmarks are stored
-        ds_path = os.getcwd() + '/datasets/open_data/Test'
-    elif hp.dataset == "SOTAB":
-        ds_path = os.getcwd() + '/datasets/SOTAB/Test'
-    elif hp.dataset == "T2DV2":
-        ds_path = os.getcwd() + '/datasets/T2DV2/Test'
+    ds_path = os.path.join(os.getcwd(), 'datasets/%s/Test' % hp.dataset)
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
     return model, dataset
 

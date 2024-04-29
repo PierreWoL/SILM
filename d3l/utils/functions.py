@@ -7,6 +7,10 @@ import string
 from dateutil.parser import parse
 import pandas as pd
 from typing import Iterable, Any
+
+from nltk import word_tokenize
+from sklearn.feature_extraction.text import CountVectorizer
+
 from d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
 from urllib.parse import urlparse
@@ -116,10 +120,11 @@ def is_date_expression(text, fuzzy=False):
     REFERENCE: https://stackoverflow.com/questions/25341945/check-if-string-has-date-any-format
     """
     try:
+
         parse(text, fuzzy=fuzzy)
         return True
 
-    except ValueError:
+    except:
         return False
 
 
@@ -184,6 +189,14 @@ def tokenize_str(text: str) -> str:
     return ele
 
 
+from country_list import countries_for_language
+
+
+def is_country(string):
+    token = tokenize_str(string)
+    countries = [x[1] for x in countries_for_language('en')]
+
+
 def token_stop_word(text) -> list:
     elements = []
     if not is_empty(text):
@@ -212,6 +225,23 @@ def has_numbers(input_string):
     return bool(re.search(r'\d', input_string))
 
 
+def bow(sentence):
+    bows = {}
+    vectorizer = CountVectorizer()
+    bow_i = vectorizer.fit_transform([sentence.lower()])
+    # Get feature name (vocabulary)
+    feature_names = vectorizer.get_feature_names_out()
+    for word, index in zip(feature_names, bow_i.toarray()[0]):
+        bows[word] = index
+    return bows
+
+
+def nltk_tokenize(text):
+    # Use NLTK's tokenizer
+    tokens = word_tokenize(text)
+    return tokens
+
+
 def remove_blank(column):
     index_list = []
     if type(column) != pd.Series:
@@ -230,7 +260,15 @@ def token_list(column: list):
         tokens = token_stop_word(item)
         if len(tokens) > 0:
             list_column_tokens.append(' '.join(tokens))
-    return list_column_tokens
+    is_blank = True
+    for element in list_column_tokens:
+        if element != '':
+            is_blank = False
+            break
+    if is_blank is True:
+        return None
+    else:
+        return list_column_tokens
 
 
 def remove_blanked_token(column):

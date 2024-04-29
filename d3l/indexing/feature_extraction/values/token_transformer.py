@@ -50,6 +50,8 @@ class TokenTransformer:
 
         if len(input_values) < 1:
             return set()
+        if input_values is None:
+            return set()
         input_values = remove_blanked_token(input_values)
         try:
             vectorizer = TfidfVectorizer(
@@ -63,7 +65,7 @@ class TokenTransformer:
                 use_idf=True,
             )
             vectorizer.fit_transform(input_values)
-        except (ValueError,AttributeError) as e:
+        except (ValueError,AttributeError,TypeError) as e:
          #   print(input_values[:5], e)
             return set()
 
