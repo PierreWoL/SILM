@@ -1,15 +1,10 @@
 import os.path
-import pickle
-import sys
-import random
-import time
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.cluster.hierarchy as sch
 import networkx as nx
 import numpy as np
 from sklearn.metrics import silhouette_score, silhouette_samples
-from Utils import mkdir
 from collections import Counter
 
 
@@ -449,127 +444,3 @@ def print_path_label(tree, layer_info, Parent_nodes):
                         pathCompatibility = MatchedElementGT / MatchedElementPath
                         all_pathCompatibility.append(pathCompatibility)
 
-    # print("mutual_parent_nodes", len(layer_info[0].keys()), len(all_pathCompatibility), all_pathCompatibility)
-    # tree_consistency_score = "{:.3f}".format(sum(all_pathCompatibility) / len(all_pathCompatibility))
-    # print("the metric is ", tree_consistency_score, "all_path_number is ", len(all_pathCompatibility))
-    # return tree_consistency_score
-
-
-"""
-def simple_tree_with_cluster_label(threCluster_dict, orginal_tree, ground_truth, table_names, data=None):
-    layer_info_dict = {}
-    Parent_nodes_h = {}
-    simple_tree = None
-    for index, (thre, clusters) in enumerate(threCluster_dict):
-        if index == 0:
-            start_time = time.time()
-            parent_nodes = slice_tree(orginal_tree, clusters, table_names)  #
-            end_time = time.time()
-            # Calculate the elapsed time
-            elapsed_time = end_time - start_time
-            print(f"Elapsed time: {elapsed_time:.4f} seconds for slice the best silhouette tree")
-
-            # print(parent_nodes)
-            simple_tree = simplify_graph(orginal_tree, parent_nodes)
-            # print(simple_tree)
-        start_time = time.time()
-        parent_nodes = slice_tree(orginal_tree, clusters, table_names)  #
-        layer_info_dict[index] = parent_nodes
-        end_time = time.time()
-        # Calculate the elapsed time
-        elapsed_time = end_time - start_time
-        print(f"Elapsed time: {elapsed_time:.4f} seconds for slice the tree")
-        layer_num = len(threCluster_dict) - 1
-        start_time_label = time.time()
-        for cluster, (closest_parent, mutual_parent_nodes) in parent_nodes.items():
-            simple_tree.nodes[closest_parent]['data'] = list(cluster)
-            index_ground_truth = 0
-            if index == layer_num:
-
-                labels_data = [ground_truth[i][1] if isinstance(ground_truth, dict) else ground_truth[data.index(i)] for
-                               i in cluster]
-                simple_tree.nodes[closest_parent]['type'] = 'data cluster node parent layer'
-                index_ground_truth = 1
-                Parent_nodes_h[cluster] = closest_parent
-            else:
-                labels_data = [ground_truth[i][0] if isinstance(ground_truth, dict) else ground_truth[data.index(i)] for
-                               i in cluster]
-                simple_tree.nodes[closest_parent]['type'] = 'data cluster node'
-            simple_tree.nodes[closest_parent]['label'] = most_frequent(labels_data)
-            wrong_labels = {}
-            for i in cluster:
-                label_per = ground_truth[i][index_ground_truth] if isinstance(ground_truth, dict) else ground_truth[
-                    data.index(i)]
-
-                if label_per not in simple_tree.nodes[closest_parent]['label']:
-                    wrong_labels[i] = label_per
-            simple_tree.nodes[closest_parent]['Wrong_labels'] = wrong_labels
-            label_cluster = simple_tree.nodes[closest_parent]['label']
-            simple_tree.nodes[closest_parent]['Purity'] = "{:.3f}".format(
-                (1 - len(wrong_labels.keys()) / len(cluster)) / len(label_cluster))
-        end_time_label = time.time()
-        elapsed_time = end_time_label - start_time_label
-        print(f"Elapsed time: {elapsed_time:.4f} seconds for slice the tree")
-
-    return simple_tree, layer_info_dict, Parent_nodes_h
-
-
-def test_tree_consistency_metric():
-    embedding_file = np.array([[0.15264832, 0.67790326, 0.35618801],
-                               [0.07687365, 0.21208948, 0.23942163],
-                               [0.83904511, 0.91205178, 0.39408256],
-                               [0.49731815, 0.79465782, 0.77706572],
-                               [0.41300549, 0.69348555, 0.80835147],
-                               [0.27307791, 0.81304529, 0.51075196],
-                               [0.92478539, 0.33409272, 0.69586836],
-                               [0.19984104, 0.52642224, 0.10401238],
-                               [0.47016623, 0.4690633, 0.6132469],
-                               [0.64690087, 0.98867187, 0.42791464],
-                               [0.57888858, 0.08689729, 0.30285491],
-                               [0.24681078, 0.64459448, 0.48688031],
-                               [0.71598771, 0.96611438, 0.23196555],
-                               [0.05359564, 0.41624766, 0.76461378],
-                               [0.19783982, 0.21246817, 0.28792796],
-                               [0.26966902, 0.27370917, 0.70342812],
-                               [0.91653158, 0.96413556, 0.15612174],
-                               [0.24759889, 0.74969501, 0.44362298],
-                               [0.38557235, 0.76425578, 0.87203644],
-                               [0.56123633, 0.01721618, 0.30774663],
-                               [0.82745475, 0.84023844, 0.79468905],
-                               [0.24703718, 0.66320813, 0.27354134],
-                               [0.78698088, 0.78636944, 0.90183845],
-                               [0.72581221, 0.35837165, 0.70863178],
-                               [0.13436005, 0.85825595, 0.10523331]])
-
-    ground_truth = ['A', 'C', 'C', 'B', 'E', 'E', 'C', 'E', 'D', 'A', 'D', 'E', 'C', 'A', 'A', 'D', 'C', 'D', 'D',
-                    'B', 'B', 'A', 'B', 'E', 'B']
-    # Print the resulting list of labels
-    node_labels = [chr(ord('a') + i) for i in range(25)]
-
-    ground_label_name = "groundTruth.csv"
-    linkage_matrix = sch.linkage(embedding_file, method='complete', metric='euclidean')
-    folder = "fig/Example"
-    mkdir(folder)
-    dendrogra = plot_tree(linkage_matrix, folder, node_labels=node_labels)
-    tree_test = dendrogram_To_DirectedGraph(embedding_file, linkage_matrix, node_labels)
-    threCluster_dict = best_clusters(dendrogra, linkage_matrix, embedding_file)
-    simple_tree, layer_info_dict, Parent_nodes_h = simple_tree_with_cluster_label(threCluster_dict, tree_test,
-                                                                                  ground_truth, node_labels,
-                                                                                  data=node_labels)
-    print(layer_info_dict[0])
-    for cluster, (closest_parent, mutual_parent_nodes) in layer_info_dict[0].items():
-        for clusterP, closest_parentP in Parent_nodes_h.items():
-            if closest_parentP in mutual_parent_nodes:
-                path = sorted(list(mutual_parent_nodes))
-                path = path[0:path.index(closest_parentP) + 1]
-                print(path)
-                for i in path:
-                    label = simple_tree.nodes[i].get('label', 0)
-                    print(i, label)
-    print_path_label(simple_tree, layer_info_dict, Parent_nodes_h)
-
-
-def test():
-    test_tree_consistency_metric()
-
-# test()"""

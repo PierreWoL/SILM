@@ -1,18 +1,14 @@
-import ast
 import pickle
 import time
 from argparse import Namespace
-import numpy as np
 import pandas as pd
 import os
 import networkx as nx
-import matplotlib.pyplot as plt
 from collections import Counter
-import readPKL as PKL
+from ClusterHierarchy import sliceDendro
 import scipy.cluster.hierarchy as sch
 from ClusterHierarchy.JaccardMetric import JaccardMatrix
 from Utils import mkdir
-from clustering import data_classes
 
 
 def find_frequent_labels(ancestors: list, G: nx.DiGraph()):
@@ -282,7 +278,7 @@ def tree_consistency_metric(tables, JaccardMatrix, embedding_file, dataset,
     linkage_matrix = sch.linkage(encodings, method='complete', metric=custom_metric)  # 'euclidean'
     dendrogra = sch.dendrogram(linkage_matrix, labels=tables)
     start_time = time.time()
-    threCluster_dict = PKL.best_clusters(dendrogra, linkage_matrix, encodings,
+    threCluster_dict = sliceDendro.best_clusters(dendrogra, linkage_matrix, encodings,
                                          customMatrix=custom_metric, sliceInterval=sliceInterval, delta=delta)
     # print(threCluster_dict)
     end_time = time.time()

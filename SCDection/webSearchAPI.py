@@ -3,7 +3,7 @@ from googleapiclient.discovery import (build)
 
 class WebSearch:
 
-    def __init__(self, cse_id="c08f6c0abe4964877"):  # , api_key, cse_id AIzaSyCt2afoIIv1hJxYp_V0mAf4ZzZtYPrCUss
+    def __init__(self, cse_id=""):
         """
         Init: connect with Google custom search api
         Parameters api
@@ -12,7 +12,7 @@ class WebSearch:
         cse_id: id of user's custom search
         """
         try:
-            self.my_api_key = "AIzaSyBogbAxNrr0c39ChcCTHliSBiMHVSQ7mog"
+            self.my_api_key = ""
             self.my_cse_id = cse_id
             self.service = build("customsearch", "v1", developerKey=self.my_api_key)
             self.res = []
@@ -60,3 +60,11 @@ class WebSearch:
                 content["snippet"] = res["snippet"]
             self.contents.append(content)
         return self.contents
+
+
+"""query = 'Anguilla'
+web_search = WebSearch()
+results = web_search.search_result(query, 5)
+for result in results:
+    # pprint.pprint(result)
+    print(result["title"], result["snippet"])"""

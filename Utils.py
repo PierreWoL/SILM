@@ -1,12 +1,11 @@
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
-import torch
-from transformers import AutoTokenizer, AutoModel, AutoConfig
+
 from d3l.utils.functions import token_stop_word
-import TableAnnotation as TA
-from SubjectColumnDetection import ColumnType
+import SCDection.TableAnnotation as TA
 
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
@@ -70,20 +69,61 @@ def split(column: pd.Series):
         # return column.tolist()
 
 
-def subjectCol(table: pd.DataFrame, combine=False):
+from SCDection.TableAnnotation import TableColumnAnnotation as TA
+
+
+def subjectColDetection(DATA_PATH, RESULT_PATH=None):
+    if RESULT_PATH is None:
+        folder_path = os.path.abspath(DATA_PATH)
+        RESULT_PATH = os.path.dirname(folder_path)
+    if 'dict.pickle' in os.listdir(RESULT_PATH):
+        with open(os.path.join(RESULT_PATH, 'dict.pickle'), "rb") as f:
+            table_dict = pickle.load(f)
+
+    else:
+        table_dict = {}
+        table_names = [i for i in os.listdir(DATA_PATH) if i.endswith(".csv")]
+        for tableName in table_names:
+            table_dict[tableName] = []
+            table_ori = pd.read_csv(os.path.join(DATA_PATH, tableName))
+            annotation_table = TA(table_ori, SearchingWeb=False)
+            annotation_table.subcol_Tjs()
+            table_dict[tableName].append(annotation_table.annotation)
+            table_dict[tableName].append(annotation_table.column_score)
+
+        with open(os.path.join(RESULT_PATH, 'dict.pickle'), "wb") as save_file:
+            pickle.dump(table_dict, save_file)
+    return table_dict
+
+
+def subjectCol(table: pd.DataFrame):
     sub_cols_header = []
-    anno = TA.TableColumnAnnotation(table, isCombine=combine)
-    types = anno.annotation
-    for key, type in types.items():
-        if type == ColumnType.named_entity:
-            sub_cols_header = [table.columns[key]]
-            break
+    annotation_table = TA(table, SearchingWeb=False)
+    annotation_table.subcol_Tjs()
+    NE_column_score = annotation_table.column_score
+    max_score = max(NE_column_score.values())
+    subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+    for index in subcol_index:
+        sub_cols_header.append(table.columns[index])
     return sub_cols_header
 
 
-import nltk
+def findSubCol(table_path: str, table: str):
+    sub_cols_header = []
+    df_table = pd.read_csv(os.path.join(table_path, table))
+    SubjectCol_dict = subjectColDetection(table_path)
+    annotation, NE_column_score = SubjectCol_dict[table]
+    if len(NE_column_score) > 0:
+        max_score = max(NE_column_score.values())
+        subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+        for index in subcol_index:
+            sub_cols_header.append(df_table.columns[index])
+    return sub_cols_header
+
+
 from nltk.corpus import wordnet
 from collections import defaultdict, Counter
+
 
 def calculate_similarity(e1, e2, Euclidean=False):
     if Euclidean is False:
@@ -92,15 +132,8 @@ def calculate_similarity(e1, e2, Euclidean=False):
         norm_e2 = np.linalg.norm(e2)
         similarity = dot_product / (norm_e1 * norm_e2)
     else:
-        similarity = np.linalg.norm(e1- e2)
+        similarity = np.linalg.norm(e1 - e2)
     return similarity
-def findSubCol(SE, table_name):
-    NE_list, headers, types = SE[table_name]
-    if NE_list:
-        subjectName = headers[NE_list[0]]
-    else:
-        subjectName = None
-    return subjectName
 
 
 # Make sure you've downloaded the necessary resources
@@ -123,6 +156,8 @@ def synonyms(entity):
         for lemma in syn.lemmas():
             syns.add(lemma.name())
     return syns
+
+
 def name_type(cluster, name_dict=None):
     if name_dict is None:
         name_i = naming(cluster, threshold=5)
@@ -131,13 +166,14 @@ def name_type(cluster, name_dict=None):
         name_i = naming(names, threshold=5)
     return name_i
 
+
 def naming(InitialNames, threshold=0):
     # Given data
     ### TODO top K name
     GivenEntities = {}
     for name in InitialNames:
-        #tokens = nltk.word_tokenize(name)
-        #Entities = namedEntityRecognition(tokens)
+        # tokens = nltk.word_tokenize(name)
+        # Entities = namedEntityRecognition(tokens)
         Entities = token_stop_word(name)
         if Entities == ['']:
             continue

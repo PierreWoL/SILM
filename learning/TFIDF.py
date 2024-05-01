@@ -1,3 +1,7 @@
+"""
+Based on https://github.com/megagonlabs/starmie/
+"""
+
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
@@ -5,33 +9,6 @@ import math
 
 from d3l.utils.functions import tokenize_str as tokenize
 from typing import Iterable
-"""
-# Sample list of phrases
-phrases = [
-    'hello world',
-    'goodbye world',
-    'hello user',
-    'goodbye user',
-    'hello',
-    'goodbye',
-    'user',
-    'world'
-]
-
-# Create a TF-IDF vectorizer
-vectorizer = TfidfVectorizer(use_idf=True)
-
-# Compute TF-IDF scores
-tfidf_matrix = vectorizer.fit_transform(phrases)
-
-# Extract the scores for each phrase
-tfidf_scores = pd.DataFrame(tfidf_matrix.toarray(), columns=vectorizer.get_feature_names_out(), index=phrases)
-
-#print(tfidf_scores)
-avg_tfidf = tfidf_scores.mean(axis=1)
-#print(avg_tfidf)
-"""
-
 
 def compute_avg_tfidf(column):
     # Function to compute average TF-IDF for a list of phrases

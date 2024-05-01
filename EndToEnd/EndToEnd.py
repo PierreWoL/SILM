@@ -65,7 +65,7 @@ def checkTree(tree: nx.DiGraph(), colDict):
                 print(f"{attri_name} ({number})")
 
 
-def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
+def find_attribute(node_tables, colDict, filePath: str):
     def findCluster(column, columnDict):
         index_attri = -1
         for key, cluster_columns in columnDict.items():
@@ -78,11 +78,10 @@ def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
         return [], {}
     attribute_index_dict = {}
     for table in node_tables:
-        subject_col = findSubCol(SubcolDict, table + ".csv")
+        subject_cols = findSubCol(filePath, table + ".csv")
         columns = pd.read_csv(os.path.join(filePath, table + ".csv")).columns
-        if subject_col is not None:
-            # subject_columns.append(subject_col)
-            columns = [i for i in columns if i != subject_col]
+        if subject_cols is not []:
+            columns = [i for i in columns if i not in subject_cols]
         for col in columns:
             attribute_index = findCluster(f"{table}.{col}", colDict)
             if attribute_index not in attribute_index_dict:
@@ -94,23 +93,23 @@ def find_attribute(node_tables, colDict, SubcolDict, filePath: str):
     return keep_keys, attribute_index_dict
 
 
-def update_attributes(tree: nx.DiGraph(), colDict, SubcolDict, filePath, name_dict):
+def update_attributes(tree: nx.DiGraph(), colDict, filePath, name_dict):
     for node in tree.nodes():
         tables = find_node_tables(tree, node)
-        co_index, attri_keys = find_attribute(tables, colDict, SubcolDict, filePath)
+        co_index, attri_keys = find_attribute(tables, colDict, filePath)
         tree.nodes[node]['attributes'] = co_index
         tree.nodes[node]['attributes_dict'] = {key: value for key, value in attri_keys.items() if key in co_index}
         names_node = name_type(tables, name_dict)
         tree.nodes[node]['name'] = names_node
 
 
-def find_cluster_embeddings(cluster, content, subjectColDict, filepath):
+def find_cluster_embeddings(cluster, content, filepath: str):
     names = []
     input_data = []
     for table_name in cluster:
         column_table = pd.read_csv(os.path.join(filepath, table_name + ".csv")).columns
-        subcol = findSubCol(subjectColDict, table_name + ".csv")
-        column_table_combine = [f"{table_name}.{i}" for i in column_table if i != subcol]
+        subcols = findSubCol(filepath, table_name + ".csv")
+        column_table_combine = [f"{table_name}.{i}" for i in column_table if i not in subcols]
         # names.extend(column_table)
         names.extend(column_table_combine)
         input_data.extend([embed for key, embed in content.items() if key in column_table_combine])
@@ -118,8 +117,6 @@ def find_cluster_embeddings(cluster, content, subjectColDict, filepath):
 
 
 def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
-    F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
-    SE = pickle.load(F)
     filepath = f"datasets/{hp.dataset}/Test/"
     content = read_col_Embeddings(hp.P23Embed, hp.dataset)
     store_path = f"/result/EndToEnd/{hp.dataset}/"
@@ -128,7 +125,7 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
     for name in cluster_dict.keys():
         cluster_info = cluster_dict[name]
         cluster = cluster_info["cluster"]
-        input_data, names = find_cluster_embeddings(cluster, content, SE, filepath)
+        input_data, names = find_cluster_embeddings(cluster, content, filepath)
         MIN = math.ceil(len(input_data) / 40) if math.ceil(len(input_data) / 40) > 2 else 2
         colcluster_dict = clustering(input_data, names, MIN, hp.clustering,
                                      max=2 * MIN + 5)
@@ -167,7 +164,7 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
                                                                  delta=hp.delta,
                                                                  store_results=False)
             if simple_tree is not None:
-                update_attributes(simple_tree, colcluster_dict, SE, filepath, name_dict)
+                update_attributes(simple_tree, colcluster_dict,  filepath, name_dict)
         cluster_dict[name]["attributes"] = colCluster
         cluster_dict[name]["tree"] = simple_tree
         if simple_tree is not None:
@@ -269,7 +266,7 @@ def name_types(cluster_dict, name_dict=None):
     return new_cluster_dict
 
 
-def type_info(typeDict, subcol_dict, dataset, nameDict=None, noLabel=False):
+def type_info(typeDict, dataset, nameDict=None, noLabel=False):
     gt_clusters = data_classes(f"datasets/{dataset}/Test", f"datasets/{dataset}/groundTruth.csv")[0]
 
     gt_clusters_low = \
@@ -279,8 +276,11 @@ def type_info(typeDict, subcol_dict, dataset, nameDict=None, noLabel=False):
     for index in new_cluster_dict.keys():
         info_dict = new_cluster_dict[index]
         tables = new_cluster_dict[index]['cluster']
-        subCols = [f"{table_name}.{findSubCol(subcol_dict, table_name + '.csv')}" for table_name in tables if
-                   findSubCol(subcol_dict, table_name + '.csv') is not None]
+        subCols = []
+        for table_name in tables:
+            per_sub_cols = findSubCol(f"datasets/{dataset}/Test/", table_name + '.csv')
+            if per_sub_cols is not []:
+                subCols.extend([f"{table_name}.{per_sub_col}" for per_sub_col in per_sub_cols])
         subcol_name = name_type([i.split(".")[1] for i in subCols])
         new_cluster_dict[index]["subjectAttribute"] = {'name': subcol_name, 'attributes': subCols}
 
@@ -305,9 +305,7 @@ def endToEnd(hp: Namespace):
     cluster_dict = dict_file[hp.clustering]
     name_dict = {row["table"]: row["name"] for index, row in
                  pd.read_csv(f"datasets/{hp.dataset}/naming.csv").iterrows()}
-    F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
-    SE = pickle.load(F)
-    cluster_dict_all = type_info(cluster_dict, SE, hp.dataset, nameDict=name_dict)
+    cluster_dict_all = type_info(cluster_dict, hp.dataset, nameDict=name_dict)
 
     print("top level type number: ", len(cluster_dict), len(cluster_dict_all))
     del cluster_dict

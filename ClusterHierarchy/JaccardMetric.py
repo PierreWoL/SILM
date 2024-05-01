@@ -1,10 +1,7 @@
 import os
-import pickle
-from argparse import Namespace
 import time
 import pandas as pd
 
-from clustering import data_classes
 
 
 def matrix(table_list: list, table_path):

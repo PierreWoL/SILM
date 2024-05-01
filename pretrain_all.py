@@ -4,13 +4,10 @@ import random
 import torch
 import mlflow
 import time
-from tqdm import tqdm
 from pretrainData import PretrainTableDataset
-from pureEncoding import Encoding
 from learning.pretrain import train
-import pandas as pd
-import os
 from Encodings import table_features
+from Utils import subjectColDetection
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -27,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument("--pretrain", dest="pretrain", action="store_true")
     parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
-    parser.add_argument("--augment_op", type=str, default='sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF') #
+    parser.add_argument("--augment_op", type=str, default='sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF')  #
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # column header-only mode without table context
@@ -63,37 +60,33 @@ if __name__ == '__main__':
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     # Change the data paths to where the benchmarks are stored
-
+    subjectColDetection('datasets/%s/' % hp.dataset)
     path = 'datasets/%s/Test' % hp.dataset
-    
-    
     start_time_preprocess = time.time()
+
     trainset = PretrainTableDataset.from_hp(path, hp)
     end_time_preprocess = time.time()
     time_difference_pre = end_time_preprocess - start_time_preprocess
     print(f"Preprocess time: {time_difference_pre}\n")
-    
 
     output_path = 'result/embedding/%s' % hp.dataset
     if hp.pretrain:
         start_time_pretrain = time.time()
-        trainset.encodings(output_path,setting=hp.NoContext)
+        trainset.encodings(output_path, setting=hp.NoContext)
         end_time_pretrain = time.time()
         time_difference_pretrain = end_time_pretrain - start_time_pretrain
         print(f"Encode time: {time_difference_pretrain}\n ")
-        
+
     else:
-        
+
         start_time_train = time.time()
         train(trainset, hp)
         end_time_train = time.time()
         time_difference_train = end_time_train - start_time_train
         print(f"Train time: {time_difference_train}\n")
-        
-        
+
         start_time_encode = time.time()
         table_features(hp)
         end_time_encode = time.time()
         time_difference_encode = end_time_encode - start_time_encode
         print(f"Encode time: {time_difference_encode} \n ")
-        

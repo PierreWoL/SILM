@@ -1,14 +1,17 @@
+"""
+This module is the training part for the contrastive learning.
+Based on https://github.com/megagonlabs/starmie/
+"""
 import torch
 import pandas as pd
 import os
-from Utils import simplify_string
+from Utils import simplify_string, subjectCol
 from .model import BarlowTwinsSimCLR
 from pretrainData import PretrainTableDataset
 from tqdm import tqdm
 from torch.utils import data
 from transformers import AdamW, get_linear_schedule_with_warmup
 from typing import List
-from Utils import subjectCol
 
 
  
@@ -121,39 +124,39 @@ def train(trainset, hp):
         
         # save the last checkpoint
         if hp.save_model and epoch == hp.n_epochs:
-            directory = os.path.join(hp.logdir, hp.method, hp.dataset)
+            directory = os.path.join(hp.logdir, hp.dataset)
             op_augment_new =simplify_string(hp.augment_op)
             if not os.path.exists(directory):
                 os.makedirs(directory)
                 
 
             # save the checkpoints for each component
-            ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+            ckpt_path = os.path.join(hp.logdir,  hp.dataset, 'model_' +
                                      op_augment_new + "_lm_" + str(
                 hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                 hp.table_order) + '_' + str(
                 hp.run_id) + "_" + str(hp.check_subject_Column) + ".pt")
             if hp.single_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                ckpt_path = os.path.join(hp.logdir, hp.dataset, 'model_' +
                                         op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_singleCol.pt")
             elif hp.subject_column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                ckpt_path = os.path.join(hp.logdir,  hp.dataset, 'model_' +
                                         op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_subCol.pt")
                 print(ckpt_path)
             elif hp.header:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                ckpt_path = os.path.join(hp.logdir,  hp.dataset, 'model_' +
                                         op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
                     hp.run_id) + "_" + str(hp.check_subject_Column) + "_header.pt")
             elif hp.column:
-                ckpt_path = os.path.join(hp.logdir, hp.method, hp.dataset, 'model_' +
+                ckpt_path = os.path.join(hp.logdir,  hp.dataset, 'model_' +
                                          op_augment_new + "_lm_" + str(
                     hp.lm) + "_" + str(hp.sample_meth) + "_" + str(
                     hp.table_order) + '_' + str(
@@ -173,8 +176,7 @@ def inference_on_tables(tables: List[pd.DataFrame],
                         unlabeled: PretrainTableDataset,
                         batch_size=128,
                         total=None,
-                        subject_column=False,
-                        isCombine=False):
+                        subject_column=False):
     """Extract column vectors from a table.
 
     Args:
@@ -192,7 +194,8 @@ def inference_on_tables(tables: List[pd.DataFrame],
     for tid, table in tqdm(enumerate(tables), total=total):
         # print(tid, table)
         if subject_column is True:
-            cols = subjectCol(table, isCombine)
+            cols = subjectCol(table)
+
             if len(cols) > 0:
                     table = table[cols]
         x, _ = unlabeled._tokenize(table)

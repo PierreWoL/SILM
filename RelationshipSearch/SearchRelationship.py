@@ -1,21 +1,13 @@
-import sys
-from concurrent.futures import ThreadPoolExecutor
 import pickle
 from argparse import Namespace
 import os
 import time
-import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from readPKL import findBestSilhouetteDendro, sliced_clusters
-from SubjectColDetect import subjectColumns
-from Utils import mkdir, most_frequent
+from Utils import mkdir
 from TableCluster.tableClustering import column_gts
 from RelationshipSearch.SimilaritySearch import group_files, entityTypeRelationship
 import numpy as np
-from scipy.spatial.distance import pdist, cdist
-from scipy.cluster.hierarchy import dendrogram, linkage
-from Utils import most_frequent
+from Utils import most_frequent, subjectColDetection
 
 
 def group_files_by_superclass(df):
@@ -98,8 +90,8 @@ def relationshipDiscovery(hp: Namespace):
     timing = []
     # load data, load subject column in each table
     subjectColPath = os.path.join(os.getcwd(), f"datasets/{hp.dataset}")
-    # data_path = os.path.join(subjectColPath, "Test")
-    SE = subjectColumns(subjectColPath)
+    data_path = os.path.join(subjectColPath, "Test")
+    SE = subjectColDetection(data_path, subjectColPath)
     table_names = [i for i in os.listdir(os.path.join(subjectColPath, "Test")) if i.endswith(".csv")]
     # ground truth of the type of tables
     ground_truth = os.path.join(os.getcwd(), f"datasets/{hp.dataset}/groundTruth.csv")
@@ -119,34 +111,21 @@ def relationshipDiscovery(hp: Namespace):
     for embedding_file in files:
         content = readEmbedding(embedding_file, hp.dataset, table_names)
         # load the column name and corresponding vector
-        """print("embedding_file", embedding_file)
-        F = open(os.path.join(datafile_path, embedding_file), 'rb')
-        if embedding_file.endswith("_column.pkl"):
-            original_content = pickle.load(F)
-            content = []
-            for fileName in table_names:
-                embedding_fileName = []
-                table = pd.read_csv(os.path.join(data_path, fileName))
-                for col in table.columns:
-                    embedding_col = [i[1] for i in original_content if i[0] == f"{fileName[:-4]}.{col}"][0]
-                    embedding_fileName.append(embedding_col[0])
-                tuple_file = fileName, np.array(embedding_fileName)
-                content.append(tuple_file)
-        else:
-            content = pickle.load(F)"""
+
         cluster_relationships = {}
         startTimeS = time.time()
         for index, type_i in enumerate(types):
             for type_j in types[index + 1:]:
                 cluster1 = Ground_t[type_i]
                 cluster2 = Ground_t[type_j]
+
                 # if type_i == 'Organization' and type_j == 'Person':
                 cluster1_embedding = [i for i in content if i[0] in cluster1]
                 cluster2_embedding = [i for i in content if i[0] in cluster2]
                 relationship1 = entityTypeRelationship(cluster1_embedding, cluster2_embedding, hp.similarity,
-                                                       SE, isEuclidean=hp.Euclidean)
+                                                       SE, isEuclidean=hp.Euclidean, dataset=hp.dataset)
                 relationship2 = entityTypeRelationship(cluster2_embedding, cluster1_embedding, hp.similarity,
-                                                       SE, isEuclidean=hp.Euclidean)
+                                                       SE, isEuclidean=hp.Euclidean, dataset=hp.dataset)
                 if len(relationship1) > 0:
                     cluster_relationships[(type_i, type_j)] = relationship1
                 if len(relationship2) > 0:
@@ -359,7 +338,8 @@ def attributeRelation(dataset, target_path, cluster_relationships, file_target):
     ground_truth = os.path.join(os.getcwd(), f"datasets/{dataset}/groundTruth.csv")
     Ground_t = group_files_by_superclass(pd.read_csv(ground_truth))
     subjectColPath = os.path.join(os.getcwd(), f"datasets/{dataset}")
-    SE = subjectColumns(subjectColPath)
+    data_path = os.path.join(subjectColPath, "Test")
+    SE = subjectColDetection(data_path, subjectColPath)
     column_relationships = []
     for type_pair, table_pair_dict in cluster_relationships.items():
         for table_pair, similarities in table_pair_dict.items():

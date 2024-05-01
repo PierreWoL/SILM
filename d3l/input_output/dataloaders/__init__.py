@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Tuple, Union, Dict, Any
 from d3l.input_output.dataloaders.typing import DBType
 
-import TableAnnotation as TA
+import SCDection.TableAnnotation as TA
 from enum import Enum
 import pandas as pd
 import sqlalchemy

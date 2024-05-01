@@ -5,8 +5,7 @@ from RelationshipSearch.SearchRelationship import relationshipDiscovery
 from Runtime import Running
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", type=str, default="SILM")  #
-    parser.add_argument("--dataset", type=str, default="GDS")  # WDC TabFact
+    parser.add_argument("--dataset", type=str, default="WDC")
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -22,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_model", dest="save_model", action="store_true", default=True)
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     parser.add_argument("--column", dest="column", action="store_true", default=True)
-    parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow
+    parser.add_argument("--sample_meth", type=str, default='head')
 
     ### This is randomly selecting tables from the datasets
     parser.add_argument("--tableNumber", type=int, default=0)
@@ -54,8 +53,8 @@ if __name__ == '__main__':
     ### Parameter for End To End
     parser.add_argument("--SelectType", type=str, default='')
     parser.add_argument("--P1Embed", type=str, default='cl_SCT8_lm_sbert_head_column_0_none_subCol.pkl')
-    parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')# cl_SC8_lm_sbert_head_column_0_header_column cl_SCT8_lm_sbert_head_column_0_none_column
-    parser.add_argument("--P4Embed", type=str, default='cl_SC8_lm_bert_head_column_0_none_column.pkl') #cl_SC8_lm_bert_head_column_0_none_column cl_SCT8_lm_sbert_head_column_0_none_column
+    parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')
+    parser.add_argument("--P4Embed", type=str, default='cl_SC8_lm_bert_head_column_0_none_column.pkl')
     # TODO Needs to delete later/ or re-code
 
     hp = parser.parse_args()

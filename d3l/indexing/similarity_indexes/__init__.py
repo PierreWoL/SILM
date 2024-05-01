@@ -6,8 +6,8 @@ from d3l.indexing.feature_extraction.schema.qgram_transformer import QGramTransf
 from d3l.indexing.feature_extraction.values.distribution_transformer import (
     DistributionTransformer,
 )
-from SubjectColumnDetection import ColumnDetection as detection
-from SubjectColumnDetection import ColumnType
+from SCDection.SubjectColumnDetection import ColumnDetection as detection
+from SCDection.SubjectColumnDetection import ColumnType
 from d3l.indexing.feature_extraction.values.fd_transformer import FDTransformer
 
 from d3l.indexing.feature_extraction.values.LM_transformer import LM_Transformer

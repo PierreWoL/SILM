@@ -6,17 +6,15 @@ import random
 import pandas as pd
 import os
 from sentence_transformers import SentenceTransformer
+
 from Utils import subjectCol
 from torch.utils import data
 from transformers import AutoTokenizer, AutoModel
 from learning.augment import augment
-from typing import List
 from learning.preprocessor import computeTfIdf, tfidfRowSample, preprocess
-from SubjectColumnDetection import ColumnType
 import d3l.utils.functions as fun
 from Utils import split
 
-# map lm name to huggingface's pre-trained model names
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased',
@@ -75,9 +73,6 @@ class PretrainTableDataset(data.Dataset):
         # assuming tables are in csv format
         self.subjectColumn_path = os.path.join(self.path[:-4], "SubjectColumn")
         self.isCombine = False
-        if "TabFact" in self.path:
-            self.subjectColumn_path = False
-            self.isCombine = True
 
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
         
@@ -124,6 +119,7 @@ class PretrainTableDataset(data.Dataset):
                 for col in columns:
                     self.columns.append(f"{fn}|{col}")
                 del columns
+
 
     @staticmethod
     def from_hp(path: str, hp: Namespace):
@@ -197,7 +193,7 @@ class PretrainTableDataset(data.Dataset):
         # a map from column names to special token indices
         column_mp = {}
 
-        Sub_cols_header = subjectCol(table, self.isCombine)
+        Sub_cols_header = subjectCol(table)
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
@@ -303,7 +299,7 @@ class PretrainTableDataset(data.Dataset):
         tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         budget = max(1, self.max_len // len(table.columns) - 1) if len(table.columns) != 0 else self.max_len
         # a map from column names to special token indices
-        Sub_cols_header = subjectCol(table, self.isCombine)
+        Sub_cols_header = subjectCol(table)
         embeddings = []
         # column-ordered preprocessing
         if self.table_order == 'column':
@@ -362,7 +358,7 @@ class PretrainTableDataset(data.Dataset):
                 col = random.choice(table_ori.columns)
                 table_ori = table_ori[[col]]
             if self.subject_column:
-                cols = subjectCol(table_ori, self.isCombine)
+                cols = subjectCol(table_ori)
                 if len(cols) > 0:
                     table_ori = table_ori[cols]
             embedding = self._encode(table_ori, Token=setting)
@@ -410,7 +406,7 @@ class PretrainTableDataset(data.Dataset):
             col = random.choice(table_ori.columns)
             table_ori = table_ori[[col]]
         if self.subject_column:
-            cols = subjectCol(table_ori, self.isCombine)
+            cols = subjectCol(table_ori)
             if len(cols) > 0:
                 table_ori = table_ori[cols]
                 # apply the augmentation operator

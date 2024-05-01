@@ -2,12 +2,12 @@ import random
 import time
 import pandas as pd
 import numpy as np
-# from concurrent.futures import ThreadPoolExecutor
 import pickle
 from argparse import Namespace
 import os
-from clustering import clustering_results, data_classes, clusteringColumnResults, inputData, clustering
-from Utils import mkdir, findSubCol
+
+from clustering import clustering_results, data_classes, clusteringColumnResults, inputData
+from Utils import mkdir, findSubCol, subjectColDetection
 from ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
 
 
@@ -27,8 +27,10 @@ def read_embeddings_P1(embedding_file, isSubCol, dataset, SelectType="", Selecte
     print(embedding_file, isSubCol)
     datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
     if isSubCol:
-        F_cluster = open(os.path.join(os.getcwd(), "datasets/" + dataset, "SubjectCol.pickle"), 'rb')
-        SE = pickle.load(F_cluster)
+        dataPath = os.path.join("datasets", dataset, "Test")
+        resultPath = os.path.join("datasets", dataset)
+        print(dataPath, resultPath)
+        SE = subjectColDetection(dataPath, resultPath)
     else:
         SE = {}
     ground_truth = os.getcwd() + "/datasets/" + dataset + "/groundTruth.csv"
@@ -54,9 +56,11 @@ def read_embeddings_P1(embedding_file, isSubCol, dataset, SelectType="", Selecte
             if embedding_file.endswith("subCol.pkl"):
                 vec_table = np.mean(vectors[1], axis=0)
             else:
-                NE_list, headers, types = SE[vectors[0]]
-                if NE_list:
-                    vec_table = vectors[1][NE_list[0]]
+                annotation, NE_column_score = SE[vectors[0]]
+                if NE_column_score:
+                    max_score = max(NE_column_score.values())
+                    subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+                    vec_table = np.mean(np.array([vectors[1][i] for i in subcol_index]), axis=0)
                 else:
                     vec_table = np.mean(vectors[1], axis=0)
         else:
@@ -69,10 +73,10 @@ def read_embeddings_P1(embedding_file, isSubCol, dataset, SelectType="", Selecte
 def typeInference(embedding_file, hp: Namespace):
     Z, T = read_embeddings_P1(embedding_file, hp.subjectCol, hp.dataset, SelectType=hp.SelectType)
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
-    numE = hp.estimateNumber  # len(gt_csv['superclass'].unique())
+    numE = hp.estimateNumber
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     dict_file = {}
-    store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+    store_path = os.getcwd() + "/result/P1/" + hp.dataset + "/"
     if hp.subjectCol is True:
         store_path += "Subject_Col/"
     else:
@@ -114,7 +118,7 @@ def typeInference(embedding_file, hp: Namespace):
 def baselineP1(hp: Namespace):
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
     isTabFact, subCol = False, False
-    store_path = os.getcwd() + "/result/" + hp.method + "/" + hp.dataset + "/"
+    store_path = os.getcwd() + "/result/P1/" + hp.dataset + "/"
     if hp.subjectCol is True:
         subCol = True
         store_path += "Subject_Col/"
@@ -122,7 +126,6 @@ def baselineP1(hp: Namespace):
         store_path += "All/"
     ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     dict_file = {}
-    nameFile = os.getcwd() + "/datasets/" + hp.dataset + "/naming.csv"
     Z, T = inputData(data_path, 0.6, 5, hp.embed, subjectCol=subCol)
     print(Z, T)
     try:
@@ -189,11 +192,11 @@ def column_gts(dataset):
     return gt_clusters, ground_t, gt_cluster_dict
 
 
-def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None):
+def conceptualAttri(hp: Namespace, embedding_file: str = None):
     print(embedding_file)
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    target_path = os.getcwd() + "/result/SILM/Column/" + hp.dataset + "/"
+    target_path = os.getcwd() + "/result/P2/Column/" + hp.dataset + "/"
     mkdir(target_path)
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table, Nochange=True)
@@ -224,7 +227,7 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None
                    gt_clusters, gt_cluster_dict)
         endTimeCC = time.time()
         TimespanCC = endTimeCC - startTimeCC
-        """ 
+
         checkfile = f"{index}_colcluster_dict.pickle"
         if "D3L" in embedding_file:
             datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -239,13 +242,13 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None, cluster_dict=None
             TimespanTH = endTimeTH - startTimeTH
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
                                   columns=['type', 'time'])
-        timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
-        "All/" + embedding_file[:-4], "timing.csv"))"""
+            timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+                                       "All/" + embedding_file[:-4], "timing.csv"))
 
 
 def inferenceHierarchy(embedding_file: str, hp: Namespace):
     data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    target_path = os.getcwd() + "/result/SILM/Column/" + hp.dataset + "/"
+    target_path = os.getcwd() + "/result/P2/Column/" + hp.dataset + "/"
     mkdir(target_path)
     ground_truth_table = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
     Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table, Nochange=True)
@@ -287,15 +290,14 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     clusters_result = {}
     Ts[clu] = []
     Zs[clu] = []
-    F = open(f"datasets/{hp.dataset}/SubjectCol.pickle", 'rb')
-    SE = pickle.load(F)
     subcols = []
     if embedding_file.endswith("_column.pkl"):
-        tables = [i for i in os.listdir(f"datasets/{hp.dataset}/Test") if i.endswith(".csv")]
+        tables = [i for i in os.listdir(f"datasets/{hp.dataset}/Test/") if i.endswith(".csv")]
         for table in tables:
-            subcol = findSubCol(SE, table)
-            if subcol is not None:
-                subcols.append(f"{table[:-4]}.{subcol}")
+            subcols = findSubCol(f"datasets/{hp.dataset}/Test/", table)
+            if subcols is not []:
+                for subcol in subcols:
+                    subcols.append(f"{table[:-4]}.{subcol}")
     for vector in content:
         if embedding_file.endswith("_column.pkl"):
             if vector[0] in gt_clusters[clu].keys() and vector[0] not in subcols:
@@ -306,19 +308,23 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
                 Ts[clu].append(vector[0])
                 Zs[clu].append(vector[1])
         else:
-            NE_list, headers, types = SE[vector[0]]
-            subjectName = None
-            if NE_list:
-                subjectName = headers[NE_list[0]]
+            SE = subjectColDetection(data_path)
+            annotation, NE_column_score = SE[vector[0]]
+            subjectName = []
+            if NE_column_score:
+                max_score = max(NE_column_score.values())
+                subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+                table_df = pd.read_csv(os.path.join(data_path, vector[0]))
+                subjectName = [table_df.columns[i] for i in subcol_index]
             if vector[0].removesuffix(".csv") in Ground_t[clu]:
                 table = pd.read_csv(data_path + vector[0], encoding="latin1")
                 for i in range(0, len(table.columns)):
-                    if table.columns[i] != subjectName:
+                    if table.columns[i] not in subjectName:
                         Ts[clu].append(f"{vector[0][0:-4]}.{table.columns[i]}")
                         Zs[clu].append(vector[1][i])
 
     Zs[clu] = np.array(Zs[clu]).astype(np.float32)
-    store_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/"
+    store_path = os.getcwd() + "/result/P2/" + hp.dataset + "/"
     embedding_file_path = embedding_file.split(".")[0]
     store_path += "All/" + embedding_file_path + "/column/"
     mkdir(store_path)
@@ -378,13 +384,13 @@ def ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp):
 
 
 def P2(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
 
     if hp.baseline is True:
         conceptualAttri(hp)
     else:
         files = [fn for fn in os.listdir(datafile_path) if
-                 '.pkl' in fn and f"_{hp.embed}_" in fn and 'subCol' not in fn]
+                 '.pkl' in fn and f"_{hp.embed}_" in fn and 'subCol' not in fn and '8' in fn]
         # if fn.endswith('_column.pkl') and hp.embed in fn] and 'Pretrain' in fn and 'subCol' not in fn
         # if fn.endswith("_column.pkl") and '8' in fn
         files = [fn for fn in files]
@@ -394,7 +400,7 @@ def P2(hp: Namespace):
 
 
 def P3(hp: Namespace):
-    datafile_path = os.getcwd() + "/result/embedding/starmie/vectors/" + hp.dataset + "/"
+    datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
     files = [fn for fn in files if not fn.endswith("_column.pkl") and 'Pretrain' not in fn][
@@ -402,4 +408,3 @@ def P3(hp: Namespace):
     print(files, len(files))
     for file in files:  # [hp.slice_start:hp.slice_stop]:
         inferenceHierarchy(file, hp)
-

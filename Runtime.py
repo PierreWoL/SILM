@@ -54,7 +54,7 @@ def Running(hp: Namespace):
     for name in cluster_dict.keys():
         cluster = cluster_dict[name]
 
-        input_data, names = find_cluster_embeddings(cluster, content, SE, filepath)
+        input_data, names = find_cluster_embeddings(cluster, content, filepath)
         if len(input_data)> 60:
             MIN = random.randint(10, 30) # math.ceil(len(input_data) / 100) if math.ceil(len(input_data) / 100) > 2 else 3
         elif 15<len(input_data) <60:

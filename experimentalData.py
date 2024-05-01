@@ -166,27 +166,3 @@ def create_test_data(gt_filename, data_path, output_path):
         metadst = output_path + "metadata/" + filename + 'Metadata.csv'
         shutil.copyfile(src, dst)
         shutil.copyfile(metadata, metadst)
-
-"""
-T2DV2Path = os.getcwd() + "/T2DV2/tables/test/"
-samplePath = os.getcwd() + "/T2DV2/test/"
-ground_truth = os.getcwd() + "/T2DV2/classes_GS.csv"
-create_test_data(ground_truth, T2DV2Path, samplePath)
-"""
-
-"""
-WDCFilePath = os.getcwd() + "/WDC/CPA_Validation/Validation/Table/"
-T2DV2Path = os.getcwd() + "/T2DV2/"
-samplePath = os.getcwd() + "/T2DV2/test/"
-WDCsamplePath = os.getcwd() + "/WDC/CPA_Validation/Validation/Table/test/"
-get_random_train_data(T2DV2Path, samplePath, 0.9)
-"""
-# get_random_train_data(WDCFilePath, WDCsamplePath, 0.1)
-
-'''
-Concepts = ['Animal','Bird','City','Museum','Plant','University']
-df = create_experiment_directory('T2DGroundTruth/classes_complete.csv', \
-                                 'T2DGroundTruth/tables_complete/', Concepts, \
-                                 'T2DGroundTruth/city_things/')
-create_gt_file(Concepts,'T2DGroundTruth/city_things/')
-'''

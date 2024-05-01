@@ -1,8 +1,8 @@
 import string
 import pandas as pd
 from typing import Iterable
+import SCDection.Utils as func
 from d3l.input_output.dataloaders import CSVDataLoader
-import d3l.utils.functions as func
 import os
 import datetime
 from typing import Any
@@ -11,7 +11,6 @@ import random
 import statistics
 from d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
-import experimentalData as ed
 
 """
 This combines the features to detection subject columns of tables
@@ -44,17 +43,17 @@ class ColumnDetection:
 
         '''
         feature used in the subject column detection
-
+       
         emc: fraction of empty cells
         uc: fraction of cells with unique content 
         ac: if over 50% cells contain acronym or id
         df: distance from the first NE-column
         cm: context match score (doubt this could work)
         ws: web search score
-
+        
         additional ones in the recovering semantics of data 
         on the web
-
+        
         tlc: average number of words in each cell
         vt: variance in the number of data tokens in each cell
         '''
@@ -101,7 +100,7 @@ class ColumnDetection:
                 if temp_count_text_cell != 0:
                     ave_token_number = total_token_number / temp_count_text_cell
                     # TODO : I think this needs further modification later Currently set to 10 just in case
-                    if ave_token_number > 50:
+                    if ave_token_number > 15:
                         type_count[ColumnType.long_text.value] = temp_count_text_cell
                     else:
                         type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + \
@@ -131,7 +130,6 @@ class ColumnDetection:
                 # print(token, token_with_number)
                 if len(element.split(" ")) == 1:
                     # Judge if it is a null value
-                    # TODO : need to mark this empty cell and calculate how many empty cells exist
                     if func.is_number(element):
                         # There exists special cases: where year could be recognized as number
                         type_count[ColumnType.number.value] += 1
@@ -213,7 +211,6 @@ class ColumnDetection:
 
                         total_token_number = total_token_number + len(token)
                         temp_count_text_cell = temp_count_text_cell + 1
-
 
             # stop iteration to the 1/3rd cell and judge what type occupies the most in columns
         self.acronym_id_num = type_count[ColumnType.other.value]
@@ -393,7 +390,19 @@ def random_table(tables: dict):
 
 
 def test_subject_column(filename):
-    files = ed.get_files(filename)
+    def get_files(data_path):
+        T = []
+        if data_path.endswith('.csv'):
+            features = pd.read_csv(data_path)
+            T = features.iloc[:, 0]
+        else:
+            T = os.listdir(data_path)
+            T = [t[:-4] for t in T if t.endswith('.csv')]
+            T.sort()
+
+        return (T)
+
+    files =  get_files(filename)
     for file in files:
         f = open(filename + file + '.csv', errors='ignore')
         table = pd.read_csv(f)
@@ -402,3 +411,65 @@ def test_subject_column(filename):
             annotation = ColumnDetection(table.iloc[:, i])
             print(annotation.column_type_judge(3))
 
+
+'''
+This is random test for the column-detection
+TODO: write a test function that can randomly choose table 's column and 
+detect its type
+if type is invalid(-1) throw exception
+'''
+
+"""
+example = '/Users/user/My Drive/CurrentDataset/T2DV2/test/3887681_0_7938589465814037992.csv'
+tableExample = pd.read_csv(example)
+detection = ColumnDetection(tableExample.iloc[:, 4])
+typeTest = detection.column_type_judge(2)
+print(detection.col_type)
+"""
+
+# print(func.is_long_text(tableExample.iloc[:,2]))
+'''
+def column_type_detection(table):
+    for i in table.columns:
+        for element in table[i]:
+'''
+
+'''
+Used in read tables, Useless now but may be a little helpful
+in the future
+
+    def __init__(self, root_path: str, **loading_kwargs: Any):
+        super().__init__(root_path, **loading_kwargs)
+        if not os.path.isdir(root_path):
+            raise FileNotFoundError(
+                "The {} root directory was not found locally. "
+                "A CSV loader must have an existing directory associated!".format(
+                    root_path
+                )
+            )
+        self.data_path = root_path
+        if self.data_path[-1] != "/":
+            self.data_path = self.data_path + "/"
+        self.loading_kwargs = loading_kwargs
+        self.data_path = root_path
+        self.tables = []
+        CSVDataLoader(root_path=(root_path), encoding='latin-1')
+
+    def read_tables(self):
+        T = os.listdir(self.data_path)
+        T = [t[:-4] for t in T if t.endswith('.csv')]
+        T.sort()
+        dataloader = CSVDataLoader(
+            root_path=(self.data_path),
+            encoding='latin-1'
+        )
+        for t in T:
+            table = dataloader.read_table(table_name=t)
+            # print(table)
+            self.tables.append(table)
+
+    def Tables(self):
+        return self.tables
+'''
+
+# print(subject.tables[0].columns.tolist())

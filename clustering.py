@@ -1,5 +1,4 @@
 import ast
-import math
 import os
 import time
 from collections import Counter
@@ -20,16 +19,12 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
-# from Graph import consistency_of_cluster
 from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
 from d3l.input_output.dataloaders import CSVDataLoader
 from d3l.querying.query_engine import QueryEngine
 from d3l.utils.functions import pickle_python_object, unpickle_python_object
 
-"""from itertools import combinations
 
-from sklearn.manifold import TSNE
-import plotly.express as px"""
 
 
 def jaccard_similarity(set1, set2):

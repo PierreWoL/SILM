@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from Utils import calculate_similarity
 sys.path.append('../')
-import TableAnnotation as TA
-from SubjectColumnDetection import ColumnType
+import SCDection.TableAnnotation as TA
+from SCDection.SubjectColumnDetection import ColumnType
 
 
 # Assuming that embeddings are stored in a dictionary in this format:
@@ -15,17 +15,29 @@ from SubjectColumnDetection import ColumnType
 
 
 
-def entityTypeRelationship(cluster1, cluster2, threshold1, EntityColumns, isEuclidean=False):
+def entityTypeRelationship(cluster1, cluster2, threshold1, EntityColumns,  dataset,isEuclidean=False):
     table_pairs = {}
     for table_1, table1_embedding in cluster1:
-        NE_list_1, columns1, types1 = EntityColumns[table_1]
-        subjectCol_1_embedding = table1_embedding[NE_list_1[0]] if len(NE_list_1) != 0 else table1_embedding[0]
+        annotation, NE_column_score = EntityColumns[table_1]
+        if len(NE_column_score) > 0:
+            max_score = max(NE_column_score.values())
+            subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+        else:
+            subcol_index = [0]
+        subjectCol_1_embedding = table1_embedding[subcol_index[0]]
         for table_2, table2_embedding in cluster2:
             similar_pairs = {}
-            NE_list_2, columns2, types2 = EntityColumns[table_2]
-            NE_embeddings2 = np.array([table2_embedding[i] for i in NE_list_2[1:]]) if len(
-                NE_list_2) != 0 else table2_embedding
-            NE_columns = [columns2[i] for i in NE_list_2[1:]] if len(NE_list_2) != 0 else columns2
+            annotation2, NE_column_score2 = EntityColumns[table_2]
+            left_index = []
+            if len(NE_column_score2) > 0:
+                max_score2 = max(NE_column_score2.values())
+                left_index = [key for key, value in NE_column_score2.items() if value != max_score2]
+            NE_embeddings2 = np.array([table2_embedding[i] for i in left_index]) if len(
+                left_index) != 0 else table2_embedding
+            columns2 = pd.read_csv(os.path.join(os.getcwd(),f"datasets/{dataset}/Test/", table_2)).columns
+            NE_columns = [columns2[i] for i in left_index] if len(left_index) != 0 else columns2
+
+
             for index, j in enumerate(NE_embeddings2):
                 similarity = calculate_similarity(subjectCol_1_embedding, j, Euclidean=isEuclidean)
                 should_add = (not isEuclidean and similarity > threshold1) or (isEuclidean and similarity < threshold1)
