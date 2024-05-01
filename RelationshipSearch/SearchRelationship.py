@@ -243,7 +243,6 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
             conceptual = find_conceptualAttri(col_cluster, table, subcols, gtclusters=gt_clusters_type)
         else:
             conceptual = find_conceptualAttri(gtClusters[type], table, subcols)
-        # length = [len(gt_attribtues[type][i]) for i in conceptual]
         return conceptual
 
     def metric(gt_list, result_list, metric='P'):
@@ -269,8 +268,13 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
         for table_pair, similarities in table_pair_dict.items():
             # print(table_pair, similarities)
             t1, t2 = table_pair[0], table_pair[1]
-            NE_list_1, columns1, types1 = SE[t1]
-            t1_subcol = [columns1[NE_list_1[0]]] if len(NE_list_1) != 0 else [columns1[0]]
+            annotation, NE_column_score = SE[t1]
+            data_path = os.path.join(os.getcwd(), f"datasets/{hp.dataset}/Test")
+            columns1 = pd.read_csv(os.path.join(data_path, t1)).columns
+            subcol_index = [key for key, value in NE_column_score.items() if value == max(NE_column_score.values())] \
+                if len(NE_column_score) > 0 else []
+            t1_subcol = columns1[subcol_index[0]] if len(subcol_index) != 0 else columns1[0]
+
             t2_cols = list(similarities.keys())
             t1_Attribute = check_conceptualAttri(Ground_t, gt_clusters, t1, t1_subcol,
                                                  gt_clusterDict=gt_cluster_dict)
@@ -315,16 +319,6 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
     return precision, recall, overall_results, TN
 
 
-"""for type_pair, attribute_pair_dict in relationships.items():
-        for attribute_pair, attribute_similarities in attribute_pair_dict.items():
-            attri_combine1 = f"{type_pair[0]}.{attribute_pair[0]}"
-            attri_combine2 = f"{type_pair[1]}.{attribute_pair[1]}"
-            sim_attri = sum(attribute_similarities) / len(attribute_similarities)
-            overall_results[(attri_combine1, attri_combine2)] = sim_attri
-    sort_results = sorted(overall_results.items(), key=lambda item: item[1])
-    precision, TN = metric(gt_attributes, sort_results)
-    recall = metric(gt_attributes, sort_results, metric='R')[0]"""
-
 
 # TODO this needs to delete later
 def find_conceptualAttribute(gt_col, type, table, attributes):
@@ -348,8 +342,11 @@ def attributeRelation(dataset, target_path, cluster_relationships, file_target):
             t2 = table_pair[1]
             type_1_list = [key for key, value in Ground_t.items() if t1 in value][0]
             type_2_list = [key for key, value in Ground_t.items() if t2 in value][0]
-            NE_list_1, columns1, types1 = SE[t1]
-            t1_subcol = columns1[NE_list_1[0]] if len(NE_list_1) != 0 else columns1[0]
+            annotation, NE_column_score = SE[t1]
+            columns1 = pd.read_csv(os.path.join(data_path,t1)).columns
+            subcol_index = [key for key, value in NE_column_score.items() if value == max(NE_column_score.values())]\
+                if len(NE_column_score) > 0 else []
+            t1_subcol = columns1[subcol_index[0]] if len(subcol_index) != 0 else columns1[0]
             t2_cols = list(similarities.keys())
             t2_cols_score = list(similarities.values())
             t1_conceptual = find_conceptualAttribute(ground_t, type_1_list, t1, [t1_subcol])

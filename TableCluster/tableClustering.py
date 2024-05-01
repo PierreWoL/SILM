@@ -395,7 +395,7 @@ def P2(hp: Namespace):
         # if fn.endswith("_column.pkl") and '8' in fn
         files = [fn for fn in files]
         print(len(files), files)
-        for file in files[hp.slice_start:hp.slice_stop]:  # [hp.slice_start:hp.slice_stop]
+        for file in files:  # [hp.slice_start:hp.slice_stop]
             conceptualAttri(hp, file)
 
 
@@ -403,8 +403,8 @@ def P3(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if not fn.endswith("_column.pkl") and 'Pretrain' not in fn][
-            hp.slice_start:hp.slice_stop]
+    files = [fn for fn in files if not fn.endswith("_column.pkl") and 'Pretrain' not in fn]
+    #[hp.slice_start:hp.slice_stop]
     print(files, len(files))
     for file in files:  # [hp.slice_start:hp.slice_stop]:
         inferenceHierarchy(file, hp)
