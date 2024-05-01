@@ -9,9 +9,9 @@ from sentence_transformers import SentenceTransformer
 from Utils import subjectCol
 from torch.utils import data
 from transformers import AutoTokenizer, AutoModel
-from starmie.sdd.augment import augment
+from learning.augment import augment
 from typing import List
-from starmie.sdd.preprocessor import computeTfIdf, tfidfRowSample, preprocess
+from learning.preprocessor import computeTfIdf, tfidfRowSample, preprocess
 from SubjectColumnDetection import ColumnType
 import d3l.utils.functions as fun
 from Utils import split

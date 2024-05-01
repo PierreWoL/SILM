@@ -1,16 +1,8 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import numpy as np
-import sklearn.metrics as metrics
-import mlflow
 import pandas as pd
 import os
 from Utils import simplify_string
-from .utils import evaluate_column_matching, evaluate_clustering
 from .model import BarlowTwinsSimCLR
-# from .dataset import PretrainTableDataset
 from pretrainData import PretrainTableDataset
 from tqdm import tqdm
 from torch.utils import data
@@ -69,9 +61,6 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
                    #print(cls_indices_ij)
                    loss = model(x_vals[j], x_vals[k],cls_indices_ij, mode='simclr')
                    losses.append(loss)
-                   
-            
-
         avg_loss = sum(losses) / len(losses)
 
         if hp.fp16:
@@ -177,25 +166,6 @@ def train(trainset, hp):
             # test loading checkpoints
             # load_checkpoint(ckpt_path)
         # intrinsic evaluation with column matching
-        if hp.method in ['small', 'large']:
-            # Train column matching models using the learned representations
-            metrics_dict = evaluate_pretrain(model, trainset)
-
-            # log metrics
-            mlflow.log_metrics(metrics_dict)
-
-            print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v) \
-                                                    for k, v in metrics_dict.items()]))
-
-        # evaluate on column clustering
-        if hp.method in ['viznet']:
-            # Train column matching models using the learned representations
-            metrics_dict = evaluate_column_clustering(model, trainset)
-
-            # log metrics
-            mlflow.log_metrics(metrics_dict)
-            print("epoch %d: " % epoch + ", ".join(["%s=%f" % (k, v) \
-                                                    for k, v in metrics_dict.items()]))
 
 
 def inference_on_tables(tables: List[pd.DataFrame],
@@ -276,110 +246,3 @@ def load_checkpoint(ckpt):
     ds_path = os.path.join(os.getcwd(), 'datasets/%s/Test' % hp.dataset)
     dataset = PretrainTableDataset.from_hp(ds_path, hp)
     return model, dataset
-
-
-def evaluate_pretrain(model: BarlowTwinsSimCLR,
-                      unlabeled: PretrainTableDataset):
-    """Evaluate pre-trained model.
-
-    Args:
-        model (BarlowTwinsSimCLR): the model to be evaluated
-        unlabeled (PretrainTableDataset): the unlabeled dataset
-
-    Returns:
-        Dict: the dictionary of metrics (e.g., valid_f1)
-    """
-    table_path = 'dataset/%s/Test' % model.hp.dataset
-
-    # encode each dataset
-    featurized_datasets = []
-    for dataset in ["train", "valid", "test"]:
-        ds_path = 'data/%s/%s.csv' % (model.hp.method, dataset)
-        ds = pd.read_csv(ds_path)
-
-        def encode_tables(table_ids, column_ids):
-            tables = []
-            for table_id, col_id in zip(table_ids, column_ids):
-                table = pd.read_csv(os.path.join(table_path, \
-                                                 "table_%d.csv" % table_id))
-                if model.hp.single_column:
-                    table = table[[table.columns[col_id]]]
-                tables.append(table)
-            vectors = inference_on_tables(tables, model, unlabeled,
-                                          batch_size=128)
-
-            # assert all columns exist
-            for vec, table in zip(vectors, tables):
-                assert len(vec) == len(table.columns)
-
-            res = []
-            for vec, cid in zip(vectors, column_ids):
-                if cid < len(vec):
-                    res.append(vec[cid])
-                else:
-                    # single column
-                    res.append(vec[-1])
-            return res
-
-        # left tables
-        l_features = encode_tables(ds['l_table_id'], ds['l_column_id'])
-
-        # right tables
-        r_features = encode_tables(ds['r_table_id'], ds['r_column_id'])
-
-        features = []
-        Y = ds['match']
-        for l, r in zip(l_features, r_features):
-            feat = np.concatenate((l, r, np.abs(l - r)))
-            features.append(feat)
-
-        featurized_datasets.append((features, Y))
-
-    train, valid, test = featurized_datasets
-    return evaluate_column_matching(train, valid, test)
-
-
-def evaluate_column_clustering(model: BarlowTwinsSimCLR,
-                               unlabeled: PretrainTableDataset):
-    """Evaluate pre-trained model on a column clustering dataset.
-
-    Args:
-        model (BarlowTwinsSimCLR): the model to be evaluated
-        unlabeled (PretrainTableDataset): the unlabeled dataset
-
-    Returns:
-        Dict: the dictionary of metrics (e.g., purity, number of clusters)
-    """
-    table_path = 'data/%s/tables' % model.hp.task
-
-    # encode each dataset
-    featurized_datasets = []
-    ds_path = 'data/%s/test.csv' % model.hp.task
-    ds = pd.read_csv(ds_path)
-    table_ids, column_ids = ds['table_id'], ds['column_id']
-
-    # encode all tables
-    def table_iter():
-        for table_id, col_id in zip(table_ids, column_ids):
-            table = pd.read_csv(os.path.join(table_path, \
-                                             "table_%d.csv" % table_id))
-            if model.hp.single_column:
-                table = table[[table.columns[col_id]]]
-            yield table
-
-    vectors = inference_on_tables(table_iter(), model, unlabeled,
-                                  batch_size=128, total=len(table_ids))
-
-    # # assert all columns exist
-    # for vec, table in zip(vectors, tables):
-    #     assert len(vec) == len(table.columns)
-
-    column_vectors = []
-    for vec, cid in zip(vectors, column_ids):
-        if cid < len(vec):
-            column_vectors.append(vec[cid])
-        else:
-            # single column
-            column_vectors.append(vec[-1])
-
-    return evaluate_clustering(column_vectors, ds['class'])

@@ -7,7 +7,7 @@ import time
 from tqdm import tqdm
 from pretrainData import PretrainTableDataset
 from pureEncoding import Encoding
-from starmie.sdd.pretrain import train
+from learning.pretrain import train
 import pandas as pd
 import os
 from Encodings import table_features
@@ -97,4 +97,3 @@ if __name__ == '__main__':
         time_difference_encode = end_time_encode - start_time_encode
         print(f"Encode time: {time_difference_encode} \n ")
         
-#--pretrain --subject_column

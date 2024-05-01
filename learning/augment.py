@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 import random
-from d3l.utils.functions import tokenize_str
-from TFIDF import compute_avg_tfidf, table_tfidf, roulette_row_selection, roulette_wheel_selection
+from TFIDF import compute_avg_tfidf, table_tfidf, roulette_wheel_selection
 import math
 from Utils import split
 
@@ -26,29 +25,8 @@ def augment(table: pd.DataFrame, op: str, isTabFact=False):
                 table.iloc[0, index] = column_list
         return table
 
-    if op == 'drop_col':
-        # set values of a random column to 0
-        col = random.choice(table.columns)
-        table = table.copy()
-        table[col] = ""
-    elif op == 'sample_row':
-        # sample 50% of rows
-        if len(table) > 0:
-            table = table.sample(frac=0.5) if isTabFact is False else sample_TFIDF_rows(table)
-    elif op == 'sample_row_TFIDF':
-        # sample 50% of rows
-        if len(table) > 0:
-            table = roulette_row_selection(table, 0.5) if isTabFact is False else sample_TFIDF_rows(table)
-    elif op == 'sample_row_ordered':
-        # sample 50% of rows
-        if len(table) > 0:
-            table = table.sample(frac=0.5).sort_index() if isTabFact is False else sample_TFIDF_rows(table)
-    elif op == 'shuffle_col':
-        # shuffle the column orders
-        new_columns = list(table.columns)
-        random.shuffle(new_columns)
-        table = table[new_columns]
-    elif op == 'drop_cell':
+
+    if op == 'drop_cell':
         # drop a random cell
         if isTabFact is False:
             table = table.copy()
@@ -238,33 +216,5 @@ def augment(table: pd.DataFrame, op: str, isTabFact=False):
         cell2 = table.iloc[row2_idx, col_idx]
         table.iloc[row_idx, col_idx] = cell2
         table.iloc[row2_idx, col_idx] = cell1
-    elif op == 'drop_num_col':  # number of columns is not preserved
-        # remove numeric columns
-        numTable = table.select_dtypes(include=['number'])
-        numCols = numTable.columns.tolist()
-        textTable = table.select_dtypes(exclude=['number'])
-        textCols = textTable.columns.tolist()
-        addedCols = 0
-        while addedCols <= len(numCols) // 2 and len(numCols) > 0:
-            numRandCol = numCols.pop(random.randrange(len(numCols)))
-            textCols.append(numRandCol)
-            addedCols += 1
-        textCols = sorted(textCols, key=list(table.columns).index)
-        table = table[textCols]
-    elif op == 'drop_nan_col':  # number of columns is not preserved
-        # remove a half of the number of columns that contain nan values
-        newCols, nanSums = [], {}
-        for column in table.columns:
-            if table[column].isna().sum() != 0:
-                nanSums[column] = table[column].isna().sum()
-            else:
-                newCols.append(column)
-        nanSums = {k: v for k, v in sorted(nanSums.items(), key=lambda item: item[1], reverse=True)}
-        nanCols = list(nanSums.keys())
-        newCols += random.sample(nanCols, len(nanCols) // 2)
-        table = table[newCols]
-    elif op == 'shuffle_row':
-        # shuffle the rows
-        table = table.sample(frac=1)
 
     return table

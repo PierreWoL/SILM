@@ -24,7 +24,7 @@ class TableDataset(data.Dataset):
                  path,
                  max_len=256,
                  lm='roberta'):
-        # 初始化一个bert模型
+        #
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
         self.pairs = []
         self.max_len = max_len
