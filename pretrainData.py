@@ -21,7 +21,7 @@ lm_mp = {'roberta': 'roberta-base',
          'sbert': 'sentence-transformers/all-mpnet-base-v2'}
 
 
-class PretrainTableDataset(data.Dataset):
+class  PretrainTableDataset(data.Dataset):
     """Table dataset for pre-training"""
 
     def __init__(self,
@@ -170,8 +170,7 @@ class PretrainTableDataset(data.Dataset):
             fn = os.path.join(self.path, table)
             column = pd.read_csv(fn)[column]  # encoding="latin-1",
             column = pd.DataFrame(column)
-            """if self.isCombine:
-                table = table.iloc[:, 1:]  # encoding="latin-1","""
+
             self.column_cache[column_id] = column
         return column
 
@@ -410,19 +409,17 @@ class PretrainTableDataset(data.Dataset):
             if len(cols) > 0:
                 table_ori = table_ori[cols]
                 # apply the augmentation operator
-
         # Handle augmentations
         augs = self.augment_op.split(',')
         self.pos_pair = len(augs)
 
         tables = [table_ori]
         for aug in augs:
-            tables.append(augment(tables[-1], aug, isTabFact=self.isCombine))
+            tables.append(augment(tables[0], aug)) #-1
         if self.pos_pair < 2:
             tables = tables[:2]
         else:
             tables = tables[1:]
-
         if "pure" in self.table_order and 'header' in self.check_subject_Column:
             header = table_ori.columns.tolist()
             for i in range(len(tables)):

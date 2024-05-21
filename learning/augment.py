@@ -10,7 +10,7 @@ import math
 from Utils import split
 
 
-def augment(table: pd.DataFrame, op: str, isTabFact=False):
+def augment(table: pd.DataFrame, op: str ):
     """Apply an augmentation operator on a table.
 
     Args:
@@ -32,7 +32,6 @@ def augment(table: pd.DataFrame, op: str, isTabFact=False):
 
     if op == 'sample_cells':
         # sample half of the cells randomly
-        if isTabFact is False:
             table = table.copy()
             col_idx = random.randint(0, len(table.columns) - 1)
             sampleRowIdx = []
@@ -40,22 +39,9 @@ def augment(table: pd.DataFrame, op: str, isTabFact=False):
                 sampleRowIdx.append(random.randint(0, len(table) - 1))
             for ind in sampleRowIdx:
                 table.iloc[ind, col_idx] = ""
-        else:
-            table = table.copy()
-            col_index = random.choice(range(0, len(table.columns)))
-            column_list = split(str(table.iloc[:, col_index][0]))
-            num_to_change = len(table) // 2
-            if num_to_change < 1:
-                num_to_change = 1
-            indices_to_change = random.sample(range(len(column_list)), num_to_change)
-            # print(indices_to_change)
-            for index in indices_to_change:
-                # column_list[index] = ""
-                del column_list[index]
-            table.iloc[0, col_index] = pd.Series(column_list).rename(table.columns[col_index])
+
     elif op == 'sample_cells_TFIDF':
-        table = table.copy()
-        if isTabFact is False:
+            table = table.copy()
             table = table.astype(str)
             df_tfidf = table_tfidf(table)
             num_rows = len(table)
@@ -68,14 +54,7 @@ def augment(table: pd.DataFrame, op: str, isTabFact=False):
                 # Combine the augmented columns to form the new table
             table = pd.concat(augmented_cols, axis=1)
             del augmented_cols
-        else:
-            for index, col in enumerate(table.columns):
-                list_col = split(table.iloc[0, index])
-                column_TFIDF = compute_avg_tfidf(list_col)
-                select_ones = roulette_wheel_selection(range(len(column_TFIDF)), math.ceil((len(column_TFIDF) * 0.5)),
-                                                       column_TFIDF.values())
-                table.iloc[0, index] = (",").join([list(column_TFIDF.keys())[i] for i in select_ones])
-                del column_TFIDF, select_ones
+
 
     """
      elif op == 'sample_cells':

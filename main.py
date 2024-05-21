@@ -15,7 +15,7 @@ if __name__ == '__main__':
     """ This is for the testing of different steps """
     parser.add_argument("--step", type=int, default=1)
     """ This is the parameter for P1"""
-    parser.add_argument("--estimateNumber", type=int, default=8)
+    parser.add_argument("--estimateNumber", type=int, default=9)
     """ Parameter for slicing the dendrogram in Step3 """
     parser.add_argument("--intervalSlice", type=int, default=10)
     parser.add_argument("--delta", type=float, default=0.08)
