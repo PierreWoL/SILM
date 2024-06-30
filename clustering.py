@@ -665,6 +665,7 @@ def clustering_results(input_data, tables, data_path, clusteringName, groundTrut
 
     min = number_estimate
     max = 3 * number_estimate
+    # cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
     cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
     end_time = time.time()
     time_difference_run = end_time - star_time

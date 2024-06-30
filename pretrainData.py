@@ -153,10 +153,6 @@ class  PretrainTableDataset(data.Dataset):
         else:
             fn = os.path.join(self.path, self.tables[table_id])
             table = pd.read_csv(fn)  # encoding="latin-1",
-
-            """if self.isCombine:
-                table = table.iloc[:, 1:]  # encoding="latin-1","""
-
             self.table_cache[table_id] = table
         return table
 
@@ -187,8 +183,7 @@ class  PretrainTableDataset(data.Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(table.columns) if len(table.columns) != 0 else 512
         budget = max(1, self.max_len // len(table.columns) - 1) if len(table.columns) != 0 else self.max_len
-        tfidfDict = computeTfIdf(table,
-                                 isCombine=self.isCombine) if "tfidf" in self.sample_meth else None  # from preprocessor.py
+        tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None
         # a map from column names to special token indices
         column_mp = {}
 
@@ -196,7 +191,6 @@ class  PretrainTableDataset(data.Dataset):
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
-
             for column, col_text in col_texts.items():
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
@@ -274,7 +268,6 @@ class  PretrainTableDataset(data.Dataset):
                         col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                     else:
                         col_text += string_token + " "
-
                 col_texts[column] = col_text
             # average embedding of tokens mode
             else:

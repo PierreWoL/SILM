@@ -4,8 +4,8 @@ import collections
 import string
 from pandas.api.types import infer_dtype
 from Utils import split
-
-def computeTfIdf(tableDf, isCombine=False):
+import json
+def computeTfIdf(tableDf):
     """ Compute tfIdf of each column independently
         Called by _tokenize() method in dataset.py
     Args:
@@ -35,12 +35,7 @@ def computeTfIdf(tableDf, isCombine=False):
 
     idf = {}
     for column in tableDf.columns:
-        if isCombine is False:
-            colVals = [val for entity in tableDf[column] for val in str(entity).split(' ')]
-        else:
-            colVals = [val for entity in pd.Series(split(tableDf[column][0])).rename(column) for val in
-                       str(entity).split(' ')]
-
+        colVals = [val for entity in tableDf[column] for val in str(entity).split(' ')]
         wordSet = set(colVals)
         wordDict = dict.fromkeys(wordSet, 0)
         for val in colVals:
@@ -263,3 +258,58 @@ def preprocess(column: pd.Series, tfidfDict: dict, max_tokens: int, method: str)
         tokens = tfidfSample(column, tfidfDict, method, max_tokens)
     # print(column, tfidfDict, tokens)
     return tokens
+
+
+def SatoComputeTfIdf(col_list):
+    """ Compute tfIdf of each column independently
+        Called by _tokenize() method in dataset.py
+    Args:
+        table (DataFrame): input table
+    Return: tfIdf dict containing tfIdf scores for all columns
+    """
+
+    # tfidf that considers each column (document) independently
+    def computeTf(wordDict, doc):
+        # input doc is a list
+        tfDict = {}
+        docCount = len(doc)
+        for word, count in wordDict.items():
+            tfDict[word] = count / float(docCount)
+        return tfDict
+
+    def computeIdf(docList):
+        idfDict = {}
+        N = len(docList)
+        idfDict = dict.fromkeys(docList.keys(), 0)
+        for word, val in docList.items():
+            if val > 0:
+                idfDict[word] += 1
+        for word, val in idfDict.items():
+            idfDict[word] = math.log10(N / float(val))
+        return idfDict
+
+    idf = {}
+    for column in col_list:
+        colVals = column.split(' ')
+        wordSet = set(colVals)
+        wordDict = dict.fromkeys(wordSet, 0)
+        for val in colVals:
+            wordDict[str(val)] += 1
+        idf.update(computeIdf(wordDict))
+    return idf
+
+
+
+
+
+
+
+
+def load_jsonl(fn, n_rows=-1):
+    data = []
+    with open(fn) as f:
+        for k, line in enumerate(f):
+            if n_rows != -1 and k == n_rows:
+                return data
+            data.append(json.loads(line))
+    return data

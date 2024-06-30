@@ -16,7 +16,6 @@ def compute_avg_tfidf(column):
     vectorizer = TfidfVectorizer(use_idf=True)
     # Compute TF-IDF scores
     if isinstance(column, list):
-
         try:
             tfidf_matrix = vectorizer.fit_transform(column)
             # Extract the scores for each phrase

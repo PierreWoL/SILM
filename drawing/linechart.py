@@ -7,32 +7,26 @@ import pandas as pd
 
 # 数据
 
-"""
+
 
 # 折线
 path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                           os.path.join("result/starmie/WDC/Sum.xlsx"))
+                           os.path.join("result/starmie/WDC/Sum2.xlsx"))
 metrics = ["Purity","Rand Index"]
-
 
 for metric in metrics:
     sum = pd.read_excel(path, sheet_name=metric)
     augmentation_times = sum["Augmentation Times"]
-    sample_cells_tfidf_sbert = sum["Sample_cells_TFIDF_SBERT"]
-    sample_cells_sbert = sum["Sample_cells_SBERT"]
-    sample_cells_tfidf_roberta = sum["Sample_cells_TFIDF_RoBERTa"]
-    sample_cells_roberta = sum["Sample_cells_RoBERTa"]
-    sample_cells_tfidf_bert = sum["Sample_cells_TFIDF_BERT"]
-    sample_cells_bert = sum["Sample_cells_BERT"]
-
+    sample_cells_tfidf_sberto = sum["Sample_cells_TFIDF_SBERT (old)"]
+    sample_cells_tfidf_sbertn = sum["Sample_cells_TFIDF_SBERT (new)"]
+    sample_cells_tfidf_berto = sum["Sample_cells_TFIDF_BERT (old)"]
+    sample_cells_tfidf_bertn = sum["Sample_cells_TFIDF_BERT (new)"]
     # 绘制
-    plt.figure(figsize=(10, 6))
-    #
-    #
-    plt.plot(augmentation_times, sample_cells_tfidf_roberta, marker='o', label='Sample_cells_TFIDF_RoBERTa')
-    plt.plot(augmentation_times, sample_cells_roberta, marker='o', label='Sample_cells_RoBERTa')
-    plt.plot(augmentation_times, sample_cells_tfidf_bert, marker='o', label='Sample_cells_TFIDF_BERT')
-    plt.plot(augmentation_times, sample_cells_bert, marker='o', label='Sample_cells_BERT')
+    plt.figure(figsize=(12, 8))
+    plt.plot(augmentation_times, sample_cells_tfidf_sberto, marker='o', label='Sample_cells_TFIDF_SBERT (old)')
+    plt.plot(augmentation_times, sample_cells_tfidf_sbertn, marker='o', label='Sample_cells_TFIDF_SBERT (new)')
+    plt.plot(augmentation_times, sample_cells_tfidf_berto, marker='o', label='Sample_cells_TFIDF_BERT (old)')
+    plt.plot(augmentation_times, sample_cells_tfidf_bertn, marker='o', label='Sample_cells_TFIDF_BERT (new)')
     #plt.plot(augmentation_times, sample_cells_tfidf_sbert, marker='o', label='Sample_cells_TFIDF_SBERT')
     #plt.plot(augmentation_times, sample_cells_sbert, marker='o', label='Sample_cells_SBERT')
 
@@ -44,12 +38,14 @@ for metric in metrics:
 
     plt.ylim(0, 1)  # 设置y轴范围为0到1
     plt.yticks([i / 10.0 for i in range(11)], fontsize=16)  # 设置y轴间隔为0.1
-    legend = plt.legend(loc='lower center', ncol=2, fontsize=16)  # 显示图例，位置在下方并分为4列
-    legend.get_frame().set_edgecolor('none')  # 为图例去掉边框
-    legend.get_frame().set_alpha(0)
+
+    #legend.get_frame().set_edgecolor('none')  # 为图例去掉边框
+    #legend.get_frame().set_alpha(0)
 
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.2, top=0.95, left=0.04, right=0.99, wspace=0.06)
+    plt.legend(loc='center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=16)  # 显示图例，位置在下方并分为4列
+    #plt.tight_layout()
 
     plt.savefig(os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                            os.path.join("result/starmie/WDC/"), metric+"LineChart2.pdf"))
@@ -57,7 +53,7 @@ for metric in metrics:
                              os.path.join("result/starmie/WDC/"), metric + "LineChart2.png"))
     plt.show()
 """
-
+"""
 
 
 """

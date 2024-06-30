@@ -10,45 +10,6 @@ lm_mp = {'roberta': 'roberta-base',
          'sbert': 'sentence-transformers/all-mpnet-base-v2'}
 
 
-class TableModel(nn.Module):
-    """A baseline model for Table/Column matching"""
-
-    def __init__(self, device='cuda', lm='roberta'):
-        super().__init__()
-        self.bert = AutoModel.from_pretrained(lm_mp[lm])
-        self.device = device
-        hidden_size = 768
-        self.fc = torch.nn.Linear(hidden_size, 2)
-        # self.fc = torch.nn.Linear(hidden_size, 1)
-        # self.cosine = nn.CosineSimilarity()
-        # self.distance = nn.PairwiseDistance()
-
-    def forward(self, x):
-        """Encode the left, right, and the concatenation of left+right.
-
-        Args:
-            x (LongTensor): a batch of ID's of the left+right
-
-        Returns:
-            Tensor: binary prediction
-        """
-        x = x.to(self.device)  # (batch_size, seq_len)
-
-        # left+right
-        enc_pair = self.bert(x)[0][:, 0, :]  # (batch_size, emb_size)
-
-        batch_size = len(x)
-        # left and right
-        enc = self.bert(x)[0][:, 0, :]
-
-        # enc = self.bert(torch.cat((x1, x2)))[0][:, 0, :]
-        # enc1 = enc[:batch_size] # (batch_size, emb_size)
-        # enc2 = enc[batch_size:] # (batch_size, emb_size)
-
-        # fully connected
-        return self.fc(enc)
-
-
 def off_diagonal(x):
     """Return a flattened view of the off-diagonal elements of a square matrix.
     """
@@ -66,7 +27,8 @@ class BarlowTwinsSimCLR(nn.Module):
         self.hp = hp
         self.bert = AutoModel.from_pretrained(lm_mp[lm])
         self.device = device
-        hidden_size = 768
+        #hidden_size = 768
+        hidden_size = self.transformer.config.hidden_size
 
         # projector
         self.projector = nn.Linear(hidden_size, hp.projector)

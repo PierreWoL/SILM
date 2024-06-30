@@ -17,14 +17,14 @@ def P1(hp: Namespace):
     # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
     # graph_gt = pickle.load(F_graph)
     files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and f"_{hp.embed}_" in fn and not fn.endswith('_column.pkl')]
+             '.pkl' in fn and f"_{hp.embed}_" in fn and not fn.endswith('_column.pkl')] #
     print(files)
     for file in files:
         typeInference(file, hp)
 
 
 def read_embeddings_P1(embedding_file, isSubCol, dataset, SelectType="", SelectedNumber=0):
-    print(embedding_file, isSubCol)
+
     datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
     if isSubCol:
         dataPath = os.path.join("datasets", dataset, "Test")
@@ -93,7 +93,7 @@ def typeInference(embedding_file, hp: Namespace):
             for i in range(0, hp.iteration):
                 new_path = os.path.join(store_path, embedding_file[:-4])
                 mkdir(new_path)
-                print("numE", numE)
+
                 cluster_dict, metric_dict = clustering_results(Z, T, data_path, method, groundTruth=ground_truth,
                                                                folderName=new_path,
                                                                numEstimate=numE)  # , graph=graph_gt
@@ -109,7 +109,7 @@ def typeInference(embedding_file, hp: Namespace):
             e_df = pd.concat([e_df, v.rename(i)], axis=1)
         if hp.SelectType == "":
             e_df.to_csv(store_path + embedding_file[:-4] + '_metrics.csv', encoding='utf-8')
-        print(e_df)
+        print(embedding_file[:-4], e_df)
     except ValueError as e:
         print(e)
     return dict_file
