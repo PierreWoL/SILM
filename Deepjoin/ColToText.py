@@ -57,6 +57,7 @@ class ColToTextTransformer:
     def get_all_column_representations(self, method: str = "title-colname-stat-col",
                                        shuffle_column_values: bool = False) -> Dict[str, Dict[str, str]]:
         column_representations = {}
+        #n=0
         for table_name, table in self.table_cache.items():
             #print(table_name, table, self.naming_dict[table_name])
             table_column_representations = {}
@@ -86,8 +87,11 @@ class ColToTextTransformer:
                                                                                                     table_title=self.naming_dict[table_name])
                 else:
                     raise ValueError(f"Method {method} not supported")
-                #print("Current column is",column,len(self.tokenizer(table_column_representations[column])),"\n",table_column_representations[column])
+                print("Current column is",column,len(self.tokenizer(table_column_representations[column])),"\n",table_column_representations[column])
             column_representations[table_name] = table_column_representations
+            #n += 1
+            #if n == 20:
+                #break
         return column_representations
 
     def col(self, column: pd.Series, prefix_text: str = '',
