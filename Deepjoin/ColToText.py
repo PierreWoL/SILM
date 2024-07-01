@@ -1,34 +1,47 @@
+import pickle
 from typing import Any, Dict, Tuple
 import os
 import pandas as pd
 import nltk
 
 
-def tokenize(text):
+def token(text):
     return nltk.word_tokenize(text.lower())
 
+def process_cell(cell):
+        if isinstance(cell, str):
+            return tuple(token(cell))
+        else:
+            return (cell,)
 class ColToTextTransformer:
 
-    def __init__(self, path, tokenizer, max_length: int = 512,
-                 column_contexts: Dict[str, Dict[str, str]] = None):
+    def __init__(self, path, naming_file, tokenizer, max_length: int = 512):
         self.path = path
-        self.table_cache = []
-        self.frequency_dictionary = self._create_frequency_dictionary()
+        self.table_cache = {}
         self.tokenizer = tokenizer
         self.max_length = max_length
-        self.column_contexts = column_contexts
+        # self.column_contexts = column_contexts
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        naming_df = pd.read_csv(naming_file)
+        self.naming_dict =  naming_df.set_index(naming_df.columns[0])[naming_df.columns[1]].to_dict()
+        #naming_dict[table_name]
         for table_name in self.tables:
             fn = os.path.join(self.path, table_name)
-            self.table_cache.append(pd.read_csv(fn))  # encoding="latin-1",
+            self.table_cache[table_name]=pd.read_csv(fn)  # encoding="latin-1",
+
+        if os.path.isfile(os.path.join(self.path,'tokens.pickle')):
+            with open(os.path.join(self.path,'tokens.pickle'), 'rb') as f:
+                self.frequency_dictionary = pickle.load(f)
+        else:
+            self.frequency_dictionary = self._create_frequency_dictionary()
 
     def _create_frequency_dictionary(self) -> Dict[Any, int]:
         column_cache = []
         unique_cell_values = set()
-        for table in self.table_cache:
+        for table in self.table_cache.values():
             for column_name in table.columns:
                 column = table[column_name]
-                tokenized_column = [tuple(tokenize(cell)) for cell in column]
+                tokenized_column = [process_cell(cell) for cell in column]
                 unique_values_in_column = set(tokenized_column)
                 column_cache.append(unique_values_in_column)
                 unique_cell_values.update(unique_values_in_column)
@@ -37,15 +50,15 @@ class ColToTextTransformer:
             for token_col in column_cache:
                 if cell in token_col:
                     frequency_dict[cell] += 1
+        with open(os.path.join(self.path,'tokens.pickle'), 'wb') as f:
+            pickle.dump(frequency_dict, f)
         return frequency_dict
 
     def get_all_column_representations(self, method: str = "title-colname-stat-col",
-                                       tables=None,
                                        shuffle_column_values: bool = False) -> Dict[str, Dict[str, str]]:
         column_representations = {}
-        if tables is None:
-            tables = self.table_cache
-        for table_name, table in tables.items():
+        for table_name, table in self.table_cache.items():
+            #print(table_name, table, self.naming_dict[table_name])
             table_column_representations = {}
             for column in table.columns:
                 if shuffle_column_values:
@@ -62,17 +75,18 @@ class ColToTextTransformer:
                 elif method == "title-colname-col":
                     table_column_representations[column] = self.title_header_col(table[column],
                                                                                                col_name=column,
-                                                                                               table_title=table_name)
+                                                                                               table_title=self.naming_dict[table_name])
                 elif method == "title-colname-col-context":
                     table_column_representations[column] = self.title_header_col_context(table[column],
                                                                                  col_name=column,
-                                                                                 table_title=table_name)
+                                                                                 table_title=self.naming_dict[table_name])
                 elif method == "title-colname-stat-col":
                     table_column_representations[column] = self.title_header_stat_col(table[column],
                                                                                                     col_name=column,
-                                                                                                    table_title=table_name)
+                                                                                                    table_title=self.naming_dict[table_name])
                 else:
                     raise ValueError(f"Method {method} not supported")
+                #print("Current column is",column,len(self.tokenizer(table_column_representations[column])),"\n",table_column_representations[column])
             column_representations[table_name] = table_column_representations
         return column_representations
 
@@ -82,7 +96,7 @@ class ColToTextTransformer:
         transformed_col, last_value_index = self._concat_until_max_length(column, prefix_text,
                                                                           suffix_text)
         if last_value_index < len(column) - 1:
-            column = column.sort_values(key=lambda x: x.map(lambda y: (-self.frequency_dictionary.get(y, 0), y)))
+            column = column.sort_values(key=lambda x: x.map(lambda y: (-self.frequency_dictionary.get(process_cell(y), 0), y)))
             transformed_col, last_value_index = self._concat_until_max_length(column, prefix_text,
                                                                               suffix_text)
         return transformed_col

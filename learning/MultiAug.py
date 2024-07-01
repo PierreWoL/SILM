@@ -9,6 +9,7 @@ import os
 import random
 from logging import getLogger
 
+import torch
 from transformers import AutoTokenizer
 
 logger = getLogger()
@@ -27,19 +28,18 @@ class MultiCropTableDataset(Dataset):
                  path,
                  percentage_crops: list,
                  size_dataset=-1,
-                 shuffle_rate =0.2,
+                 shuffle_rate=0.2,
                  lm='roberta',
                  subject_column=False,
                  augmentation_methods="sample_cells_TFIDF",
                  column=False,
-                 header = False,
+                 header=False,
                  return_index=False,
-                 max_length = 512):
-
-
+                 max_length=512):
 
         self.path = path
         self.column = column
+        self.subject_column = subject_column
         self.header = header
         self.percentage_crops = percentage_crops
         self.augmentation_methods = augmentation_methods
@@ -88,8 +88,7 @@ class MultiCropTableDataset(Dataset):
         """
         checkpoint for the tokenizer
         """
-        self.log_cnt =0
-
+        self.log_cnt = 0
 
         """
         add special tokens
@@ -108,7 +107,6 @@ class MultiCropTableDataset(Dataset):
         self.tokenizer.special_tokens_map.items()
         self.max_len = max_length
 
-
     def _read_item(self, id):
         """Read a data item from the cache"""
         if id in self.cache:
@@ -124,7 +122,6 @@ class MultiCropTableDataset(Dataset):
                 data = pd.read_csv(os.path.join(self.path, self.samples[id]))
         return data
 
-
     def _create_transforms(self):
         trans = []
         for index in range(len(self.percentage_crops)):
@@ -132,10 +129,10 @@ class MultiCropTableDataset(Dataset):
             print(trans)
         return trans
 
-    def  _tokens(self, data:pd.DataFrame):
+    def _tokens(self, data: pd.DataFrame):
         """Tokenize a DataFrame table
             Args:
-                table (DataFrame): the input TABLE/COLUMN dataframe
+                data (DataFrame): the input TABLE/COLUMN dataframe
             Returns:
                 List of int: list of token ID's with special tokens inserted
                 Dictionary: a map from column names to special tokens
@@ -143,11 +140,10 @@ class MultiCropTableDataset(Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(data.columns) if len(data.columns) != 0 else 512
         budget = max(1, self.max_len // len(data.columns) - 1) if len(data.columns) != 0 else self.max_len
-        tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None  # from preprocessor.py
         # a map from column names to special token indices
         column_mp = {}
         # column-ordered preprocessing
-        col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
+        col_texts = self._column_stratgy(data, max_tokens)
         for column, col_text in col_texts.items():
             column_mp[column] = len(res)
             encoding = self.tokenizer.encode(text=col_text,
@@ -159,6 +155,33 @@ class MultiCropTableDataset(Dataset):
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
         return res, column_mp
+
+    def _column_stratgy(self, table, max_tokens):
+        def tokenize(text_ele):
+            return text_ele.lower().split()
+
+        col_texts = {}
+        for index, column in enumerate(table.columns):
+            column_values = table.iloc[:, index]
+            all_text = column_values.tolist()
+            # 使用集合存储所有不重复的tokens
+            unique_tokens = set()
+            # 遍历每个文本进行分词并添加到集合中
+            for text in all_text:
+                tokens = tokenize(text)
+                unique_tokens.update(tokens)
+            unique_tokens = sorted(list(unique_tokens))
+            string_token = ' '.join(unique_tokens[:max_tokens])
+            col_text = self.tokenizer.cls_token + " "
+            # value in column as a whole string mode
+            if self.header:
+                col_text += str(column) + " "
+            # column value concatenating mode
+            else:
+                col_text += string_token + " "
+            col_texts[column] = col_text
+        return col_texts
+
     def __len__(self):
         return len(self.samples)
 
@@ -178,8 +201,44 @@ class MultiCropTableDataset(Dataset):
             if index in self.shuffle_index:
                 shuffle = True
             multi_crops.append(augment(data, aug_method, percent=percentage, shuffle=shuffle))
-
-
+        multi_crop_tokens = [self._tokens(data) for data in multi_crops]
+        x_values = [x for x, _ in multi_crop_tokens]
+        mp_values = [mp for _, mp in multi_crop_tokens]
+        cls_indices = []
+        for col in mp_values[0]:
+            # print(col, [mp[col] for mp in mp_values if col in mp])
+            if all(col in mp for mp in mp_values):
+                cls_indices.append(tuple(mp[col] for mp in mp_values))
         if self.return_index:
-            return index, multi_crops
-        return multi_crops
+            return index, *x_values, cls_indices
+        return *x_values, cls_indices
+
+    def pad(self, batch):
+        # Dynamically determine the number of sequences
+        num_sequences = len(batch[0])
+        sequences = list(zip(*batch))
+        x_seqs = sequences[:-1]
+        cls_indices = sequences[-1]
+        # print(cls_indices)
+        # Determine maximum length across all sequences
+        maxlen = max([max([len(x) for x in seq]) for seq in x_seqs])
+
+        # Pad the sequences
+        x_new_seqs = []
+        for seq in x_seqs:
+            x_new = [xi + [self.tokenizer.pad_token_id] * (maxlen - len(xi)) for xi in seq]
+            x_new_seqs.append(torch.LongTensor(x_new))
+        # Decompose the column alignment
+        if len(cls_indices[0]) == 0:
+            per_cls_indices = [[] for _ in range(len(cls_indices))]
+            cls_lists = per_cls_indices, per_cls_indices
+        else:
+            cls_lists = tuple([[] for _ in range(len(cls_indices[0][0]))])
+            for table_batch in cls_indices:
+                table_batch_indices = [[] for _ in range(len(cls_indices[0][0]))]
+                for item in table_batch:
+                    for i, idx in enumerate(item):
+                        table_batch_indices[i].append(idx)
+                for i, item in enumerate(table_batch_indices):
+                    cls_lists[i].append(item)
+        return *x_new_seqs, cls_lists

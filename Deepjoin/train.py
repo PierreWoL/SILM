@@ -2,38 +2,35 @@
 import os
 import torch
 from torch.nn.parallel import DataParallel
-
 from sentence_transformers import SentenceTransformer, LoggingHandler, losses, InputExample
 from sentence_transformers.datasets import SentenceLabelDataset
 from sentence_transformers.util import cos_sim
 from torch.utils.data import DataLoader
-from typing import Dict, Union
-
 import logging
 import math
-import pandas as pd
 import random
 
-from ColToText import ColToTextTransformer
+from Deepjoin.ColToText import ColToTextTransformer
 from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 
 logger = logging.getLogger(__name__)
 
 
-def construct_train_dataset(all_tables: Dict[str, pd.DataFrame], model_name: str = None,
-                            model: Union[SentenceTransformer] = None,
+def construct_train_dataset(path, naming_file, model_name: str = None,
                             column_to_text_transformation: str = "title-colname-stat-col",
                             shuffle_rate: float = 0.2, seed: int = 42, device="cuda"):
-    if model is None:
-        model = SentenceTransformer(model_name, device=device)
-    col_to_text_transformer = ColToTextTransformer(all_tables, model.tokenizer)
-    column_representations = col_to_text_transformer.get_all_column_representations(method=column_to_text_transformation)
-
+    model = SentenceTransformer(model_name, )  # device=device
+    col_to_text = ColToTextTransformer(path, naming_file, model.tokenizer)
+    column_representations = col_to_text.get_all_column_representations(method=column_to_text_transformation)
     # To get the positive pairs, we follow the approach in OmniMatch, where "positive training pairs are generated
     # based on pairwise cosine similarity of initial column representations (more than or equal to 0.9 ot ensure
     # high true positive rates)".
-    flatten_representation = [column_representation for table_name, table_representation in column_representations.items() for column_name, column_representation in table_representation.items()]
-    embeddings = model.encode(flatten_representation)
+    flatten_representation = [column_representation
+                              for table_name, table_representation in column_representations.items()
+                              for column_name, column_representation in table_representation.items()]
+    print(len(flatten_representation),flatten_representation[:3])
+
+    embeddings = model.encode(flatten_representation, device=device)
     similarities = cos_sim(embeddings, embeddings)
     positive_pairs = set()
     positive_pairs_indices = set()
@@ -46,22 +43,24 @@ def construct_train_dataset(all_tables: Dict[str, pd.DataFrame], model_name: str
     if shuffle_rate > 0:
         # sample from the positive pairs
         random.seed(seed)
-        to_be_shuffled = random.sample(positive_pairs_indices, int(shuffle_rate * len(positive_pairs_indices)))
+        # print(positive_pairs_indices,int(shuffle_rate * len(positive_pairs_indices)) )
+        to_be_shuffled = random.sample(list(positive_pairs_indices), int(shuffle_rate * len(positive_pairs_indices)))
 
-        shuffled_column_representations = col_to_text_transformer.get_all_column_representations(method=column_to_text_transformation,
-                                                                                                 shuffle_column_values=True)
-        shuffled_flatten_representation = [column_representation for table_name, table_representation in shuffled_column_representations.items()
-                                for column_name, column_representation in table_representation.items()]
-
+        shuffled_column_representations = col_to_text.get_all_column_representations(
+            method=column_to_text_transformation,
+            shuffle_column_values=True)
+        shuffled_flatten_representation = [column_representation for table_name, table_representation
+                                           in shuffled_column_representations.items()
+                                           for column_name, column_representation in table_representation.items()]
         for i, j in to_be_shuffled:
-            positive_pairs.add((shuffled_flatten_representation[i], flatten_representation[j])) # (X', Y)
-
+            positive_pairs.add((shuffled_flatten_representation[i], flatten_representation[j]))  # (X', Y)
+    print(positive_pairs)
     return list(positive_pairs)
 
 
-def train_model(model_name: str, train_dataset,dev_samples,  model_save_path: str = None, batch_size: int = 32,
+def train_model(model_name: str, train_dataset, dev_samples=None, model_save_path: str = None, batch_size: int = 32,
                 learning_rate: float = 2e-5, warmup_steps: int = None, weight_decay: float = 0.01, num_epochs: int = 3,
-                device="cuda",cpuid = 3):
+                device="cuda", cpuid=3):
     # Here we define our SentenceTransformer model
     #### Just some code to print debug information to stdout
     logging.basicConfig(format='%(asctime)s - %(message)s',
@@ -97,11 +96,14 @@ def train_model(model_name: str, train_dataset,dev_samples,  model_save_path: st
                  f"Learning-rate: {learning_rate}, "
                  f"Batch-size: {batch_size}, "
                  f"Num-epochs: {num_epochs}")
-    evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples)
+    if dev_samples is not None:
+        evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples)
+    else:
+        evaluator = None
     model.fit(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=num_epochs,
-        evaluator = evaluator,
+        evaluator=evaluator,
         optimizer_params={"lr": learning_rate},
         warmup_steps=warmup_steps,
         weight_decay=weight_decay,
@@ -110,4 +112,5 @@ def train_model(model_name: str, train_dataset,dev_samples,  model_save_path: st
     )
     logging.info("Training completed.")
     return model
+
 
