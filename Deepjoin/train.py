@@ -114,3 +114,84 @@ def train_model(model_name: str, train_dataset, dev_samples=None, model_save_pat
     return model
 
 
+
+def train_model2(model_name: str, train_dataset, dev_samples=None, model_save_path: str = None, batch_size: int = 32,
+                learning_rate: float = 2e-5, warmup_steps: int = None, weight_decay: float = 0.01, num_epochs: int = 3,
+                device="cuda", cpuid=3):
+    # 设置日志格式
+    logging.basicConfig(format='%(asctime)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        level=logging.INFO,
+                        handlers=[LoggingHandler()])
+
+    model = SentenceTransformer(model_name)
+    # 设置CUDA设备
+    if cpuid == 1:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    elif cpuid == 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    elif cpuid == 2:
+        device_ids = [0, 1]
+        torch.cuda.set_device(device_ids[0])
+        model = DataParallel(model, device_ids=[0, 1])
+        model = model.module  # 获取原始模型
+
+        # 准备训练数据
+    train_dataset = [InputExample(texts=[a, b], label=1) for a, b in train_dataset]
+    sentence_label_dataset = SentenceLabelDataset(train_dataset)
+    train_dataloader = DataLoader(sentence_label_dataset, batch_size=batch_size, shuffle=True)
+    train_loss = losses.MultipleNegativesRankingLoss(model)
+
+    # 配置训练参数
+    if warmup_steps is None:
+        warmup_steps = math.ceil(len(train_dataloader) * num_epochs * 0.1)  # 10%的训练数据用于预热
+
+    logging.info(f"Warmup-steps: {warmup_steps}, "
+                 f"Weight-decay: {weight_decay}, "
+                 f"Learning-rate: {learning_rate}, "
+                 f"Batch-size: {batch_size}, "
+                 f"Num-epochs: {num_epochs}")
+
+    # 使用AdamW优化器
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    # 学习率调度器
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+
+    # 训练过程
+    model.train()
+    global_step = 0
+
+    for epoch in range(num_epochs):
+        epoch_loss = 0
+        for step, batch in enumerate(train_dataloader):
+            features, labels = batch
+            features = [f.to(device) for f in features]
+            labels = labels.to(device)
+            optimizer.zero_grad()
+            model_output = model(features)
+            loss = train_loss(model_output, labels)
+            loss.backward()
+            optimizer.step()
+            epoch_loss += loss.item()
+            global_step += 1
+
+            if global_step % 10 == 0:  # 每10步记录一次损失
+                logging.info(f"Epoch: {epoch + 1}, Step: {global_step}, Loss: {loss.item()}")
+
+        avg_epoch_loss = epoch_loss / len(train_dataloader)
+        logging.info(f"Epoch {epoch + 1} finished. Average Loss: {avg_epoch_loss}")
+        scheduler.step()
+
+        # 在验证集上评估模型
+        if dev_samples is not None:
+            evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples)
+            eval_score = evaluator(model)
+            logging.info(f"Epoch {epoch + 1} Evaluation Score: {eval_score}")
+
+    # 保存模型
+    if model_save_path:
+        model.save(model_save_path)
+
+    logging.info("Training completed.")
+    return model
