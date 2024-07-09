@@ -107,6 +107,13 @@ class MultiCropTableDataset(Dataset):
         self.tokenizer.special_tokens_map.items()
         self.max_len = max_length
 
+    def _create_transforms(self):
+        trans = []
+        for index in range(len(self.percentage_crops)):
+            trans.append((self.percentage_crops[index], self.augmentation_methods[index]))
+            print(trans)
+        return trans
+
     def _read_item(self, id):
         """Read a data item from the cache"""
         if id in self.cache:
@@ -122,12 +129,31 @@ class MultiCropTableDataset(Dataset):
                 data = pd.read_csv(os.path.join(self.path, self.samples[id]))
         return data
 
-    def _create_transforms(self):
-        trans = []
-        for index in range(len(self.percentage_crops)):
-            trans.append((self.percentage_crops[index], self.augmentation_methods[index]))
-            print(trans)
-        return trans
+    def _column_stratgy(self, table, max_tokens):
+        def tokenize(text_ele):
+            return text_ele.lower().split()
+        col_texts = {}
+        for index, column in enumerate(table.columns):
+            column_values = table.iloc[:, index]
+            all_text = column_values.tolist()
+            # Use a set to store all unique tokens
+            unique_tokens = set()
+            # Iterate every text and tokenize the text, add it to the collection
+            for text in all_text:
+                tokens = tokenize(text)
+                unique_tokens.update(tokens)
+            unique_tokens = sorted(list(unique_tokens))
+            string_token = ' '.join(unique_tokens[:max_tokens])
+            col_text = self.tokenizer.cls_token + " "
+            # value in column as a whole string mode
+            if self.header:
+                col_text += str(column) + " "
+            # column value concatenating mode
+            else:
+                col_text += string_token + " "
+            #col_texts[column] = col_text
+            col_texts[index] = col_text
+        return col_texts
 
     def _tokens(self, data: pd.DataFrame):
         """Tokenize a DataFrame table
@@ -144,8 +170,8 @@ class MultiCropTableDataset(Dataset):
         column_mp = {}
         # column-ordered preprocessing
         col_texts = self._column_stratgy(data, max_tokens)
-        for column, col_text in col_texts.items():
-            column_mp[column] = len(res)
+        for column_index, col_text in col_texts.items():
+            column_mp[column_index] = len(res)
             encoding = self.tokenizer.encode(text=col_text,
                                              max_length=budget,
                                              add_special_tokens=False,
@@ -155,32 +181,6 @@ class MultiCropTableDataset(Dataset):
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
         return res, column_mp
-
-    def _column_stratgy(self, table, max_tokens):
-        def tokenize(text_ele):
-            return text_ele.lower().split()
-
-        col_texts = {}
-        for index, column in enumerate(table.columns):
-            column_values = table.iloc[:, index]
-            all_text = column_values.tolist()
-            # 使用集合存储所有不重复的tokens
-            unique_tokens = set()
-            # 遍历每个文本进行分词并添加到集合中
-            for text in all_text:
-                tokens = tokenize(text)
-                unique_tokens.update(tokens)
-            unique_tokens = sorted(list(unique_tokens))
-            string_token = ' '.join(unique_tokens[:max_tokens])
-            col_text = self.tokenizer.cls_token + " "
-            # value in column as a whole string mode
-            if self.header:
-                col_text += str(column) + " "
-            # column value concatenating mode
-            else:
-                col_text += string_token + " "
-            col_texts[column] = col_text
-        return col_texts
 
     def __len__(self):
         return len(self.samples)
@@ -192,11 +192,13 @@ class MultiCropTableDataset(Dataset):
             fn = os.path.join(self.path, table)
             column = pd.read_csv(fn)[column]  # encoding="latin-1",
             data = pd.DataFrame(column)
-            print(data)
+
         else:
             data = pd.read_csv(os.path.join(self.path, self.samples[index]))
+        print(data)
         multi_crops = []
-        for index, percentage, aug_method in enumerate(self.trans):
+        for index, tuple_aug in enumerate(self.trans):
+            percentage, aug_method = tuple_aug
             shuffle = False
             if index in self.shuffle_index:
                 shuffle = True
@@ -211,6 +213,7 @@ class MultiCropTableDataset(Dataset):
                 cls_indices.append(tuple(mp[col] for mp in mp_values))
         if self.return_index:
             return index, *x_values, cls_indices
+
         return *x_values, cls_indices
 
     def pad(self, batch):

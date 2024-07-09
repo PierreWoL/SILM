@@ -10,7 +10,6 @@ import os
 import shutil
 import time
 from logging import getLogger
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,9 +20,10 @@ import torch.optim
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
+from MultiAug import MultiCropTableDataset
+import model_swav as transformer
 
-
-from  util import (
+from util import (
     bool_flag,
     initialize_exp,
     restart_from_checkpoint,
@@ -31,9 +31,6 @@ from  util import (
     AverageMeter,
     # init_distributed_mode,
 )
-from MultiAug import MultiCropTableDataset
-import model_swav as transformer
-#import src.resnet50 as resnet_models
 
 logger = getLogger()
 
@@ -42,7 +39,7 @@ parser = argparse.ArgumentParser(description="Implementation of SwAV")
 #########################
 #### data parameters ####
 #########################
-parser.add_argument("--data_path", type=str, default="datasets/WDC/Test",
+parser.add_argument("--data_path", type=str, default="E:\Project\CurrentDataset\datasets\WDC\Test\\",
                     help="path to dataset repository")
 parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.4, 0.6], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
@@ -50,11 +47,11 @@ parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
                     help="crops resolutions (example: sample_cells_TFIDF)")
 parser.add_argument("--shuffle", default=0.3, type=float,
                     help="portion of views that should be shuffled")
-parser.add_argument("--column", dest="column",action="store_true",
+parser.add_argument("--column", dest="column", action="store_true",
                     help="if the unit of input is a column")
-parser.add_argument("--header", dest="header",action="store_true",
+parser.add_argument("--header", dest="header", action="store_true",
                     help="if include header in the tables")
-#TODO stop here
+# TODO stop here
 #########################
 ## swav specific params #
 #########################
@@ -107,8 +104,8 @@ parser.add_argument("--local_rank", default=0, type=int,
 #########################
 #### other parameters ###
 #########################
-#parser.add_argument("--lm", default="resnet50", type=str, help="convnet architecture") #arch
-parser.add_argument("--lm", default="bert", type=str, help="encoding model") #arch
+# parser.add_argument("--lm", default="resnet50", type=str, help="convnet architecture") #arch
+parser.add_argument("--lm", default="bert", type=str, help="encoding model")  # arch
 parser.add_argument("--hidden_mlp", default=2048, type=int,
                     help="hidden layer dimension in projection head")
 parser.add_argument("--workers", default=10, type=int,
@@ -128,25 +125,30 @@ parser.add_argument("--seed", type=int, default=31, help="seed")
 def main():
     global args
     args = parser.parse_args()
-    #init_distributed_mode(args)
+    # init_distributed_mode(args)
     fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
 
     # build data
+
+    # read the augmentation methods from args
     augmentation_methods = args.augmentation
-    if ","  in  args.augmentation:
+    if "," in args.augmentation:
         augmentation_methods = args.augmentation.split(",")
+    # read the dataset from the data path
     train_dataset = MultiCropTableDataset(
         args.data_path,
         args.percentage_crops,
-        shuffle_rate = args.shuffle,
-        augmentation_methods = augmentation_methods,
+        shuffle_rate=args.shuffle,
+        augmentation_methods=augmentation_methods,
         column=args.column,
-        header = args.header,
-       ) # size_dataset=10
+        header=args.header,
+    )  # size_dataset=10
+    # This should be removed later
     for element in train_dataset[0]:
-        print(element, type(element))
+        print(element)
 
+    padder = train_dataset.pad
     sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
         train_dataset,
@@ -154,9 +156,12 @@ def main():
         batch_size=args.batch_size,
         num_workers=args.workers,
         pin_memory=True,
-        drop_last=True
+        drop_last=True,
+        collate_fn=padder
     )
     logger.info("Building data done with {} tables loaded.".format(len(train_dataset)))
+
+
 
     # build model
     model = transformer.__dict__[args.arch](
@@ -164,12 +169,10 @@ def main():
         hidden_mlp=args.hidden_mlp,
         output_dim=args.feat_dim,
         nmb_prototypes=args.nmb_prototypes,
+        resize=len(train_dataset.tokenizer)
     )
     # synchronize batch norm layers
-
     # model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
-        
     # copy model to GPU
     model = model.cuda()
     if args.rank == 0:
@@ -183,23 +186,7 @@ def main():
                                                 num_warmup_steps=0,
                                                 num_training_steps=num_steps)
 
-    """# 定义Lambda函数
-    lambda1 = lambda epoch: np.interp(epoch, np.linspace(0, len(train_loader) * args.warmup_epochs,
-                                                         len(train_loader) * args.warmup_epochs),
-                                      np.linspace(args.start_warmup, args.base_lr,
-                                                  len(train_loader) * args.warmup_epochs))
-    lambda2 = lambda epoch: args.final_lr + 0.5 * (args.base_lr - args.final_lr) * (
-                1 + math.cos(math.pi * epoch / (len(train_loader) * (args.epochs - args.warmup_epochs))))
 
-    def combined_lambda(epoch):
-        if epoch < len(train_loader) * args.warmup_epochs:
-            return lambda1(epoch)
-        else:
-            return lambda2(epoch - len(train_loader) * args.warmup_epochs)
-
-    # 创建调度器
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=combined_lambda)
-    """
     logger.info("Building optimizer done.")
     # init mixed precision
     if args.use_fp16:
@@ -220,8 +207,8 @@ def main():
         optimizer=optimizer,
         amp=torch.cuda.amp,
     )
-    start_epoch = to_restore["epoch"]
 
+    start_epoch = to_restore["epoch"]
     # build the queue
     queue = None
     queue_path = os.path.join(args.dump_path, "queue" + str(args.rank) + ".pth")
@@ -239,7 +226,7 @@ def main():
         # optionally starts a queue
         if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
             queue = torch.zeros(
-                len(args.crops_for_assign),
+                len(args.percentage_crops),#crops_for_assign
                 args.queue_length // args.world_size,
                 args.feat_dim,
             ).cuda()
@@ -271,7 +258,8 @@ def main():
             torch.save({"queue": queue}, queue_path)
 
 
-def train(train_loader, model, optimizer, epoch, lr_schedule,scaler, queue):
+
+def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
     def loss_model_fp16(loss):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -280,7 +268,6 @@ def train(train_loader, model, optimizer, epoch, lr_schedule,scaler, queue):
     def loss_model(loss):
         loss.backward()
         optimizer.step()
-
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -294,9 +281,9 @@ def train(train_loader, model, optimizer, epoch, lr_schedule,scaler, queue):
         data_time.update(time.time() - end)
         # update learning rate
         iteration = epoch * len(train_loader) + it
-        for param_group in optimizer.param_groups:
-            param_group["lr"] = lr_schedule[iteration]
 
+        ###TODO wonder if this should be here
+        optimizer.zero_grad()
         # normalize the prototypes
         with torch.no_grad():
             w = model.module.prototypes.weight.data.clone()
@@ -334,19 +321,9 @@ def train(train_loader, model, optimizer, epoch, lr_schedule,scaler, queue):
                 x = output[bs * v: bs * (v + 1)] / args.temperature
                 subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
-        loss /= len(args.crops_for_assign)
+        loss /= len(args.percentage_crops)#crops_for_assign
         loss = torch.tensor(loss, device=output.device, dtype=torch.float32)
-
         # ============ backward and optim step ... ============
-        optimizer.zero_grad()
-
-        """if args.use_fp16:
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        else:
-            loss.backward()
-            optimizer.step()"""
 
         if args.use_fp16:
             with torch.cuda.amp.autocast():
@@ -359,25 +336,25 @@ def train(train_loader, model, optimizer, epoch, lr_schedule,scaler, queue):
             for name, p in model.named_parameters():
                 if "prototypes" in name:
                     p.grad = None
-        optimizer.step()
-
+        scheduler.step()
         # ============ misc ... ============
         losses.update(loss.item(), inputs[0].size(0))
+
         batch_time.update(time.time() - end)
         end = time.time()
-        if args.rank ==0 and it % 50 == 0:
+        if args.rank == 0 and it % 50 == 0:
             logger.info(
                 "Epoch: [{0}][{1}]\t"
                 "Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t"
                 "Data {data_time.val:.3f} ({data_time.avg:.3f})\t"
                 "Loss {loss.val:.4f} ({loss.avg:.4f})\t"
-                "Lr: {lr:.4f}".format(
+                .format(
                     epoch,
                     it,
                     batch_time=batch_time,
                     data_time=data_time,
                     loss=losses,
-                    lr=optimizer.optim.param_groups[0]["lr"],
+                    # lr=optimizer.optim.param_groups[0]["lr"],
                 )
             )
     return (epoch, losses.avg), queue
@@ -385,9 +362,9 @@ def train(train_loader, model, optimizer, epoch, lr_schedule,scaler, queue):
 
 @torch.no_grad()
 def distributed_sinkhorn(out):
-    Q = torch.exp(out / args.epsilon).t() # Q is K-by-B for consistency with notations from our paper
-    B = Q.shape[1] * args.world_size # number of samples to assign
-    K = Q.shape[0] # how many prototypes
+    Q = torch.exp(out / args.epsilon).t()  # Q is K-by-B for consistency with notations from our paper
+    B = Q.shape[1] * args.world_size  # number of samples to assign
+    K = Q.shape[0]  # how many prototypes
 
     # make the matrix sums to 1
     sum_Q = torch.sum(Q)
@@ -405,7 +382,7 @@ def distributed_sinkhorn(out):
         Q /= torch.sum(Q, dim=0, keepdim=True)
         Q /= B
 
-    Q *= B # the columns must sum to 1 so that Q is an assignment
+    Q *= B  # the columns must sum to 1 so that Q is an assignment
     return Q.t()
 
 

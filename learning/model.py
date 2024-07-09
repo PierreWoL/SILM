@@ -96,7 +96,6 @@ class BarlowTwinsSimCLR(nn.Module):
             seq_len = x.shape[-1]
             for rid in range(len(cls_indices)):
                 indices += [idx + rid * seq_len for idx in cls_indices[rid]]
-
         return column_vectors[indices]
 
     def inference(self, x):

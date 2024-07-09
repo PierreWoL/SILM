@@ -13,7 +13,7 @@ lm_mp = {'roberta': 'roberta-base',
 
 import torch
 import torch.nn as nn
-from transformers import AutoModel
+from transformers import AutoModel, AutoTokenizer
 
 
 class TransformerModel(nn.Module):
@@ -25,20 +25,19 @@ class TransformerModel(nn.Module):
             nmb_prototypes=0,
             normalize=False,
             eval_mode=False,
+            resize=-1
     ):
         super(TransformerModel, self).__init__()
-
         self.eval_mode = eval_mode
-
         # Load the pretrained transformer model
         self.transformer = AutoModel.from_pretrained(lm_mp[lm])
 
         # Get the hidden size of the transformer model
         hidden_size = self.transformer.config.hidden_size
-
+        if resize > 0:
+            self.transformer.resize_token_embeddings(resize)
         # normalize output features
         self.l2norm = normalize
-
         # Projection head
         if output_dim == 0:
             self.projection_head = None
@@ -47,19 +46,35 @@ class TransformerModel(nn.Module):
         else:
             self.projection_head = nn.Sequential(
                 nn.Linear(hidden_size, hidden_mlp),
-                nn.BatchNorm1d(hidden_mlp),
+                nn.LayerNorm(hidden_mlp),
                 nn.ReLU(inplace=True),
                 nn.Linear(hidden_mlp, output_dim),
             )
-
         # Prototype layer
         self.prototypes = None
         if isinstance(nmb_prototypes, list):
             self.prototypes = MultiPrototypes(output_dim, nmb_prototypes)
         elif nmb_prototypes > 0:
             self.prototypes = nn.Linear(output_dim, nmb_prototypes, bias=False)
+        # cls token id
+        self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
 
+    def _extract_columns(self, x, z, cls_indices=None):
+        """
+        Helper function for extracting column vectors from LM outputs.
+        """
+        x_flat = x.view(-1)
+        column_vectors = z.view((x_flat.shape[0], -1))
 
+        if cls_indices is None:
+            indices = [idx for idx, token_id in enumerate(x_flat) \
+                       if token_id == self.cls_token_id]
+        else:
+            indices = []
+            seq_len = x.shape[-1]
+            for rid in range(len(cls_indices)):
+                indices += [idx + rid * seq_len for idx in cls_indices[rid]]
+        return column_vectors[indices]
 
     def forward_head(self, x):
         if self.projection_head is not None:
@@ -73,22 +88,19 @@ class TransformerModel(nn.Module):
         return x
 
     def forward(self, inputs):
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-        idx_crops = torch.cumsum(torch.unique_consecutive(
-            torch.tensor([inp.shape[-1] for inp in inputs]),
-            return_counts=True,
-        )[1], 0)
-        start_idx = 0
-        for end_idx in idx_crops:
-            _out = self.forward_backbone(torch.cat(inputs[start_idx: end_idx]).cuda(non_blocking=True))
-            if start_idx == 0:
+        global output
+        x_vals = inputs[:-1]  # Separate out cls_indices
+        cls_indices = inputs[-1]
+        for j in range(len(x_vals)):
+            x_view1 = x_vals[j].to(self.device)
+            z_view1 = self.bert(x_view1)[0]
+            cls_view1 = cls_indices[j]
+            _out = self._extract_columns(x_view1, z_view1, cls_view1)
+            if j == 0:
                 output = _out
             else:
                 output = torch.cat((output, _out))
-            start_idx = end_idx
         return self.forward_head(output)
-
 
 
 class MultiPrototypes(nn.Module):

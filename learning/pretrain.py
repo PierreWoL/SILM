@@ -196,7 +196,6 @@ def inference_on_tables(tables: List[pd.DataFrame],
         # print(tid, table)
         if subject_column is True:
             cols = subjectCol(table)
-
             if len(cols) > 0:
                     table = table[cols]
         x, _ = unlabeled._tokenize(table)
