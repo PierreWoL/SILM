@@ -1,0 +1,461 @@
+INFO - 07/08/24 23:29:38 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:29:38 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: datasets/WDC/Test
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:29:38 - 0:00:00 - The experiment will be stored in .
+                                     
+
+INFO - 07/08/24 23:30:34 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:30:34 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: datasets/WDC/Test/
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:30:34 - 0:00:00 - The experiment will be stored in .
+                                     
+
+INFO - 07/08/24 23:30:53 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:30:53 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:/CurrentDataset/datasets/WDC/Test/
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:30:53 - 0:00:00 - The experiment will be stored in .
+                                     
+
+INFO - 07/08/24 23:31:16 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:31:16 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E/CurrentDataset/datasets/WDC/Test/
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:31:16 - 0:00:00 - The experiment will be stored in .
+                                     
+
+INFO - 07/08/24 23:31:52 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:31:52 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:\Project\CurrentDataset\datasets\WDC\Test\
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:31:52 - 0:00:00 - The experiment will be stored in .
+                                     
+
+DEBUG - 07/08/24 23:31:52 - 0:00:00 - Starting new HTTPS connection (1): huggingface.co
+DEBUG - 07/08/24 23:31:52 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:31:52 - 0:00:00 - Attempting to acquire lock 1627745317328 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\34ddbd64a4cd3f2d9d8a9120d3662d0bf91baead.lock
+DEBUG - 07/08/24 23:31:52 - 0:00:00 - Lock 1627745317328 acquired on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\34ddbd64a4cd3f2d9d8a9120d3662d0bf91baead.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - https://huggingface.co:443 "GET /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 25
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - Attempting to release lock 1627745317328 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\34ddbd64a4cd3f2d9d8a9120d3662d0bf91baead.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - Lock 1627745317328 released on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\34ddbd64a4cd3f2d9d8a9120d3662d0bf91baead.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/config.json HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - Attempting to acquire lock 1627781805968 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\8db5e7ac5bfc9ec8b613b776009300fe3685d957.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - Lock 1627781805968 acquired on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\8db5e7ac5bfc9ec8b613b776009300fe3685d957.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:00 - https://huggingface.co:443 "GET /roberta-base/resolve/main/config.json HTTP/1.1" 200 481
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Attempting to release lock 1627781805968 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\8db5e7ac5bfc9ec8b613b776009300fe3685d957.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Lock 1627781805968 released on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\8db5e7ac5bfc9ec8b613b776009300fe3685d957.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/vocab.json HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Attempting to acquire lock 1627781416912 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\5606f48548d99a9829d10a96cd364b816b02cd21.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Lock 1627781416912 acquired on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\5606f48548d99a9829d10a96cd364b816b02cd21.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - https://huggingface.co:443 "GET /roberta-base/resolve/main/vocab.json HTTP/1.1" 200 898823
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Attempting to release lock 1627781416912 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\5606f48548d99a9829d10a96cd364b816b02cd21.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Lock 1627781416912 released on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\5606f48548d99a9829d10a96cd364b816b02cd21.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/merges.txt HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Attempting to acquire lock 1627749357328 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\226b0752cac7789c48f0cb3ec53eda48b7be36cc.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Lock 1627749357328 acquired on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\226b0752cac7789c48f0cb3ec53eda48b7be36cc.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - https://huggingface.co:443 "GET /roberta-base/resolve/main/merges.txt HTTP/1.1" 200 456318
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Attempting to release lock 1627749357328 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\226b0752cac7789c48f0cb3ec53eda48b7be36cc.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Lock 1627749357328 released on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\226b0752cac7789c48f0cb3ec53eda48b7be36cc.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer.json HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Attempting to acquire lock 1627782053200 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\ad0bcbeb288f0d1373d88e0762e66357f55b8311.lock
+DEBUG - 07/08/24 23:31:53 - 0:00:01 - Lock 1627782053200 acquired on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\ad0bcbeb288f0d1373d88e0762e66357f55b8311.lock
+DEBUG - 07/08/24 23:31:54 - 0:00:01 - https://huggingface.co:443 "GET /roberta-base/resolve/main/tokenizer.json HTTP/1.1" 200 1355863
+DEBUG - 07/08/24 23:31:54 - 0:00:02 - Attempting to release lock 1627782053200 on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\ad0bcbeb288f0d1373d88e0762e66357f55b8311.lock
+DEBUG - 07/08/24 23:31:54 - 0:00:02 - Lock 1627782053200 released on C:\Users\Pierre\.cache\huggingface\hub\.locks\models--roberta-base\ad0bcbeb288f0d1373d88e0762e66357f55b8311.lock
+DEBUG - 07/08/24 23:31:54 - 0:00:02 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/added_tokens.json HTTP/1.1" 404 0
+DEBUG - 07/08/24 23:31:54 - 0:00:02 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/special_tokens_map.json HTTP/1.1" 404 0
+INFO - 07/08/24 23:33:11 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:33:11 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:\Project\CurrentDataset\datasets\WDC\Test\
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:33:11 - 0:00:00 - The experiment will be stored in .
+                                     
+
+DEBUG - 07/08/24 23:33:11 - 0:00:00 - Starting new HTTPS connection (1): huggingface.co
+DEBUG - 07/08/24 23:33:11 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+INFO - 07/08/24 23:33:25 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:33:25 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:\Project\CurrentDataset\datasets\WDC\Test\
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:33:25 - 0:00:00 - The experiment will be stored in .
+                                     
+
+DEBUG - 07/08/24 23:33:25 - 0:00:00 - Starting new HTTPS connection (1): huggingface.co
+DEBUG - 07/08/24 23:33:25 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+INFO - 07/08/24 23:33:25 - 0:00:00 - Building data done with 602 tables loaded.
+INFO - 07/08/24 23:43:31 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:43:31 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:\Project\CurrentDataset\datasets\WDC\Test\
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:43:31 - 0:00:00 - The experiment will be stored in .
+                                     
+
+DEBUG - 07/08/24 23:43:31 - 0:00:00 - Starting new HTTPS connection (1): huggingface.co
+DEBUG - 07/08/24 23:43:31 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:43:35 - 0:00:04 - Falling back to TensorFlow client; we recommended you install the Cloud TPU client directly with pip install cloud-tpu-client.
+DEBUG - 07/08/24 23:43:35 - 0:00:04 - Creating converter from 7 to 5
+DEBUG - 07/08/24 23:43:35 - 0:00:04 - Creating converter from 5 to 7
+DEBUG - 07/08/24 23:43:35 - 0:00:04 - Creating converter from 7 to 5
+DEBUG - 07/08/24 23:43:35 - 0:00:04 - Creating converter from 5 to 7
+WARNING - 07/08/24 23:43:38 - 0:00:07 - From C:\Users\Pierre\AppData\Local\Programs\Python\Python311\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+                                        
+INFO - 07/08/24 23:43:38 - 0:00:07 - Building data done with 602 tables loaded.
+INFO - 07/08/24 23:44:05 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:44:05 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:\Project\CurrentDataset\datasets\WDC\Test\
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:44:05 - 0:00:00 - The experiment will be stored in .
+                                     
+
+DEBUG - 07/08/24 23:44:05 - 0:00:00 - Starting new HTTPS connection (1): huggingface.co
+DEBUG - 07/08/24 23:44:05 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG - 07/08/24 23:44:06 - 0:00:01 - Falling back to TensorFlow client; we recommended you install the Cloud TPU client directly with pip install cloud-tpu-client.
+DEBUG - 07/08/24 23:44:06 - 0:00:01 - Creating converter from 7 to 5
+DEBUG - 07/08/24 23:44:06 - 0:00:01 - Creating converter from 5 to 7
+DEBUG - 07/08/24 23:44:06 - 0:00:01 - Creating converter from 7 to 5
+DEBUG - 07/08/24 23:44:06 - 0:00:01 - Creating converter from 5 to 7
+WARNING - 07/08/24 23:44:07 - 0:00:03 - From C:\Users\Pierre\AppData\Local\Programs\Python\Python311\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+                                        
+INFO - 07/08/24 23:44:07 - 0:00:03 - Building data done with 602 tables loaded.
+INFO - 07/08/24 23:46:37 - 0:00:00 - ============ Initialized logger ============
+INFO - 07/08/24 23:46:37 - 0:00:00 - augmentation: sample_cells_TFIDF
+                                     base_lr: 4.8
+                                     batch_size: 64
+                                     checkpoint_freq: 25
+                                     column: False
+                                     crops_for_assign: [0, 1]
+                                     data_path: E:\Project\CurrentDataset\datasets\WDC\Test\
+                                     dist_url: env://
+                                     dump_checkpoints: .\checkpoints
+                                     dump_path: .
+                                     epoch_queue_starts: 15
+                                     epochs: 100
+                                     epsilon: 0.05
+                                     feat_dim: 128
+                                     final_lr: 0
+                                     freeze_prototypes_niters: 313
+                                     header: False
+                                     hidden_mlp: 2048
+                                     lm: bert
+                                     local_rank: 0
+                                     nmb_prototypes: 3000
+                                     percentage_crops: [0.5, 0.4, 0.6]
+                                     queue_length: 0
+                                     rank: 0
+                                     seed: 31
+                                     shuffle: 0.3
+                                     sinkhorn_iterations: 3
+                                     start_warmup: 0
+                                     sync_bn: pytorch
+                                     syncbn_process_group_size: 8
+                                     temperature: 0.1
+                                     use_fp16: True
+                                     warmup_epochs: 10
+                                     wd: 1e-06
+                                     workers: 10
+                                     world_size: -1
+INFO - 07/08/24 23:46:37 - 0:00:00 - The experiment will be stored in .
+                                     
+
+DEBUG - 07/08/24 23:46:37 - 0:00:00 - Starting new HTTPS connection (1): huggingface.co
+DEBUG - 07/08/24 23:46:37 - 0:00:00 - https://huggingface.co:443 "HEAD /roberta-base/resolve/main/tokenizer_config.json HTTP/1.1" 200 0
+INFO - 07/08/24 23:46:37 - 0:00:00 - Building data done with 602 tables loaded.
