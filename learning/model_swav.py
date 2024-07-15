@@ -98,9 +98,11 @@ class TransformerModel(nn.Module):
         ###TODO warning here this needs re-check!
         global output
         x_vals = inputs[:-1]  # Separate out cls_indices
+
         cls_indices = inputs[-1]
         # concat = [torch.empty(0) for i in range(len(x_vals[0]))]
         for j in range(len(x_vals)):
+            print(j,"th x_vals: ", x_vals[j])
             x_view1 = x_vals[j].to(self.device)
             z_view1 = self.bert(x_view1)[0]
             cls_view1 = cls_indices[j]
@@ -115,6 +117,7 @@ class TransformerModel(nn.Module):
                 output = _out
             else:
                 output = torch.cat((output, _out))
+                print("output",_out, "\n",output)
             # output=torch.cat(concat, dim=0)
         return self.forward_head(output)
 

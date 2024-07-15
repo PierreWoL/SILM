@@ -63,13 +63,13 @@ parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1],
                     help="list of crops id used for computing assignments")
 parser.add_argument("--temperature", default=0.1, type=float,
                     help="temperature parameter in training loss")
-parser.add_argument("--epsilon", default=0.05, type=float,
+parser.add_argument("--epsilon", default=0.03, type=float,
                     help="regularization parameter for Sinkhorn-Knopp algorithm")
 parser.add_argument("--sinkhorn_iterations", default=3, type=int,
                     help="number of iterations in Sinkhorn-Knopp algorithm")
 parser.add_argument("--feat_dim", default=128, type=int,
                     help="feature dimension")
-parser.add_argument("--nmb_prototypes", default=3000, type=int,
+parser.add_argument("--nmb_prototypes", default=500, type=int,
                     help="number of prototypes")
 parser.add_argument("--queue_length", type=int, default=0,
                     help="length of the queue (0 for no queue)")
@@ -94,8 +94,7 @@ parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
 #########################
 #### dist parameters ###
 #########################
-parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up distributed
-                    training; see https://pytorch.org/docs/stable/distributed.html""")
+
 parser.add_argument("--world_size", default=-1, type=int, help="""
                     number of processes: it is set automatically and
                     should not be passed as argument""")
@@ -146,7 +145,8 @@ def main():
         augmentation_methods=augmentation_methods,
         column=args.column,
         header=args.header,
-    )  # size_dataset=10
+        size_dataset=100
+    )  #
     # This should be removed later
     for element in train_dataset[0]:
         print(element)
@@ -305,6 +305,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
+                print("out prototype",out)
                 # time to use the queue
                 if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
@@ -316,6 +317,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
+                    print("out embedding", embedding)
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
 
