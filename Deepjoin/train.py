@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def construct_train_dataset(path, naming_file, model_name: str = None,
                             column_to_text_transformation: str = "title-colname-stat-col",
                             shuffle_rate: float = 0.2, seed: int = 42, device="cuda"):
-    model = SentenceTransformer(model_name, )  # device=device
+    model = SentenceTransformer(model_name, device=device)  #
     col_to_text = ColToTextTransformer(path, naming_file, model.tokenizer)
     column_representations = col_to_text.get_all_column_representations(method=column_to_text_transformation)
     # To get the positive pairs, we follow the approach in OmniMatch, where "positive training pairs are generated
@@ -117,7 +117,7 @@ def train_model(model_name: str, train_dataset, dev_samples=None, model_save_pat
 
 def train_model2(model_name: str, train_dataset, dev_samples=None, model_save_path: str = None, batch_size: int = 32,
                 learning_rate: float = 2e-5, warmup_steps: int = None, weight_decay: float = 0.01, num_epochs: int = 3,
-                device="cuda"):
+                device="cuda"): #, cpuid=3
     # 设置日志格式
     logging.basicConfig(format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
@@ -125,12 +125,21 @@ def train_model2(model_name: str, train_dataset, dev_samples=None, model_save_pa
                         handlers=[LoggingHandler()])
 
     model = SentenceTransformer(model_name)
-
+    """ # 设置CUDA设备
+    if cpuid == 1:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    elif cpuid == 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    elif cpuid == 2:
+        device_ids = [0, 1]
+        torch.cuda.set_device(device_ids[0])
+        model = DataParallel(model, device_ids=[0, 1])
+        model = model.module  # 获取原始模型"""
 
         # 准备训练数据
     train_dataset = [InputExample(texts=[a, b], label=1) for a, b in train_dataset]
     sentence_label_dataset = SentenceLabelDataset(train_dataset)
-    train_dataloader = DataLoader(sentence_label_dataset, batch_size=batch_size)#, shuffle=True
+    train_dataloader = DataLoader(sentence_label_dataset, batch_size=batch_size)
     train_loss = losses.MultipleNegativesRankingLoss(model)
 
     # 配置训练参数

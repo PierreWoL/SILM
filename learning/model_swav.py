@@ -16,6 +16,13 @@ import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
 
+def restore_tensors(flat_tensor, original_shape):
+    """
+    将一维张量还原为原始形状 (N, M) 的张量。
+    """
+    return flat_tensor.view(original_shape)
+
+
 class TransformerModel(nn.Module):
     def __init__(
             self,
@@ -88,18 +95,27 @@ class TransformerModel(nn.Module):
         return x
 
     def forward(self, inputs):
+        ###TODO warning here this needs re-check!
         global output
         x_vals = inputs[:-1]  # Separate out cls_indices
         cls_indices = inputs[-1]
+        # concat = [torch.empty(0) for i in range(len(x_vals[0]))]
         for j in range(len(x_vals)):
             x_view1 = x_vals[j].to(self.device)
             z_view1 = self.bert(x_view1)[0]
             cls_view1 = cls_indices[j]
             _out = self._extract_columns(x_view1, z_view1, cls_view1)
+            print(_out)
+            if _out.dim() == 2 and _out.size(0) > 1:
+                # _out = _out.view(-1) flatten
+                _out = torch.mean(_out, dim=0, keepdim=True)
+            # for index in range(_out.size(0)):
+            # concat[index] = torch.cat((concat[index], _out[index].unsqueeze(0)), dim=0)
             if j == 0:
                 output = _out
             else:
                 output = torch.cat((output, _out))
+            # output=torch.cat(concat, dim=0)
         return self.forward_head(output)
 
 

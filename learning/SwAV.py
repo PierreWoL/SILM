@@ -41,8 +41,12 @@ parser = argparse.ArgumentParser(description="Implementation of SwAV")
 #########################
 parser.add_argument("--data_path", type=str, default="E:\Project\CurrentDataset\datasets\WDC\Test\\",
                     help="path to dataset repository")
-parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.4, 0.6], nargs="+",
+parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
+                    help="list of number of crops (example: [2, 6])")
+
+parser.add_argument("--percentage_crops", type=float, default=[0.6, 0.4], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
+
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
                     help="crops resolutions (example: sample_cells_TFIDF)")
 parser.add_argument("--shuffle", default=0.3, type=float,
@@ -80,13 +84,12 @@ parser.add_argument("--epochs", default=100, type=int,
 parser.add_argument("--batch_size", default=64, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
 parser.add_argument("--base_lr", default=4.8, type=float, help="base learning rate")
-parser.add_argument("--final_lr", type=float, default=0, help="final learning rate")
 parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
                     help="freeze the prototypes during this many iterations from the start")
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
-parser.add_argument("--warmup_epochs", default=10, type=int, help="number of warmup epochs")
-parser.add_argument("--start_warmup", default=0, type=float,
-                    help="initial warmup learning rate")
+
+
+
 
 #########################
 #### dist parameters ###
@@ -104,7 +107,6 @@ parser.add_argument("--local_rank", default=0, type=int,
 #########################
 #### other parameters ###
 #########################
-# parser.add_argument("--lm", default="resnet50", type=str, help="convnet architecture") #arch
 parser.add_argument("--lm", default="bert", type=str, help="encoding model")  # arch
 parser.add_argument("--hidden_mlp", default=2048, type=int,
                     help="hidden layer dimension in projection head")
@@ -138,6 +140,7 @@ def main():
     # read the dataset from the data path
     train_dataset = MultiCropTableDataset(
         args.data_path,
+        args.nmb_crops,
         args.percentage_crops,
         shuffle_rate=args.shuffle,
         augmentation_methods=augmentation_methods,
@@ -160,9 +163,6 @@ def main():
         collate_fn=padder
     )
     logger.info("Building data done with {} tables loaded.".format(len(train_dataset)))
-
-
-
     # build model
     model = transformer.__dict__[args.arch](
         normalize=True,
@@ -209,6 +209,7 @@ def main():
     )
 
     start_epoch = to_restore["epoch"]
+
     # build the queue
     queue = None
     queue_path = os.path.join(args.dump_path, "queue" + str(args.rank) + ".pth")
@@ -216,7 +217,7 @@ def main():
         queue = torch.load(queue_path)["queue"]
     # the queue needs to be divisible by the batch size
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
-
+    # cudnn.benchmark = True
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
@@ -225,8 +226,14 @@ def main():
 
         # optionally starts a queue
         if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
+            """
+            Initialize a new queue with shape (crops_for_assign, queue_length // world_size, feat_dim).
+             len(args.crops_for_assign) indicates the number of crops assigned to the job,
+              args.queue_length // args.world_size indicates the queue length is divided equally among each process
+               and args.feat_dim indicates the feature dimension. The queue is assigned to the GPU (using .cuda()).
+            """
             queue = torch.zeros(
-                len(args.percentage_crops),#crops_for_assign
+                len(args.crops_for_assign),#crops_for_assign
                 args.queue_length // args.world_size,
                 args.feat_dim,
             ).cuda()
@@ -276,14 +283,13 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
     model.train()
     use_the_queue = False
     end = time.time()
-    for it, inputs in enumerate(train_loader):
+    for it, batch in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         # update learning rate
         iteration = epoch * len(train_loader) + it
-
-        ###TODO wonder if this should be here
         optimizer.zero_grad()
+
         # normalize the prototypes
         with torch.no_grad():
             w = model.module.prototypes.weight.data.clone()
@@ -291,15 +297,14 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
             model.module.prototypes.weight.copy_(w)
 
         # ============ multi-res forward passes ... ============
-        embedding, output = model(inputs)
+        embedding, output = model(batch)
         embedding = embedding.detach()
-        bs = inputs[0].size(0)
+        bs = batch[0].size(0)
         # ============ swav loss ... ============
         loss = 0
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
-
                 # time to use the queue
                 if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
@@ -311,7 +316,6 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
-
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
 
@@ -321,10 +325,9 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                 x = output[bs * v: bs * (v + 1)] / args.temperature
                 subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
-        loss /= len(args.percentage_crops)#crops_for_assign
+        loss /= len(args.crops_for_assign) #crops_for_assign
         loss = torch.tensor(loss, device=output.device, dtype=torch.float32)
         # ============ backward and optim step ... ============
-
         if args.use_fp16:
             with torch.cuda.amp.autocast():
                 loss_model_fp16(loss)
@@ -338,7 +341,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     p.grad = None
         scheduler.step()
         # ============ misc ... ============
-        losses.update(loss.item(), inputs[0].size(0))
+        losses.update(loss.item(), batch[0].size(0))
 
         batch_time.update(time.time() - end)
         end = time.time()

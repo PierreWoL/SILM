@@ -26,6 +26,7 @@ lm_mp = {'roberta': 'roberta-base',
 class MultiCropTableDataset(Dataset):
     def __init__(self,
                  path,
+                 nmb_crops: list,
                  percentage_crops: list,
                  size_dataset=-1,
                  shuffle_rate=0.2,
@@ -41,16 +42,24 @@ class MultiCropTableDataset(Dataset):
         self.column = column
         self.subject_column = subject_column
         self.header = header
+        self.nmb_crops = nmb_crops
         self.percentage_crops = percentage_crops
-        self.augmentation_methods = augmentation_methods
+        self.augmentation_methods = []
+
+        total_number = 0
+        for i in augmentation_methods:
+            total_number += i
         """
         Transfer augmentation methods list
         """
         if isinstance(augmentation_methods, str):
-            self.augmentation_methods = [augmentation_methods] * len(percentage_crops)
+
+            self.augmentation_methods = [augmentation_methods] * total_number
             print(self.augmentation_methods)
         else:
-            self.augmentation_methods = augmentation_methods
+            for index, num in enumerate(nmb_crops):
+                self.augmentation_methods.extend([augmentation_methods[index]*num])
+            print(self.augmentation_methods)
         """
         Create args for the augmentation methods
         """

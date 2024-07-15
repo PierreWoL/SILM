@@ -41,21 +41,22 @@ parser = argparse.ArgumentParser(description="Implementation of DeepCluster-v2")
 #########################
 #### data parameters ####
 #########################
-parser.add_argument("--data_path", type=str, default="/path/to/imagenet",
+parser.add_argument("--data_path", type=str, default="E:\Project\CurrentDataset\datasets\WDC\Test\\",
                     help="path to dataset repository")
-parser.add_argument("--nmb_crops", type=int, default=[2], nargs="+",
-                    help="list of number of crops (example: [2, 6])")
-parser.add_argument("--size_crops", type=int, default=[224], nargs="+",
-                    help="crops resolutions (example: [224, 96])")
-parser.add_argument("--min_scale_crops", type=float, default=[0.14], nargs="+",
-                    help="argument in RandomResizedCrop (example: [0.14, 0.05])")
-parser.add_argument("--max_scale_crops", type=float, default=[1], nargs="+",
-                    help="argument in RandomResizedCrop (example: [1., 0.14])")
-
+parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.4, 0.6], nargs="+",
+                    help="crops of tables (example: [0.5, 0.6])")
+parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
+                    help="crops resolutions (example: sample_cells_TFIDF)")
+parser.add_argument("--shuffle", default=0.3, type=float,
+                    help="portion of views that should be shuffled")
+parser.add_argument("--column", dest="column", action="store_true",
+                    help="if the unit of input is a column")
+parser.add_argument("--header", dest="header", action="store_true",
+                    help="if include header in the tables")
 #########################
 ## dcv2 specific params #
 #########################
-parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1],
+parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1, 2],
                     help="list of crops id used for computing assignments")
 parser.add_argument("--temperature", default=0.1, type=float,
                     help="temperature parameter in training loss")
@@ -71,8 +72,8 @@ parser.add_argument("--epochs", default=100, type=int,
                     help="number of total epochs to run")
 parser.add_argument("--batch_size", default=64, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
-parser.add_argument("--base_lr", default=4.8, type=float, help="base learning rate")
-parser.add_argument("--final_lr", type=float, default=0, help="final learning rate")
+#parser.add_argument("--base_lr", default=4.8, type=float, help="base learning rate")
+#parser.add_argument("--final_lr", type=float, default=0, help="final learning rate")
 parser.add_argument("--freeze_prototypes_niters", default=1e10, type=int,
                     help="freeze the prototypes during this many iterations from the start")
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
@@ -117,7 +118,6 @@ def main():
     init_distributed_mode(args)
     fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
-
     # build data
 
     # read the augmentation methods from args
@@ -175,18 +175,8 @@ def main():
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,
                                                 num_training_steps=num_steps)
-
-
-    """
-    optimizer = LARC(optimizer=optimizer, trust_coefficient=0.001, clip=False)
-    warmup_lr_schedule = np.linspace(args.start_warmup, args.base_lr, len(train_loader) * args.warmup_epochs)
-    iters = np.arange(len(train_loader) * (args.epochs - args.warmup_epochs))
-    cosine_lr_schedule = np.array([args.final_lr + 0.5 * (args.base_lr - args.final_lr) * (1 + \
-                         math.cos(math.pi * t / (len(train_loader) * (args.epochs - args.warmup_epochs)))) for t in iters])
-    lr_schedule = np.concatenate((warmup_lr_schedule, cosine_lr_schedule))
-    """
-
     logger.info("Building optimizer done.")
+
     # init mixed precision
     if args.use_fp16:
         scaler = torch.cuda.amp.GradScaler()
@@ -220,12 +210,14 @@ def main():
     else:
         local_memory_index, local_memory_embeddings = init_memory(train_loader, model)
 
-    cudnn.benchmark = True
+    #cudnn.benchmark = True
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
+
         # set sampler
         train_loader.sampler.set_epoch(epoch)
+
         # train the network
         scores, local_memory_index, local_memory_embeddings = train(
             train_loader,
@@ -237,6 +229,7 @@ def main():
             local_memory_index,
             local_memory_embeddings,
         )
+
         training_stats.update(scores)
 
         # save checkpoints
@@ -268,24 +261,20 @@ def train(loader, model, optimizer, epoch, scheduler, scaler, local_memory_index
     losses = AverageMeter()
     model.train()
     cross_entropy = nn.CrossEntropyLoss(ignore_index=-100)
-
     assignments = cluster_memory(model, local_memory_index, local_memory_embeddings, len(loader.dataset))
     logger.info('Clustering for epoch {} done.'.format(epoch))
 
     end = time.time()
     start_idx = 0
-    for it, (idx, inputs) in enumerate(loader):
+    for it, (idx, batch) in enumerate(loader):
         # measure data loading time
         data_time.update(time.time() - end)
-
         # update learning rate
         iteration = epoch * len(loader) + it
-
-
         # ============ multi-res forward passes ... ============
-        emb, output = model(inputs)
+        emb, output = model(batch)
         emb = emb.detach()
-        bs = inputs[0].size(0)
+        bs = batch[0].size(0)
 
         # ============ deepcluster-v2 loss ... ============
         loss = 0
@@ -294,7 +283,6 @@ def train(loader, model, optimizer, epoch, scheduler, scaler, local_memory_index
             targets = assignments[h][idx].repeat(sum(args.nmb_crops)).cuda(non_blocking=True)
             loss += cross_entropy(scores, targets)
         loss /= len(args.nmb_prototypes)
-
         # ============ backward and optim step ... ============
         optimizer.zero_grad()
         if args.use_fp16:
@@ -322,7 +310,7 @@ def train(loader, model, optimizer, epoch, scheduler, scaler, local_memory_index
         start_idx += bs
 
         # ============ misc ... ============
-        losses.update(loss.item(), inputs[0].size(0))
+        losses.update(loss.item(), batch[0].size(0))
         batch_time.update(time.time() - end)
         end = time.time()
         if args.rank ==0 and it % 50 == 0:
