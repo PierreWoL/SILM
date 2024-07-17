@@ -29,11 +29,10 @@ from util import (
     restart_from_checkpoint,
     fix_random_seeds,
     AverageMeter,
-    init_distributed_mode,
+    init_distributed_mode, ### TODO if you need distributed this needs to be added
 )
 
 logger = getLogger()
-
 parser = argparse.ArgumentParser(description="Implementation of SwAV")
 
 #########################
@@ -133,9 +132,8 @@ def main():
     # 获取本机IP地址
     hostname = socket.gethostname()
     master_node = socket.gethostbyname(hostname)
-
     # 设置端口
-    port = 40000
+    port = 8080
     args.dist_url = f"tcp://{master_node}:{port}"
     init_distributed_mode(args)
     fix_random_seeds(args.seed)
@@ -156,12 +154,11 @@ def main():
         augmentation_methods=augmentation_methods,
         column=args.column,
         header=args.header,
-        size_dataset=12
+        size_dataset=8
     )  #
     # This should be removed later
     for element in train_dataset[0]:
-        print(element)
-
+        logger.info(element)
     padder = train_dataset.pad
     sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
@@ -185,6 +182,7 @@ def main():
         nmb_prototypes=args.nmb_prototypes,
         resize=len(train_dataset.tokenizer)
     )
+    logger.info("model initialize ...")
     # synchronize batch norm layers
     # model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     # copy model to GPU
@@ -210,7 +208,7 @@ def main():
         scaler = None
 
     # wrap model
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on])
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on]) # test distributed
 
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
@@ -234,15 +232,14 @@ def main():
     # the queue needs to be divisible by the batch size
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     # cudnn.benchmark = True
-    indices = np.random.permutation(len(train_dataset))
+
+
 
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
         # set sampler
-        np.random.seed(epoch)  # 保证每个 epoch 打乱的顺序是一致的
-        np.random.shuffle(indices)
-        train_loader.sampler.set_epoch(epoch)
+        train_loader.sampler.set_epoch(epoch) # test distibuted
 
         # optionally starts a queue
         if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
@@ -312,15 +309,13 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
 
         # normalize the prototypes
         with torch.no_grad():
-            w = model.module.prototypes.weight.data.clone()
-            #w = model.prototypes.weight.data.clone()
+            w = model.module.prototypes.weight.data.clone() # for test distributed
             w = nn.functional.normalize(w, dim=1, p=2)
-            model.module.prototypes.weight.copy_(w)
-            #model.prototypes.weight.copy_(w)
+            model.module.prototypes.weight.copy_(w) # for test distributed
 
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
-        print(embedding,"\n",output)
+        logger.info(embedding,"\n",output)
         embedding = embedding.detach()
         bs = batch[0].size(0)
         # ============ swav loss ... ============
@@ -328,7 +323,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
-                print("out prototype",out)
+                logger.info("out prototype",out)
                 # time to use the queue
                 if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
@@ -340,7 +335,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
-                    print("out embedding", embedding)
+                    logger.info("out embedding", embedding)
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
 
@@ -396,13 +391,14 @@ def distributed_sinkhorn(out):
 
     # make the matrix sums to 1
     sum_Q = torch.sum(Q)
-    dist.all_reduce(sum_Q)
+    dist.all_reduce(sum_Q)# test distributed
     Q /= sum_Q
 
     for it in range(args.sinkhorn_iterations):
         # normalize each row: total weight per prototype must be 1/K
         sum_of_rows = torch.sum(Q, dim=1, keepdim=True)
-        dist.all_reduce(sum_of_rows)
+        dist.all_reduce(sum_of_rows) # test distributed
+
         Q /= sum_of_rows
         Q /= K
 

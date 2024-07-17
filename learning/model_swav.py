@@ -15,6 +15,8 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
+from logging import getLogger
+logger = getLogger()
 
 
 class TransformerModel(nn.Module):
@@ -97,12 +99,12 @@ class TransformerModel(nn.Module):
         cls_indices = inputs[-1]
         # concat = [torch.empty(0) for i in range(len(x_vals[0]))]
         for j in range(len(x_vals)):
-            print(j,"th x_vals: ", x_vals[j])
+            logger.info(j,"th x_vals: ", x_vals[j])
             x_view1 = x_vals[j].to(self.device)
             z_view1 = self.transformer(x_view1)[0]
             cls_view1 = cls_indices[j]
             _out = self._extract_columns(x_view1, z_view1, cls_view1)
-            print(_out)
+            logger.info(_out)
             if _out.dim() == 2 and _out.size(0) > 1:
                 # _out = _out.view(-1) flatten
                 _out = torch.mean(_out, dim=0, keepdim=True)
@@ -112,7 +114,7 @@ class TransformerModel(nn.Module):
                 output = _out
             else:
                 output = torch.cat((output, _out))
-                print("output",_out, "\n",output)
+                logger.info("output",_out, "\n",output)
             # output=torch.cat(concat, dim=0)
         return self.forward_head(output)
 
