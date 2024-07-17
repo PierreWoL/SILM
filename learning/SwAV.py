@@ -22,14 +22,14 @@ from torch.utils.data.distributed import DistributedSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 from MultiAug import MultiCropTableDataset
 import model_swav as transformer
-
+import socket
 from util import (
     bool_flag,
     initialize_exp,
     restart_from_checkpoint,
     fix_random_seeds,
     AverageMeter,
-    # init_distributed_mode,
+    init_distributed_mode,
 )
 
 logger = getLogger()
@@ -63,15 +63,15 @@ parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1],
                     help="list of crops id used for computing assignments")
 parser.add_argument("--temperature", default=0.1, type=float,
                     help="temperature parameter in training loss")
-parser.add_argument("--epsilon", default=0.03, type=float,
+parser.add_argument("--epsilon", default=0.02, type=float,
                     help="regularization parameter for Sinkhorn-Knopp algorithm")
 parser.add_argument("--sinkhorn_iterations", default=3, type=int,
                     help="number of iterations in Sinkhorn-Knopp algorithm")
 parser.add_argument("--feat_dim", default=128, type=int,
                     help="feature dimension")
-parser.add_argument("--nmb_prototypes", default=500, type=int,
+parser.add_argument("--nmb_prototypes", default=200, type=int,
                     help="number of prototypes")
-parser.add_argument("--queue_length", type=int, default=0,
+parser.add_argument("--queue_length", type=int, default=1000,
                     help="length of the queue (0 for no queue)")
 parser.add_argument("--epoch_queue_starts", type=int, default=15,
                     help="from this epoch, we start using a queue")
@@ -79,9 +79,9 @@ parser.add_argument("--epoch_queue_starts", type=int, default=15,
 #########################
 #### optim parameters ###
 #########################
-parser.add_argument("--epochs", default=100, type=int,
+parser.add_argument("--epochs", default=2, type=int,
                     help="number of total epochs to run")
-parser.add_argument("--batch_size", default=64, type=int,
+parser.add_argument("--batch_size", default=4, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
 parser.add_argument("--base_lr", default=4.8, type=float, help="base learning rate")
 parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
@@ -91,10 +91,9 @@ parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
 
 
 
-#########################
-#### dist parameters ###
-#########################
 
+parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up distributed
+                    training; see https://pytorch.org/docs/stable/distributed.html""")
 parser.add_argument("--world_size", default=-1, type=int, help="""
                     number of processes: it is set automatically and
                     should not be passed as argument""")
@@ -111,7 +110,7 @@ parser.add_argument("--hidden_mlp", default=2048, type=int,
                     help="hidden layer dimension in projection head")
 parser.add_argument("--workers", default=10, type=int,
                     help="number of data loading workers")
-parser.add_argument("--checkpoint_freq", type=int, default=25,
+parser.add_argument("--checkpoint_freq", type=int, default=1,
                     help="Save the model periodically")
 parser.add_argument("--use_fp16", type=bool_flag, default=True,
                     help="whether to train with mixed precision or not")
@@ -126,7 +125,19 @@ parser.add_argument("--seed", type=int, default=31, help="seed")
 def main():
     global args
     args = parser.parse_args()
-    # init_distributed_mode(args)
+
+    """
+    This needs to change later
+    """
+
+    # 获取本机IP地址
+    hostname = socket.gethostname()
+    master_node = socket.gethostbyname(hostname)
+
+    # 设置端口
+    port = 40000
+    args.dist_url = f"tcp://{master_node}:{port}"
+    init_distributed_mode(args)
     fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
 
@@ -145,7 +156,7 @@ def main():
         augmentation_methods=augmentation_methods,
         column=args.column,
         header=args.header,
-        size_dataset=100
+        size_dataset=12
     )  #
     # This should be removed later
     for element in train_dataset[0]:
@@ -163,8 +174,11 @@ def main():
         collate_fn=padder
     )
     logger.info("Building data done with {} tables loaded.".format(len(train_dataset)))
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # build model
-    model = transformer.__dict__[args.arch](
+    model = transformer.TransformerModel(
+        lm=args.lm,
+        device=device,
         normalize=True,
         hidden_mlp=args.hidden_mlp,
         output_dim=args.feat_dim,
@@ -200,6 +214,8 @@ def main():
 
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
+
+
     restart_from_checkpoint(
         os.path.join(args.dump_path, "checkpoint.pth.tar"),
         run_variables=to_restore,
@@ -218,10 +234,14 @@ def main():
     # the queue needs to be divisible by the batch size
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     # cudnn.benchmark = True
+    indices = np.random.permutation(len(train_dataset))
+
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
         # set sampler
+        np.random.seed(epoch)  # 保证每个 epoch 打乱的顺序是一致的
+        np.random.shuffle(indices)
         train_loader.sampler.set_epoch(epoch)
 
         # optionally starts a queue
@@ -293,11 +313,14 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
         # normalize the prototypes
         with torch.no_grad():
             w = model.module.prototypes.weight.data.clone()
+            #w = model.prototypes.weight.data.clone()
             w = nn.functional.normalize(w, dim=1, p=2)
             model.module.prototypes.weight.copy_(w)
+            #model.prototypes.weight.copy_(w)
 
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
+        print(embedding,"\n",output)
         embedding = embedding.detach()
         bs = batch[0].size(0)
         # ============ swav loss ... ============

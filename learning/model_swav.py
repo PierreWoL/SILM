@@ -16,17 +16,12 @@ import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
 
-def restore_tensors(flat_tensor, original_shape):
-    """
-    将一维张量还原为原始形状 (N, M) 的张量。
-    """
-    return flat_tensor.view(original_shape)
-
 
 class TransformerModel(nn.Module):
     def __init__(
             self,
             lm,
+            device,
             output_dim=0,
             hidden_mlp=0,
             nmb_prototypes=0,
@@ -38,7 +33,7 @@ class TransformerModel(nn.Module):
         self.eval_mode = eval_mode
         # Load the pretrained transformer model
         self.transformer = AutoModel.from_pretrained(lm_mp[lm])
-
+        self.device = device
         # Get the hidden size of the transformer model
         hidden_size = self.transformer.config.hidden_size
         if resize > 0:
@@ -104,7 +99,7 @@ class TransformerModel(nn.Module):
         for j in range(len(x_vals)):
             print(j,"th x_vals: ", x_vals[j])
             x_view1 = x_vals[j].to(self.device)
-            z_view1 = self.bert(x_view1)[0]
+            z_view1 = self.transformer(x_view1)[0]
             cls_view1 = cls_indices[j]
             _out = self._extract_columns(x_view1, z_view1, cls_view1)
             print(_out)

@@ -7,8 +7,14 @@ import pandas as pd
 import random
 from TFIDF import table_tfidf, roulette_wheel_selection
 import math
-from Utils import split
 
+def split(column: pd.Series):
+    if "," in column:
+        return column.split(",")
+    elif "|" in column:
+        return column.split("|")
+    else:
+        return column.split(" ")
 
 def augment(table: pd.DataFrame, op: str, percent=0.5, shuffle = False):
     """Apply an augmentation operator on a table.

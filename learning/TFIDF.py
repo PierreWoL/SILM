@@ -6,10 +6,16 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import math
-
-from d3l.utils.functions import tokenize_str as tokenize
 from typing import Iterable
+import re
+import string
 
+def tokenize(text: str) -> str:
+    re.compile(r"[^\w\s\-_@&]+")
+    textRemovePuc = str(text).translate(str.maketrans('', '', string.punctuation)).strip()
+    textRemovenumber = textRemovePuc.translate(str.maketrans('', '', string.digits)).strip()
+    ele = re.sub(r"\s+", " ", textRemovenumber)
+    return ele
 def compute_avg_tfidf(column):
     # Function to compute average TF-IDF for a list of phrases
     # Create a TF-IDF vectorizer

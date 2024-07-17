@@ -47,19 +47,21 @@ class MultiCropTableDataset(Dataset):
         self.augmentation_methods = []
 
         total_number = 0
-        for i in augmentation_methods:
+        for i in nmb_crops:
             total_number += i
         """
         Transfer augmentation methods list
         """
+
         if isinstance(augmentation_methods, str):
 
             self.augmentation_methods = [augmentation_methods] * total_number
-            print(self.augmentation_methods)
         else:
             for index, num in enumerate(nmb_crops):
                 self.augmentation_methods.extend([augmentation_methods[index]*num])
-            print(self.augmentation_methods)
+
+
+
         """
         Create args for the augmentation methods
         """
@@ -117,10 +119,13 @@ class MultiCropTableDataset(Dataset):
         self.max_len = max_length
 
     def _create_transforms(self):
+        percentage_list = []
         trans = []
-        for index in range(len(self.percentage_crops)):
-            trans.append((self.percentage_crops[index], self.augmentation_methods[index]))
-            print(trans)
+        for index, number in enumerate(self.nmb_crops):
+            percentage_list.extend([self.percentage_crops[index]]*number)
+        for i in range(len(percentage_list)):
+            trans.append((percentage_list[i], self.augmentation_methods[i]))
+        print(trans)
         return trans
 
     def _read_item(self, id):
@@ -187,8 +192,8 @@ class MultiCropTableDataset(Dataset):
                                              truncation=True)
             res += encoding
         self.log_cnt += 1
-        if self.log_cnt % 5000 == 0:
-            print(self.tokenizer.decode(res))
+        #if self.log_cnt % 5000 == 0:
+            #print(self.tokenizer.decode(res))
         return res, column_mp
 
     def __len__(self):
@@ -204,7 +209,6 @@ class MultiCropTableDataset(Dataset):
 
         else:
             data = pd.read_csv(os.path.join(self.path, self.samples[index]))
-        print(data)
         multi_crops = []
         for index, tuple_aug in enumerate(self.trans):
             percentage, aug_method = tuple_aug
