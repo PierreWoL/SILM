@@ -79,7 +79,6 @@ def subjectColDetection(DATA_PATH, RESULT_PATH=None):
     if 'dict.pickle' in os.listdir(RESULT_PATH):
         with open(os.path.join(RESULT_PATH, 'dict.pickle'), "rb") as f:
             table_dict = pickle.load(f)
-
     else:
         table_dict = {}
         table_names = [i for i in os.listdir(DATA_PATH) if i.endswith(".csv")]

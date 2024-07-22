@@ -120,7 +120,7 @@ def main():
     if args.model == 'mpnet':
         tokenizer = AutoTokenizer.from_pretrained('all-mpnet-base-v2')
     if args.model == 'deberta_base':
-        tokenizer = DebertaTokenizer.from_pretrained('deberta-base')
+        tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-base')
     if args.model == 'deberta_large':
         tokenizer = DebertaTokenizer.from_pretrained('deberta-large')
     if args.model == 'xlnet':
@@ -166,6 +166,7 @@ def main():
         test_sets = []
         valid_sets = []
         limit = 10000
+
         for key,p in dataformat.entity_alignment_data.items():
             train_sets.append(get_data(p[1]+"train.json",num=limit))
             test_sets.append(get_data(p[1]+"test.json"))
@@ -177,12 +178,14 @@ def main():
             test_sets.append(get_data(p[1]+"test.json"))
             valid_sets.append(get_data(p[1]+"valid.json",num=limit))
             metrics.append(p[2])
+
         
         for key,p in dataformat.new_schema_matching_data.items():
             train_sets.append(get_data(p[1]+"train.json",num=limit))
             test_sets.append(get_data(p[1]+"test.json"))
             valid_sets.append(get_data(p[1]+"valid.json",num=limit))
             metrics.append(p[2])
+
 
         for key,p in dataformat.ontology_matching_data.items():
             train_sets.append(get_data(p[1]+"train.json",num=limit))
@@ -207,6 +210,7 @@ def main():
             test_sets.append(get_data(p[1]+"test.json"))
             valid_sets.append(get_data(p[1]+"valid.json",num=limit))
             metrics.append(p[2])
+
 
         train_data_loaders = []
         test_data_loaders = []
@@ -252,6 +256,7 @@ def main():
         test_sets = []
         valid_sets = []
         limit = 10000
+
         for key,p in dataformat.entity_alignment_data.items():
             traindata = get_data(p[1]+"train.json",num=limit)
             train_sets.extend(traindata)
@@ -265,6 +270,7 @@ def main():
             test_sets.append(get_data(p[1]+"test.json"))
             valid_sets.append(get_data(p[1]+"valid.json",num=limit))
             metrics.append(p[2])
+
         
         for key,p in dataformat.new_schema_matching_data.items():
             traindata = get_data(p[1]+"train.json",num=limit)
@@ -272,6 +278,7 @@ def main():
             test_sets.append(get_data(p[1]+"test.json"))
             valid_sets.append(get_data(p[1]+"valid.json",num=limit))
             metrics.append(p[2])
+
 
         for key,p in dataformat.ontology_matching_data.items():
             traindata = get_data(p[1]+"train.json",num=limit)
@@ -300,6 +307,7 @@ def main():
             test_sets.append(get_data(p[1]+"test.json"))
             valid_sets.append(get_data(p[1]+"valid.json",num=limit))
             metrics.append(p[2])
+
             
         train_data_loaders = []
         test_data_loaders = []

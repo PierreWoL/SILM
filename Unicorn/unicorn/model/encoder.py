@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import BertModel, DistilBertModel, RobertaModel, AutoModel, DebertaModel, XLNetModel
-from unicorn.utils import param
+from Unicorn.unicorn.utils import param
 
 
 class BertEncoder(nn.Module):
@@ -101,7 +101,7 @@ class XLNetEncoder(nn.Module):
 class DebertaBaseEncoder(nn.Module):
     def __init__(self):
         super(DebertaBaseEncoder, self).__init__()
-        self.encoder = DebertaModel.from_pretrained("deberta-base")
+        self.encoder = DebertaModel.from_pretrained("microsoft/deberta-base")
 
     def forward(self, x, mask=None, segment=None):
         outputs = self.encoder(x, attention_mask=mask, token_type_ids=segment)

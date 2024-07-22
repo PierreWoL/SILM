@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from unicorn.utils import param
+from Unicorn.unicorn.utils import param
 
 
 class Classifier(nn.Module):

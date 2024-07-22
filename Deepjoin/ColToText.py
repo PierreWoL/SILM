@@ -3,6 +3,8 @@ from typing import Any, Dict, Tuple
 import os
 import pandas as pd
 import nltk
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections import defaultdict
 
 
 def token(text):
@@ -25,9 +27,11 @@ class ColToTextTransformer:
         naming_df = pd.read_csv(naming_file)
         self.naming_dict =  naming_df.set_index(naming_df.columns[0])[naming_df.columns[1]].to_dict()
         #naming_dict[table_name]
-        for table_name in self.tables:
+        for index, table_name in enumerate(self.tables):
             fn = os.path.join(self.path, table_name)
             self.table_cache[table_name]=pd.read_csv(fn)  # encoding="latin-1",
+
+        print(len(self.tables), len(self.table_cache))
 
         if os.path.isfile(os.path.join(self.path,'tokens.pickle')):
             with open(os.path.join(self.path,'tokens.pickle'), 'rb') as f:
@@ -35,16 +39,18 @@ class ColToTextTransformer:
         else:
             self.frequency_dictionary = self._create_frequency_dictionary()
 
+
     def _create_frequency_dictionary(self) -> Dict[Any, int]:
         column_cache = []
         unique_cell_values = set()
-        for table in self.table_cache.values():
+        for name, table in self.table_cache.items():
             for column_name in table.columns:
                 column = table[column_name]
                 tokenized_column = [process_cell(cell) for cell in column]
                 unique_values_in_column = set(tokenized_column)
                 column_cache.append(unique_values_in_column)
                 unique_cell_values.update(unique_values_in_column)
+            print("table ",name, "unique_cell_values", len(unique_cell_values) )
         frequency_dict = {cell: 0 for cell in unique_cell_values}
         for cell in frequency_dict:
             for token_col in column_cache:
@@ -54,10 +60,12 @@ class ColToTextTransformer:
             pickle.dump(frequency_dict, f)
         return frequency_dict
 
+
+
     def get_all_column_representations(self, method: str = "title-colname-stat-col",
                                        shuffle_column_values: bool = False) -> Dict[str, Dict[str, str]]:
         column_representations = {}
-        #n=0
+        n=0
         for table_name, table in self.table_cache.items():
             #print(table_name, table, self.naming_dict[table_name])
             table_column_representations = {}
@@ -87,11 +95,11 @@ class ColToTextTransformer:
                                                                                                     table_title=self.naming_dict[table_name])
                 else:
                     raise ValueError(f"Method {method} not supported")
-                print("Current column is",column,len(self.tokenizer(table_column_representations[column])),"\n",table_column_representations[column])
+                # print("Current column is",column,len(self.tokenizer(table_column_representations[column])),"\n",table_column_representations[column])
             column_representations[table_name] = table_column_representations
-            #n += 1
-            #if n == 20:
-                #break
+            n += 1
+            if n == 50:
+                break
         return column_representations
 
     def col(self, column: pd.Series, prefix_text: str = '',

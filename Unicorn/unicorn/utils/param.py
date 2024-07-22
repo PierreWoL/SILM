@@ -9,7 +9,7 @@ cls = 1
 encoder_path = "encoder.pt"
 moe_path = "moe.pt"
 cls_path = "cls.pt"
-model_root = "checkpoint"
+model_root = "E:\Project\CurrentDataset\\Unicorn\checkpoint\\"
 num_labels = 2
 hidden_size = 768
 

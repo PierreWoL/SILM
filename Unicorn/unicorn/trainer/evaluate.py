@@ -1,8 +1,42 @@
 import torch
 import torch.nn as nn
 import json
-from unicorn.utils.utils import make_cuda
-from unicorn.dataprocess import dataformat
+from Unicorn.unicorn.utils.utils import make_cuda
+from Unicorn.unicorn.dataprocess import dataformat
+
+def matchingOutput(encoder, moelayer, classifier, data_loader, args=None, index=-1, flag=None):
+    """Output the results of column matching"""
+    encoder.eval()
+    moelayer.eval()
+    classifier.eval()
+    # init loss and accuracy
+    probility = {}
+    predictions = []
+    averagegateweight = torch.Tensor([0 for _ in range(args.expertsnum)]).cuda()
+    for (reviews, mask, segment, labels, exm_id, task_id) in data_loader:
+        reviews = make_cuda(reviews)
+        mask = make_cuda(mask)
+        segment = make_cuda(segment)
+        labels = make_cuda(labels)
+        with torch.no_grad():
+            feat = encoder(reviews, mask, segment)
+            if index == -1:
+                if args.load_balance:
+                    moeoutput, balanceloss, _, gateweights = moelayer(feat)
+                    averagegateweight += gateweights
+                else:
+                    moeoutput, gateweights = moelayer(feat)
+                    averagegateweight += gateweights
+            else:
+                moeoutput, _ = moelayer(feat, gate_idx=index)
+            preds = classifier(moeoutput)
+            if flag == "get_prob":
+                for i in range(len(preds)):
+                    probility[exm_id[i].item()] = preds[i][1].item()
+        pred_cls = preds.data.max(1)[1]
+        for i in range(len(labels)):
+            predictions.append(pred_cls[i])
+    return predictions
 
 
 def evaluate_moe(encoder, moelayer, classifier, data_loader, args=None, index=-1, flag=None, write=False, prob_name=None, all=None):
@@ -31,6 +65,7 @@ def evaluate_moe(encoder, moelayer, classifier, data_loader, args=None, index=-1
         mask = make_cuda(mask)
         segment = make_cuda(segment)
         labels = make_cuda(labels)
+
         truelen = torch.sum(mask, dim=1)
         
         with torch.no_grad():
@@ -48,6 +83,7 @@ def evaluate_moe(encoder, moelayer, classifier, data_loader, args=None, index=-1
             else:
                 moeoutput,_ = moelayer(feat,gate_idx=index)
             preds = classifier(moeoutput)
+
             if flag == "get_prob":
                 for i in range(len(preds)):
                     probility[exm_id[i].item()] = preds[i][1].item()
@@ -57,6 +93,7 @@ def evaluate_moe(encoder, moelayer, classifier, data_loader, args=None, index=-1
 
         loss += criterion(preds, labels).item()
         pred_cls = preds.data.max(1)[1]
+        #print("label length", len(labels),"pred_cls",pred_cls, len(pred_cls))
 
         acc += pred_cls.eq(labels.data).cpu().sum().item()
         for i in range(len(labels)):

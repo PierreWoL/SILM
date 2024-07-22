@@ -3,8 +3,8 @@ import torch.optim as optim
 import datetime
 import copy
 import numpy as np
-from unicorn.utils.utils import make_cuda, save_model
-from unicorn.utils import param
+from Unicorn.unicorn.utils.utils import make_cuda, save_model
+from Unicorn.unicorn.utils import param
 from .evaluate import evaluate_moe, evaluate_wo_moe
 
 def train_moe(args, encoder, moelayer, classifiers,

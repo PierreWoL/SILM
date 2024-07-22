@@ -1,5 +1,7 @@
 # Here, we use sentence-transformers, not just transformers package, so that it is consistent with the paper.
 import os
+import pickle
+
 import torch
 from torch.nn.parallel import DataParallel
 from sentence_transformers import SentenceTransformer, LoggingHandler, losses, InputExample
@@ -22,13 +24,17 @@ def construct_train_dataset(path, naming_file, model_name: str = None,
     model = SentenceTransformer(model_name, device=device)  #
     col_to_text = ColToTextTransformer(path, naming_file, model.tokenizer)
     column_representations = col_to_text.get_all_column_representations(method=column_to_text_transformation)
+    with open(os.path.join(path, f'column_representations.pickle'), 'wb') as f:
+        pickle.dump(column_representations, f)
     # To get the positive pairs, we follow the approach in OmniMatch, where "positive training pairs are generated
     # based on pairwise cosine similarity of initial column representations (more than or equal to 0.9 ot ensure
     # high true positive rates)".
-    flatten_representation = [column_representation
+
+
+    """flatten_representation = [column_representation
                               for table_name, table_representation in column_representations.items()
                               for column_name, column_representation in table_representation.items()]
-    print(len(flatten_representation),flatten_representation[:3])
+    print(len(flatten_representation))
 
     embeddings = model.encode(flatten_representation, device=device)
     similarities = cos_sim(embeddings, embeddings)
@@ -54,8 +60,9 @@ def construct_train_dataset(path, naming_file, model_name: str = None,
                                            for column_name, column_representation in table_representation.items()]
         for i, j in to_be_shuffled:
             positive_pairs.add((shuffled_flatten_representation[i], flatten_representation[j]))  # (X', Y)
-    print(positive_pairs)
-    return list(positive_pairs)
+    print(len(positive_pairs))
+    return list(positive_pairs)"""
+
 
 
 def train_model(model_name: str, train_dataset, dev_samples=None, model_save_path: str = None, batch_size: int = 32,

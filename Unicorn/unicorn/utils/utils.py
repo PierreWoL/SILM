@@ -9,7 +9,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import matplotlib.pyplot as plt
 
-from unicorn.utils import param
+from Unicorn.unicorn.utils import param
 
 
 def read_csv(input_file):
