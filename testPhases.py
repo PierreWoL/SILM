@@ -143,11 +143,11 @@ def find_clusters(data_pairs, dataset=None):
             clusters.append(cluster)
             if dataset is not None:
                 result_set.update(cluster)
-    if len(result_set) > 0:
-        print(len(result_set), result_set)
+    #if len(result_set) > 0:
+        #print(len(result_set), result_set)
 
         lef_clusters = set(dataset) - result_set
-        print(lef_clusters)
+        #print(lef_clusters)
         for table in lef_clusters:
             clusters.append([table])
     cluster_dict = {index: [i for i in cluster] for index, cluster in enumerate(clusters)}
@@ -195,7 +195,6 @@ def read_column_corpus(dataset, isSubCol=False, rest=False, max_token=255, selec
                 column_store = transfromCol(table.iloc[:, sub_index])
                 # column_store = cut(tokenizer,column_store)
                 table_dict[table_name[:-4]] = column_store
-                # print(column_store)
         elif rest is True:
             rest_index = [i for i in rest_index if i != sub_index]
             for index in rest_index:
@@ -213,7 +212,6 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
     else:
         if selected is not None:
             corpus = read_column_corpus(dataset, rest=True, selected_dataset=selected)
-            print(len(corpus))
         else:
             corpus = read_column_corpus(dataset, rest=True)
     write(corpus, pathStore(dataset, f"P{phase}",Name), "corpus")
@@ -235,9 +233,6 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
     end_time_encode = time.time()
     elapsed_time_encode = end_time_encode - start_time_encode
     print("encode time", elapsed_time_encode)
-
-    # test print
-    print("pairs length", len(predicts), len(table_pairs))
     start_time_cluster = time.time()
     data_pairs = [(table_pairs[index][0], table_pairs[index][1], predicts[index]) for index in range(len(table_pairs))]
     write(data_pairs, pathStore(dataset, f"P{phase}",Name), "dataPairs")
@@ -246,13 +241,6 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
     end_time_cluster = time.time()
     elapsed_time_cluster = end_time_cluster - start_time_cluster
     print("cluster time", elapsed_time_cluster)
-    """
-        total = 0
-        for cluster in clusters:
-            print(cluster)
-            total += len(cluster)
-        print("total data", total)
-        """
     return clusters
 
 
@@ -266,7 +254,6 @@ def phase1(encoder, moelayer, classifiers, dataset):
     folderName = os.getcwd() + f"/datasets/{dataset}"
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, clusters, None,
                                      gt_clusters0)
-    print(metrics_value)
 
 def phase2(encoder, moelayer, classifiers, dataset):
     data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
@@ -276,9 +263,8 @@ def phase2(encoder, moelayer, classifiers, dataset):
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
         tables = [i+".csv" for i in Ground_t[clu]]
         clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
-        print("result clusters", clusters)
         metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
-        print(metrics_value)
+        print(clu, metrics_value)
 
 
 
