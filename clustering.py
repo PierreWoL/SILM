@@ -34,6 +34,7 @@ def jaccard_similarity(set1, set2):
 
 
 def rand_Index_custom(predicted_labels, ground_truth_labels):
+    print(len(predicted_labels))
     true_positive = 0
     true_negative = 0
     false_positive = 0
@@ -44,6 +45,7 @@ def rand_Index_custom(predicted_labels, ground_truth_labels):
         i_true = ground_truth_labels[i]
         for j in range(i, len(predicted_labels)):
             if i != j:
+                all += 1
                 j_predict = predicted_labels[j]
                 j_true = ground_truth_labels[j]
                 jaccard_sim_predict = jaccard_similarity(set(i_predict), set(j_predict))
@@ -58,7 +60,8 @@ def rand_Index_custom(predicted_labels, ground_truth_labels):
                     false_positive += 1
                 elif jaccard_sim_predict == 0 and jaccard_sim_true > 0:
                     false_negative += 1
-                all += 1
+
+    print(f"TP {true_positive}, TN {true_negative} all {all}")
     RI = (true_positive + true_negative) / all
     return RI
 
@@ -667,6 +670,7 @@ def clustering_results(input_data, tables, data_path, clusteringName, groundTrut
     max = 3 * number_estimate
     # cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
     cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
+    print(cluster_dict)
     end_time = time.time()
     time_difference_run = end_time - star_time
     if groundTruth is None:
