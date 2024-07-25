@@ -304,7 +304,7 @@ def tree_consistency_metric(tables, JaccardMatrix, embedding_file, dataset,
     Create folder for the results
     """
     if store_results is True:
-        result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
+        result_folder = os.path.join("result/P4/", dataset, Naming, cluster_name)
         file_path = os.path.join(result_folder, embedding_file)
         mkdir(file_path)
         mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")

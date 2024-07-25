@@ -4,6 +4,8 @@ import time
 
 import pandas as pd
 
+from ClusterHierarchy.ClusterDecompose import tree_consistency_metric
+from ClusterHierarchy.JaccardMetric import JaccardMatrix
 from TableCluster.tableClustering import column_gts
 from Unicorn.unicorn.model.encoder import DebertaBaseEncoder
 from Unicorn.unicorn.model.matcher import MOEClassifier
@@ -22,9 +24,9 @@ limit = 10000
 csv.field_size_limit(500 * 1024 * 1024)
 
 
-def pathStore(dataset, phase, name = ""):
+def pathStore(dataset, phase, name=""):
     path = os.path.join(f"result/{phase}/{dataset}/")
-    if name !="":
+    if name != "":
         path = os.path.join(f"result/{phase}/{dataset}/{name}/")
     if not os.path.exists(path):
         os.makedirs(path)
@@ -40,7 +42,7 @@ def parse_arguments():
                         help='Force to pretrain source encoder/moe/classifier')
     parser.add_argument('--dataset', type=str, default="WDC",
                         help="chosen dataset")
-    parser.add_argument('--step', type=str, default="P2",
+    parser.add_argument('--step', type=str, default="P3",
                         help="chosen PHASE")
     parser.add_argument('--seed', type=int, default=42,
                         help="Specify random state")
@@ -115,7 +117,6 @@ def parse_arguments():
 args = parse_arguments()
 
 
-
 def find_clusters(data_pairs, dataset=None):
     from collections import defaultdict
     result_set = set()
@@ -143,11 +144,11 @@ def find_clusters(data_pairs, dataset=None):
             clusters.append(cluster)
             if dataset is not None:
                 result_set.update(cluster)
-    #if len(result_set) > 0:
-        #print(len(result_set), result_set)
+        # if len(result_set) > 0:
+        # print(len(result_set), result_set)
 
         lef_clusters = set(dataset) - result_set
-        #print(lef_clusters)
+        # print(lef_clusters)
         for table in lef_clusters:
             clusters.append([table])
     cluster_dict = {index: [i for i in cluster] for index, cluster in enumerate(clusters)}
@@ -157,6 +158,12 @@ def find_clusters(data_pairs, dataset=None):
 def write(target, path, name):
     with open(os.path.join(path, f'{name}_{args.dataset}.pickle'), 'wb') as f:
         pickle.dump(target, f)
+
+
+def read(path, name):
+    with open(os.path.join(path, f'{name}_{args.dataset}.pickle'), 'rb') as f:
+        target = pickle.load(f)
+    return target
 
 
 def transfromCol(column: pd.Series):
@@ -205,7 +212,7 @@ def read_column_corpus(dataset, isSubCol=False, rest=False, max_token=255, selec
     return table_dict
 
 
-def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, Name =""):
+def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, Name=""):
     start_time_encode = time.time()
     if phase == 1:
         corpus = read_column_corpus(dataset, isSubCol=True)
@@ -214,7 +221,7 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
             corpus = read_column_corpus(dataset, rest=True, selected_dataset=selected)
         else:
             corpus = read_column_corpus(dataset, rest=True)
-    write(corpus, pathStore(dataset, f"P{phase}",Name), "corpus")
+    write(corpus, pathStore(dataset, f"P{phase}", Name), "corpus")
     tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-base')
     table_names = list(corpus.keys())
     test_data_loaders = []
@@ -227,7 +234,7 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
     fea = predata.convert_examples_to_features(pairs, max_seq_length=args.max_seq_length, tokenizer=tokenizer)
     test_data_loaders.append(predata.convert_fea_to_tensor(fea, 32, do_train=0))
 
-    write(test_data_loaders, pathStore(dataset, f"P{phase}",Name), "testDataLoader")
+    write(test_data_loaders, pathStore(dataset, f"P{phase}", Name), "testDataLoader")
 
     predicts = evaluate.matchingOutput(encoder, moelayer, classifiers, test_data_loaders[0], args=args)
     end_time_encode = time.time()
@@ -235,7 +242,7 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
     print("encode time", elapsed_time_encode)
     start_time_cluster = time.time()
     data_pairs = [(table_pairs[index][0], table_pairs[index][1], predicts[index]) for index in range(len(table_pairs))]
-    write(data_pairs, pathStore(dataset, f"P{phase}",Name), "dataPairs")
+    write(data_pairs, pathStore(dataset, f"P{phase}", Name), "dataPairs")
     table_names = list(corpus.keys())
     clusters = find_clusters(data_pairs, table_names)
     end_time_cluster = time.time()
@@ -255,25 +262,35 @@ def phase1(encoder, moelayer, classifiers, dataset):
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, clusters, None,
                                      gt_clusters0)
 
+
 def phase2(encoder, moelayer, classifiers, dataset):
     data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
     ground_truth_table = os.getcwd() + f"/datasets/{dataset}/groundTruth.csv"
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        tables = [i+".csv" for i in Ground_t[clu]]
+        tables = [i + ".csv" for i in Ground_t[clu]]
         clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
         metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
         print(clu, metrics_value)
 
 
+def phase3(dataset, intervalSlice, delta):
+    data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
+    ground_truth_table = os.getcwd() + f"/datasets/{dataset}/groundTruth.csv"
 
-    """
-    gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, ground_truth)
-    gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, ground_truth, superclass=False)
-
-    """
-
+    Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
+    gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
+    for index, clu in enumerate(list(gt_cluster_dict.keys())):
+        tables = [i + ".csv" for i in Ground_t[clu]]
+        corpus = read(pathStore(dataset, f"P2", clu), "corpus")
+        data_pairs = read(pathStore(dataset, f"P2", clu), "dataPairs")
+        colClusters = find_clusters(data_pairs, list(corpus.keys()))
+        jaccard_score = JaccardMatrix(colClusters, data_path)[2]
+        TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
+                                                cluster_name="Connect", Naming=str(index),
+                                                sliceInterval=intervalSlice, delta=delta)[:-1]
+        print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
 
 
 def main():
@@ -300,7 +317,7 @@ def main():
     if args.step == "P2":
         phase2(encoder, moelayer, classifiers, args.dataset)
     if args.step == "P3":
-        phase1(encoder, moelayer, classifiers, args.dataset)
+        phase3(args.dataset, 10, 0.01)
     if args.step == "P4":
         phase1(encoder, moelayer, classifiers, args.dataset)
 
