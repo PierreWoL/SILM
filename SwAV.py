@@ -95,7 +95,7 @@ parser.add_argument("--world_size", default=-1, type=int, help="""
 parser.add_argument("--rank", default=0, type=int, help="""rank of this process:
                     it is set automatically and should not be passed as argument""")
 #parser.add_argument("--local_rank", default=0, type=int,
- #                   help="this argument is not used and should be ignored")
+              #      help="this argument is not used and should be ignored")
 
 #########################
 #### other parameters ###
@@ -127,8 +127,9 @@ def main():
 
     hostname = socket.gethostname()
     master_node = socket.gethostbyname(hostname)
-    port = 8080
+    port = 40000
     args.dist_url = f"tcp://{master_node}:{port}"
+    args.local_rank = os.environ['LOCAL_RANK']
     ### Start here
     init_distributed_mode(args)
     fix_random_seeds(args.seed)
