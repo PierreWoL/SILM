@@ -43,7 +43,7 @@ if __name__ == "__main__":
         with open(os.path.join(f"datasets/{dataset}/",
                                f'trainDeepJoinData{dataset}_{args.datasetSize}.pickle'), 'wb') as f:
             pickle.dump(train_dataset, f)
-        print("Succeeded in  building and saving training dataset...")
+        print("Succeeded in building and saving training dataset...")
 
     """
     train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None, model_save_path=f"model/WDC/Deepjoin{dataset}.pt",

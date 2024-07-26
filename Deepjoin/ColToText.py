@@ -3,6 +3,8 @@ from typing import Dict, Tuple
 import os
 import pandas as pd
 import nltk
+
+from Utils import childList
 from d3l.utils.functions import tokenize_with_number
 
 
@@ -23,10 +25,7 @@ def _calculate_column_statistics(column: pd.Series) -> Tuple[int, int, int, floa
     avg_length = column.map(lambda x: len(str(x))).mean()
     return len(column), max_length, min_length, avg_length
 
-def childList(cut_list, select_length):
-    if len(cut_list) < select_length:
-       return cut_list
-    return  random.sample(cut_list, select_length)
+
 class ColToTextTransformer:
 
     def __init__(self, path, naming_file, tokenizer, max_length: int = 512, shuffle=False,select=200):
