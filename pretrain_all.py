@@ -42,6 +42,7 @@ if __name__ == '__main__':
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow tfidf_cell
     # mlflow tag
     parser.add_argument("--mlflow_tag", type=str, default=None)
+    parser.add_argument("--datasetSize", type=int, default=200)
 
     hp = parser.parse_args()
 

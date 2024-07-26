@@ -6,6 +6,7 @@ import random
 import pandas as pd
 import os
 from sentence_transformers import SentenceTransformer
+from Utils import childList
 
 from Utils import subjectCol
 from torch.utils import data
@@ -37,7 +38,8 @@ class  PretrainTableDataset(data.Dataset):
                  pretrain=False,
                  sample_meth='wordProb',
                  table_order='column',
-                 check_subject_Column='subjectheader'):
+                 check_subject_Column='subjectheader',
+                 select = 200):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
                                                        selectable_pos=1)
         # pretained-LM
@@ -75,6 +77,8 @@ class  PretrainTableDataset(data.Dataset):
         self.isCombine = False
 
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        self.tables = childList(self.tables , select)
+        print(len(self.tables))
         
         self.columns = []
         # only keep the first n tables
@@ -144,7 +148,8 @@ class  PretrainTableDataset(data.Dataset):
                                     table_order=hp.table_order,
                                     header=hp.header,
                                     pretrain=hp.pretrain,
-                                    check_subject_Column=hp.check_subject_Column)
+                                    check_subject_Column=hp.check_subject_Column,
+                                    select = hp.datasetSize)
 
     def _read_table(self, table_id):
         """Read a table"""

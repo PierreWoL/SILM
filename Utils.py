@@ -1,5 +1,6 @@
 import os
 import pickle
+import random
 
 import numpy as np
 import pandas as pd
@@ -93,7 +94,10 @@ def subjectColDetection(DATA_PATH, RESULT_PATH=None):
         with open(os.path.join(RESULT_PATH, 'dict.pickle'), "wb") as save_file:
             pickle.dump(table_dict, save_file)
     return table_dict
-
+def childList(cut_list, select_length):
+    if len(cut_list) < select_length:
+       return cut_list
+    return  random.sample(cut_list, select_length)
 
 def subjectCol(table: pd.DataFrame):
     sub_cols_header = []
