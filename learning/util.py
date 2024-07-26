@@ -46,12 +46,11 @@ def bool_flag(s):
 
 def init_distributed_mode(args):
     """
-    Initialize the following variables:
-        - world_size
-        - rank
-    """
+       Initialize the following variables:
+           - world_size
+           - rank
+       """
 
-    """
     args.is_slurm_job = "SLURM_JOB_ID" in os.environ
 
     if args.is_slurm_job:
@@ -64,19 +63,13 @@ def init_distributed_mode(args):
         # read environment variables
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ["WORLD_SIZE"])
-    """
-    args.is_pbs_job = "PBS_JOBID" in os.environ
 
-    if not args.is_pbs_job:
-        args.rank = int(os.environ["RANK"])
-        args.world_size = int(os.environ["WORLD_SIZE"])
-    print(args.dist_url)
     # prepare distributed
     dist.init_process_group(
-        backend="nccl",#gloo
+        backend="nccl",
         init_method=args.dist_url,
         world_size=args.world_size,
-        rank=args.rank
+        rank=args.rank,
     )
 
     # set cuda device

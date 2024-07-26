@@ -18,20 +18,23 @@ from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 logger = logging.getLogger(__name__)
 
 
-def construct_train_dataset(path, naming_file, model_name: str = None,
+def construct_train_dataset(path, naming_file, model_name: str = None, select_num = 200,
                             column_to_text_transformation: str = "title-colname-stat-col",
                             shuffle_rate: float = 0.2, seed: int = 42, device="cuda"):
     model = SentenceTransformer(model_name, device=device)  #
-    col_to_text = ColToTextTransformer(path, naming_file, model.tokenizer)
-    column_representations = col_to_text.get_all_column_representations(method=column_to_text_transformation)
+    if shuffle_rate >0:
+        shuffle = True
+    else:
+        shuffle = False
+    col_to_text = ColToTextTransformer(path, naming_file, model.tokenizer,shuffle=shuffle, select= select_num)
+    column_representations, shuffled_column_representations = (
+        col_to_text.get_all_column_representations(method=column_to_text_transformation))
     with open(os.path.join(path, f'column_representations.pickle'), 'wb') as f:
         pickle.dump(column_representations, f)
     # To get the positive pairs, we follow the approach in OmniMatch, where "positive training pairs are generated
     # based on pairwise cosine similarity of initial column representations (more than or equal to 0.9 ot ensure
     # high true positive rates)".
-
-
-    """flatten_representation = [column_representation
+    flatten_representation = [column_representation
                               for table_name, table_representation in column_representations.items()
                               for column_name, column_representation in table_representation.items()]
     print(len(flatten_representation))
@@ -49,19 +52,14 @@ def construct_train_dataset(path, naming_file, model_name: str = None,
     if shuffle_rate > 0:
         # sample from the positive pairs
         random.seed(seed)
-        # print(positive_pairs_indices,int(shuffle_rate * len(positive_pairs_indices)) )
         to_be_shuffled = random.sample(list(positive_pairs_indices), int(shuffle_rate * len(positive_pairs_indices)))
-
-        shuffled_column_representations = col_to_text.get_all_column_representations(
-            method=column_to_text_transformation,
-            shuffle_column_values=True)
         shuffled_flatten_representation = [column_representation for table_name, table_representation
                                            in shuffled_column_representations.items()
                                            for column_name, column_representation in table_representation.items()]
         for i, j in to_be_shuffled:
             positive_pairs.add((shuffled_flatten_representation[i], flatten_representation[j]))  # (X', Y)
     print(len(positive_pairs))
-    return list(positive_pairs)"""
+    return list(positive_pairs)
 
 
 

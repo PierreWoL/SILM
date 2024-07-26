@@ -84,7 +84,7 @@ def subjectColDetection(DATA_PATH, RESULT_PATH=None):
         table_names = [i for i in os.listdir(DATA_PATH) if i.endswith(".csv")]
         for tableName in table_names:
             table_dict[tableName] = []
-            table_ori = pd.read_csv(os.path.join(DATA_PATH, tableName))
+            table_ori = pd.read_csv(os.path.join(DATA_PATH, tableName), encoding="latin1")
             annotation_table = TA(table_ori, SearchingWeb=False)
             annotation_table.subcol_Tjs()
             table_dict[tableName].append(annotation_table.annotation)
@@ -100,10 +100,11 @@ def subjectCol(table: pd.DataFrame):
     annotation_table = TA(table, SearchingWeb=False)
     annotation_table.subcol_Tjs()
     NE_column_score = annotation_table.column_score
-    max_score = max(NE_column_score.values())
-    subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
-    for index in subcol_index:
-        sub_cols_header.append(table.columns[index])
+    if len(NE_column_score)>0:
+        max_score = max(NE_column_score.values())
+        subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+        for index in subcol_index:
+            sub_cols_header.append(table.columns[index])
     return sub_cols_header
 
 

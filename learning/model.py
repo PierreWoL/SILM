@@ -28,7 +28,7 @@ class BarlowTwinsSimCLR(nn.Module):
         self.bert = AutoModel.from_pretrained(lm_mp[lm])
         self.device = device
         #hidden_size = 768
-        hidden_size = self.transformer.config.hidden_size
+        hidden_size = self.bert.config.hidden_size
 
         # projector
         self.projector = nn.Linear(hidden_size, hp.projector)

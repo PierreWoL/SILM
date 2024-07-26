@@ -8,6 +8,7 @@ from Deepjoin.train import construct_train_dataset, train_model2, train_model
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--colToText", type=str, default="title-colname-stat-col", help="col to text transformation")
+parser.add_argument("--datasetSize", type=int, default=200)
 parser.add_argument("--model_name", type=str, default="all-mpnet-base-v2", help="Base model name for training")
 parser.add_argument("--dataset", type=str, default="GDS", help="used dataset")
 parser.add_argument("--shuffle_rate", type=float, default=0.3)
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dataset = args.dataset
-    model_name = "all-mpnet-base-v2"  # multi-qa-distilbert-cos-v1
+    model_name = "all-mpnet-base-v2"
     data_path = f"datasets/{dataset}/Test/"
     naming_file = f"datasets/{dataset}/naming.csv"
     if os.path.isfile(os.path.join(f"datasets/{dataset}/", f'trainDeepJoinData{dataset}.pickle')):
@@ -37,10 +38,12 @@ if __name__ == "__main__":
         print("Start constructing training dataset...")
         train_dataset = construct_train_dataset(data_path, naming_file, model_name=model_name,
                                                 column_to_text_transformation=args.colToText,
-                                                shuffle_rate=args.shuffle_rate, device=device)
-        with open(os.path.join(f"datasets/{dataset}/", f'trainDeepJoinData{dataset}50.pickle'), 'wb') as f:
+                                                shuffle_rate=args.shuffle_rate, device=device,
+                                                select_num=args.datasetSize)
+        with open(os.path.join(f"datasets/{dataset}/",
+                               f'trainDeepJoinData{dataset}_{args.datasetSize}.pickle'), 'wb') as f:
             pickle.dump(train_dataset, f)
-        #print("Succeeded in  building and saving training dataset...")
+        print("Succeeded in  building and saving training dataset...")
 
     """
     train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None, model_save_path=f"model/WDC/Deepjoin{dataset}.pt",

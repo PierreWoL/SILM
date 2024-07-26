@@ -5,7 +5,7 @@ Based on https://github.com/megagonlabs/starmie/
 import numpy as np
 import pandas as pd
 import random
-from TFIDF import table_tfidf, roulette_wheel_selection
+from learning.TFIDF import table_tfidf, roulette_wheel_selection
 import math
 
 def split(column: pd.Series):
