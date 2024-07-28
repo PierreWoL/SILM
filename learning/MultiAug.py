@@ -12,10 +12,12 @@ from logging import getLogger
 import torch
 from transformers import AutoTokenizer
 
+from Utils import childList
+
 logger = getLogger()
 from torch.utils.data import Dataset
 import pandas as pd
-from augment import augment
+from learning.augment import augment
 
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
@@ -79,7 +81,7 @@ class MultiCropTableDataset(Dataset):
         else:
             self.samples = [fn for fn in os.listdir(path) if '.csv' in fn]
         if size_dataset >= 0:
-            self.samples = self.samples[:size_dataset]
+            self.samples = childList(self.samples, size_dataset)
         self.return_index = return_index
         """
         The views that needs to be shuffled

@@ -13,7 +13,7 @@ import os
 import numpy as np
 import torch
 
-from logger import create_logger, PD_Stats
+from learning.logger import create_logger, PD_Stats
 
 import torch.distributed as dist
 

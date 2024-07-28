@@ -19,10 +19,10 @@ import torch.optim
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
-from MultiAug import MultiCropTableDataset
-import model_swav as transformer
+from learning.MultiAug import MultiCropTableDataset
+from learning import model_swav as transformer
 import socket
-from util import (
+from learning.util import (
     bool_flag,
     initialize_exp,
     restart_from_checkpoint,
@@ -41,9 +41,10 @@ parser.add_argument("--data_path", type=str, default="E:\Project\CurrentDataset\
                     help="path to dataset repository")
 parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
                     help="list of number of crops (example: [2, 6])")
-
 parser.add_argument("--percentage_crops", type=float, default=[0.6, 0.4], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
+parser.add_argument("--datasetSize", default=8, type=int,
+                    help="the size of training dataset")
 
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
                     help="crops resolutions (example: sample_cells_TFIDF)")
@@ -93,8 +94,8 @@ parser.add_argument("--world_size", default=-1, type=int, help="""
                     should not be passed as argument""")
 parser.add_argument("--rank", default=0, type=int, help="""rank of this process:
                     it is set automatically and should not be passed as argument""")
-parser.add_argument("--local_rank", default=0, type=int,
-                    help="this argument is not used and should be ignored")
+#parser.add_argument("--local_rank", default=0, type=int,
+              #      help="this argument is not used and should be ignored")
 
 #########################
 #### other parameters ###
@@ -126,8 +127,9 @@ def main():
 
     hostname = socket.gethostname()
     master_node = socket.gethostbyname(hostname)
-    port = 8080
+    port = 40000
     args.dist_url = f"tcp://{master_node}:{port}"
+    args.local_rank = os.environ['LOCAL_RANK']
     ### Start here
     init_distributed_mode(args)
     fix_random_seeds(args.seed)
@@ -147,7 +149,7 @@ def main():
         augmentation_methods=augmentation_methods,
         column=args.column,
         header=args.header,
-        size_dataset=8
+        size_dataset=args.datasetSize
     )  #
     # This should be removed later
     for element in train_dataset[0]:
@@ -414,3 +416,4 @@ def distributed_sinkhorn(out):
 
 if __name__ == "__main__":
     main()
+#python -m torch.distributed.launch --nproc_per_node=1  E:/Project/CurrentDataset/learning/SwAV.py
