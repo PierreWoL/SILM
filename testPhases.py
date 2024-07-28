@@ -276,10 +276,15 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice = 10, delta = 
                 write(clusters, pathStore(dataset, f"P2", clu), "clusters")
                 metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
                 print(clu, metrics_value)
+
+                start_time_cluster = time.time()
                 jaccard_score = JaccardMatrix(clusters, data_path)[2]
                 TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
                                                         cluster_name="Connect", Naming=str(index),
                                                         sliceInterval=intervalSlice, delta=delta)[:-1]
+                end_time_cluster = time.time()
+                elapsed_time_cluster = end_time_cluster - start_time_cluster
+                print("P3 time", elapsed_time_cluster)
                 print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
         except:
             print("failed!")
