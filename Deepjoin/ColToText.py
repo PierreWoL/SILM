@@ -46,7 +46,7 @@ class ColToTextTransformer:
 
         print(len(self.tables), len(self.table_cache))
 
-    def get_all_column_representations(self, method: str = "title-colname-stat-col") -> Dict[str, Dict[str, str]]:
+    def get_all_column_representations(self, method: str = "title-colname-stat-col"):
         column_representations = {}
         shuffled_representations = {}
         n = 0
@@ -93,7 +93,7 @@ class ColToTextTransformer:
             n += 1
             """if n == 50:
                 break"""
-        return column_representations
+        return column_representations,shuffled_representations
 
     def col(self, column: pd.Series, prefix_text: str = '',
             suffix_text: str = ''):

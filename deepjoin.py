@@ -8,9 +8,9 @@ from Deepjoin.train import construct_train_dataset, train_model2, train_model
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--colToText", type=str, default="title-colname-stat-col", help="col to text transformation")
-parser.add_argument("--datasetSize", type=int, default=200)
+parser.add_argument("--datasetSize", type=int, default=4)
 parser.add_argument("--model_name", type=str, default="all-mpnet-base-v2", help="Base model name for training")
-parser.add_argument("--dataset", type=str, default="GDS", help="used dataset")
+parser.add_argument("--dataset", type=str, default="WDC", help="used dataset")
 parser.add_argument("--shuffle_rate", type=float, default=0.3)
 parser.add_argument("--batch_size", type=int, default=64)
 parser.add_argument("--learning_rate", type=float, default=2e-5)
