@@ -8,6 +8,12 @@ conda activate py39
 source /mnt/iusers01/fatpou01/compsci01/c29770zw/test/CurrentDataset/datavenv/bin/activate
 module avail libs/nccl
 
+nodelist=$(awk '{print $1}' $PE_HOSTFILE | tr '\n' ',' | sed 's/,$//')
+echo "Node List: $nodelist"
+master_node=$(head -n 1 $PE_HOSTFILE | awk '{print $1}')
+echo "Master node: $master_node"
+dist_url="tcp://$master_node:40000"
+echo "Distributed URL: $dist_url"
 #python -m torch.distributed.run --nproc_per_node=1 --rdzv_id=123 --rdzv_backend=c10d
 selected_datasets=(12)
 for num in "${selected_datasets[@]}"
