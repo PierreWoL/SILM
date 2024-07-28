@@ -94,8 +94,7 @@ parser.add_argument("--world_size", default=-1, type=int, help="""
                     should not be passed as argument""")
 parser.add_argument("--rank", default=0, type=int, help="""rank of this process:
                     it is set automatically and should not be passed as argument""")
-#parser.add_argument("--local_rank", default=0, type=int,
-              #      help="this argument is not used and should be ignored")
+parser.add_argument("--local_rank", default=0, type=int, help="this argument is not used and should be ignored")
 
 #########################
 #### other parameters ###
@@ -120,19 +119,9 @@ parser.add_argument("--seed", type=int, default=31, help="seed")
 def main():
     global args
     args = parser.parse_args()
-
-    """
-    This needs to change later
-    """
-
-    hostname = socket.gethostname()
-    master_node = socket.gethostbyname(hostname)
-    port = 40000
-    args.dist_url = f"tcp://{master_node}:{port}"
-    args.local_rank = os.environ['LOCAL_RANK']
-    ### Start here
+    # args.local_rank = os.environ['LOCAL_RANK']
     init_distributed_mode(args)
-    fix_random_seeds(args.seed)
+    """fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
 
     # build data
@@ -199,11 +188,9 @@ def main():
         num_warmup_steps=warmup_steps,
         num_training_steps=total_steps
     )
-    """
-    num_steps = (len(train_dataset) // args.batch_size) * args.epochs
-    scheduler = get_linear_schedule_with_warmup(optimizer,
-                                                num_warmup_steps=0,
-                                                num_training_steps=num_steps)"""
+   
+    # num_steps = (len(train_dataset) // args.batch_size) * args.epochs
+    # scheduler = get_linear_schedule_with_warmup(optimizer,num_warmup_steps=0,num_training_steps=num_steps)
 
     logger.info("Building optimizer done.")
 
@@ -248,12 +235,12 @@ def main():
 
         # optionally starts a queue
         if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
-            """
-            Initialize a new queue with shape (crops_for_assign, queue_length // world_size, feat_dim).
-             len(args.crops_for_assign) indicates the number of crops assigned to the job,
-              args.queue_length // args.world_size indicates the queue length is divided equally among each process
-               and args.feat_dim indicates the feature dimension. The queue is assigned to the GPU (using .cuda()).
-            """
+            ###
+            #Initialize a new queue with shape (crops_for_assign, queue_length // world_size, feat_dim).
+            # len(args.crops_for_assign) indicates the number of crops assigned to the job,
+             # args.queue_length // args.world_size indicates the queue length is divided equally among each process
+             #  and args.feat_dim indicates the feature dimension. The queue is assigned to the GPU (using .cuda()).
+           ###
             queue = torch.zeros(
                 len(args.crops_for_assign),  # crops_for_assign
                 args.queue_length // args.world_size,
@@ -285,6 +272,7 @@ def main():
                 )
         if queue is not None:
             torch.save({"queue": queue}, queue_path)
+"""
 
 
 def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
@@ -416,4 +404,4 @@ def distributed_sinkhorn(out):
 
 if __name__ == "__main__":
     main()
-#python -m torch.distributed.launch --nproc_per_node=1  E:/Project/CurrentDataset/learning/SwAV.py
+# python -m torch.distributed.launch --nproc_per_node=1  E:/Project/CurrentDataset/learning/SwAV.py

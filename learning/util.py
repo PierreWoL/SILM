@@ -51,30 +51,37 @@ def init_distributed_mode(args):
            - rank
        """
 
-    args.is_slurm_job = "SLURM_JOB_ID" in os.environ
+    args.is_slurm_job = False
 
-    if args.is_slurm_job:
-        args.rank = int(os.environ["SLURM_PROCID"])
-        args.world_size = int(os.environ["SLURM_NNODES"]) * int(
-            os.environ["SLURM_TASKS_PER_NODE"][0]
-        )
+    if "PE_HOSTFILE" in os.environ:
+        # Read PE_HOSTFILE to get the list of nodes
+        with open(os.environ["PE_HOSTFILE"], 'r') as f:
+            nodes = [line.split()[0] for line in f.readlines()]
+        print(f"nodes are {nodes}")
+        args.rank = int(os.environ["SGE_TASK_ID"]) - 1 if "SGE_TASK_ID" in os.environ else 0
+        args.world_size = len(nodes) * torch.cuda.device_count()
+        master_node = nodes[0]
+        print(f"master_node is {master_node} and world_size is {args.world_size} AND rank is {args.rank}")
     else:
-        # multi-GPU job (local or multi-node) - jobs started with torch.distributed.launch
-        # read environment variables
-        args.rank = int(os.environ["RANK"])
-        args.world_size = int(os.environ["WORLD_SIZE"])
+        # Fall back to single node multi-GPU setup
+        args.rank = int(os.environ.get("RANK", 0))
+        args.world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
+        master_node = os.environ.get("MASTER_ADDR", "127.0.0.1")
 
-    # prepare distributed
+    # Set dist_url using master_node
+    args.dist_url = f"tcp://{master_node}:40000"
+
+    # Prepare distributed
     dist.init_process_group(
         backend="nccl",
         init_method=args.dist_url,
         world_size=args.world_size,
         rank=args.rank,
     )
-
-    # set cuda device
+    # Set cuda device
     args.gpu_to_work_on = args.rank % torch.cuda.device_count()
     torch.cuda.set_device(args.gpu_to_work_on)
+
     return
 
 
