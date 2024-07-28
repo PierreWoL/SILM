@@ -269,7 +269,7 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice = 10, delta = 
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        try:
+        #try:
             if index>0:
                 tables = [i + ".csv" for i in Ground_t[clu]]
                 clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
@@ -286,8 +286,8 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice = 10, delta = 
                 elapsed_time_cluster = end_time_cluster - start_time_cluster
                 print("P3 time", elapsed_time_cluster)
                 print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
-        except:
-            print("failed!")
+         #except:
+            #print("failed!")
 
 
 def phase3(dataset, intervalSlice, delta):
