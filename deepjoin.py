@@ -45,10 +45,10 @@ if __name__ == "__main__":
             pickle.dump(train_dataset, f)
         print("Succeeded in building and saving training dataset...")
 
-    """
+    
     train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None, model_save_path=f"model/WDC/Deepjoin{dataset}.pt",
                 batch_size=args.batch_size,
                 learning_rate=args.learning_rate, warmup_steps=args.weight_decay,
                 weight_decay=args.weight_decay, num_epochs=args.weight_decay,
                 device=device)
-    """
+    
