@@ -50,27 +50,6 @@ def init_distributed_mode(args):
            - world_size
            - rank
        """
-
-    args.is_slurm_job = False
-
-    if "PE_HOSTFILE" in os.environ:
-        # Read PE_HOSTFILE to get the list of nodes
-        with open(os.environ["PE_HOSTFILE"], 'r') as f:
-            nodes = [line.split()[0] for line in f.readlines()]
-        print(f"nodes are {nodes}")
-        args.rank = int(os.environ["SGE_TASK_ID"]) - 1 if "SGE_TASK_ID" in os.environ else 0
-        args.world_size = len(nodes) * torch.cuda.device_count()
-        master_node = nodes[0]
-        print(f"master_node is {master_node} and world_size is {args.world_size} AND rank is {args.rank}")
-    else:
-        # Fall back to single node multi-GPU setup
-        args.rank = int(os.environ.get("RANK", 0))
-        args.world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
-        master_node = os.environ.get("MASTER_ADDR", "127.0.0.1")
-
-    # Set dist_url using master_node
-    args.dist_url = f"tcp://{master_node}:40000"
-
     # Prepare distributed
     dist.init_process_group(
         backend="nccl",
@@ -80,6 +59,7 @@ def init_distributed_mode(args):
     )
     # Set cuda device
     args.gpu_to_work_on = args.rank % torch.cuda.device_count()
+    print(f"rank is {args.rank}, world_size is {args.world_size} and gpu_to_work_on are {args.gpu_to_work_on}")
     torch.cuda.set_device(args.gpu_to_work_on)
 
     return
