@@ -12,7 +12,6 @@ module load libs/nccl/2.8.3
 
 echo "Job is using $NGPUS GPU(s) with ID(s) $CUDA_VISIBLE_DEVICES and $NSLOTS CPU core(s)"
 
-export TOKENIZERS_PARALLELISM=false
 nodelist=$(awk '{print $1}' $PE_HOSTFILE | tr '\n' ',' | sed 's/,$//')
 echo "Node List: $nodelist"
 master_node=$(head -n 1 $PE_HOSTFILE | awk '{print $1}')
@@ -24,7 +23,7 @@ num_nodes=$(wc -l < $PE_HOSTFILE)
 world_size=$((num_nodes * NGPUS))
 echo "world_size: $world_size "
 
-
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
 EXPERIMENT_PATH="./model/swav/12/"
 mkdir -p $EXPERIMENT_PATH
 mpirun -np $world_size python -u SwAV.py \

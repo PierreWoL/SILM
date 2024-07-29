@@ -29,9 +29,11 @@ from learning.util import (
     AverageMeter,
     init_distributed_mode,
 )
-
+os.environ['TORCH_DISTRIBUTED_DEBUG'] = 'DETAIL'  # Enable detailed debug information
 logger = getLogger()
 parser = argparse.ArgumentParser(description="Implementation of SwAV")
+
+
 
 #########################
 #### data parameters ####
@@ -140,9 +142,9 @@ def main():
         size_dataset=args.datasetSize
     )  #
     # This should be removed later
-    for element in train_dataset[0]:
+    #for element in train_dataset[0]:
         #logger.info(element)
-        print(element)
+       # print(element)
     padder = train_dataset.pad
     sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
@@ -168,6 +170,9 @@ def main():
         nmb_prototypes=args.nmb_prototypes,
         resize=len(train_dataset.tokenizer)
     )
+    for idx, (name, param) in enumerate(model.named_parameters()):
+      if idx in [197,198]:
+        print(f"Index: {idx}, Name: {name}")
     logger.info("model initialize ...")
     # synchronize batch norm layers
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -203,7 +208,7 @@ def main():
         scaler = None
 
     # wrap model
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on])  # test distributed
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on],find_unused_parameters=True)  # test distributed
 
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
@@ -291,6 +296,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
     losses = AverageMeter()
 
     model.train()
+    
     use_the_queue = False
     end = time.time()
     for it, batch in enumerate(train_loader):
@@ -307,9 +313,9 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
             model.module.prototypes.weight.copy_(w)  # for test distributed
 
         # ============ multi-res forward passes ... ============
-        print("batch size is ",len(batch),"\n", (batch),"\n")
+        print(it, "th batch size is ",len(batch) )#(batch),"\n"
         embedding, output = model(batch)
-        print("embedding", embedding.shape,output.shape, "\n", embedding, "\n", output)
+        print("embedding", embedding.shape,output.shape)# ,"\n", embedding, "\n", output
         embedding = embedding.detach()
         bs = batch[0].size(0)
         print("batch size: ", bs)
@@ -344,7 +350,8 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                 subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
         loss /= len(args.crops_for_assign)  # crops_for_assign
-        loss = torch.tensor(loss, device=output.device, dtype=torch.float32)
+        # loss = torch.tensor(loss, device=output.device, dtype=torch.float32)
+        print("current loss is ", loss)
         # ============ backward and optim step ... ============
         if args.use_fp16:
             with torch.cuda.amp.autocast():

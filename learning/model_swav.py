@@ -15,10 +15,6 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
-from logging import getLogger
-logger = getLogger()
-
-
 class TransformerModel(nn.Module):
     def __init__(
             self,
@@ -60,6 +56,7 @@ class TransformerModel(nn.Module):
             self.prototypes = MultiPrototypes(output_dim, nmb_prototypes)
         elif nmb_prototypes > 0:
             self.prototypes = nn.Linear(output_dim, nmb_prototypes, bias=False)
+        print(self.prototypes)
         # cls token id
         self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
 
@@ -92,7 +89,6 @@ class TransformerModel(nn.Module):
         return x
 
     def forward(self, inputs):
-        global output
         x_vals = inputs[:-1]  # Separate out cls_indices
         cls_indices = inputs[-1]
         print(len(x_vals))
@@ -113,9 +109,11 @@ class TransformerModel(nn.Module):
                 output = _out
             else:
                 output = torch.cat((output, _out))
-                print("current length",_out.shape, output.shape)#"output",_out, "\n",output
+            print("current length",_out.shape, output.shape)#"output",_out, "\n",output
             # output=torch.cat(concat, dim=0)
-        return self.forward_head(output)
+        result=  self.forward_head(output)
+        print(f"Result shape: {result[0].shape if isinstance(result, tuple) else result.shape}")
+        return result
 
 
 class MultiPrototypes(nn.Module):
