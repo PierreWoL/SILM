@@ -307,15 +307,16 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
 
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
-        print(embedding, "\n", output)
+        print("embedding", embedding.shape,output.shape, "\n", embedding, "\n", output)
         embedding = embedding.detach()
         bs = batch[0].size(0)
+        print("batch size: ", bs)
         # ============ swav loss ... ============
         loss = 0
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
-                print("out prototype", out)
+                print("out prototype",out.shape, out)
                 # time to use the queue
                 if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
@@ -327,10 +328,10 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
-                    print("out embedding", embedding)
+                    print("out embedding for the queue", queue[i, bs:],queue[i, :bs]  )
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
-
+                print("code q is ", q)
             # cluster assignment prediction
             subloss = 0
             for v in np.delete(np.arange(np.sum(args.nmb_crops)), crop_id):
