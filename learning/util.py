@@ -50,6 +50,9 @@ def init_distributed_mode(args):
            - world_size
            - rank
        """
+    args.rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
+    #args.world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
+    print(f"rank is {os.environ['OMPI_COMM_WORLD_RANK']}, world_size is {os.environ['OMPI_COMM_WORLD_SIZE']} ")
     # Prepare distributed
     dist.init_process_group(
         backend="nccl",
