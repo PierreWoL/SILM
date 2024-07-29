@@ -36,11 +36,12 @@ mpirun -np $world_size python -u SwAV.py \
 --epsilon 0.01 \
 --nmb_prototypes 4 \
 --queue_length 20 \
---epochs 3 \
+--epochs 2 \
 --batch_size 3 \
 --sinkhorn_iterations 3 \
 --wd 0.000001 \
 --use_fp16 true \
+--column \
 --dump_path $EXPERIMENT_PATH
 
 #python -m torch.distributed.run --nproc_per_node=1 --rdzv_id=123 --rdzv_backend=c10d
