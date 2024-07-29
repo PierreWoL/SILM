@@ -338,6 +338,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                 x = output[bs * v: bs * (v + 1)] / args.temperature
                 print("Shape of q:", q.shape)
                 print("Shape of x:", x.shape)
+                print("x is ",x)
                 subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
         loss /= len(args.crops_for_assign)  # crops_for_assign
