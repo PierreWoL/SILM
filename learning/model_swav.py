@@ -92,11 +92,10 @@ class TransformerModel(nn.Module):
         return x
 
     def forward(self, inputs):
-        ###TODO warning here this needs re-check!
         global output
         x_vals = inputs[:-1]  # Separate out cls_indices
-
         cls_indices = inputs[-1]
+        print(len(x_vals))
         # concat = [torch.empty(0) for i in range(len(x_vals[0]))]
         for j in range(len(x_vals)):
             print(j,"th x_vals: ", x_vals[j].shape)

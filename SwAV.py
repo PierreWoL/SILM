@@ -307,6 +307,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
             model.module.prototypes.weight.copy_(w)  # for test distributed
 
         # ============ multi-res forward passes ... ============
+        print(len(batch), (batch))
         embedding, output = model(batch)
         print("embedding", embedding.shape,output.shape, "\n", embedding, "\n", output)
         embedding = embedding.detach()
