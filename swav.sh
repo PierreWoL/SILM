@@ -12,7 +12,7 @@ module load libs/nccl/2.8.3
 
 echo "Job is using $NGPUS GPU(s) with ID(s) $CUDA_VISIBLE_DEVICES and $NSLOTS CPU core(s)"
 
-
+export TOKENIZERS_PARALLELISM=false
 nodelist=$(awk '{print $1}' $PE_HOSTFILE | tr '\n' ',' | sed 's/,$//')
 echo "Node List: $nodelist"
 master_node=$(head -n 1 $PE_HOSTFILE | awk '{print $1}')
