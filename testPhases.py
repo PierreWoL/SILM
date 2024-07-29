@@ -212,34 +212,57 @@ def read_column_corpus(dataset, isSubCol=False, rest=False, max_token=255, selec
     return table_dict
 
 
-def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, Name=""):
+def convert(dataset, phase=1, selected=None, Name=""):
+    path = pathStore(dataset, f"P{phase}", Name)
+    name_corpus = "corpus"
     start_time_encode = time.time()
-    if phase == 1:
-        corpus = read_column_corpus(dataset, isSubCol=True)
+    if os.path.exists(os.path.join(path, f'{name_corpus}_{args.dataset}.pickle')):
+        corpus = read(path, name_corpus)
+        print(f"read corpus of {Name} successfully")
     else:
-        if selected is not None:
-            corpus = read_column_corpus(dataset, rest=True, selected_dataset=selected)
+        if phase == 1:
+            corpus = read_column_corpus(dataset, isSubCol=True)
         else:
-            corpus = read_column_corpus(dataset, rest=True)
-    write(corpus, pathStore(dataset, f"P{phase}", Name), "corpus")
-    tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-base')
+            if selected is not None:
+                corpus = read_column_corpus(dataset, rest=True, selected_dataset=selected)
+            else:
+                corpus = read_column_corpus(dataset, rest=True)
+        write(corpus, path, name_corpus)
+        print(f"generate corpus of {Name}.")
+    name_loader = "testDataLoader"
     table_names = list(corpus.keys())
-    test_data_loaders = []
-    pairs = []
     table_pairs = []
+    pairs = []
     for index, name in enumerate(table_names):
         for other_name in table_names[index + 1:]:
             table_pairs.append((name, other_name))
             pairs.append([corpus[name] + " [SEP] " + corpus[other_name]])
-    fea = predata.convert_examples_to_features(pairs, max_seq_length=args.max_seq_length, tokenizer=tokenizer)
-    test_data_loaders.append(predata.convert_fea_to_tensor(fea, 32, do_train=0))
 
-    #write(test_data_loaders, pathStore(dataset, f"P{phase}", Name), "testDataLoader")
+    if os.path.exists(os.path.join(path, f'{name_loader}_{args.dataset}.pickle')):
+        test_data_loaders = read(path, name_loader)
+        print(f"read test_data_loaders of {Name} successfully")
+    else:
+        tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-base')
+        test_data_loaders = []
+        fea = predata.convert_examples_to_features(pairs, max_seq_length=args.max_seq_length, tokenizer=tokenizer)
+        test_data_loaders.append(predata.convert_fea_to_tensor(fea, 64, do_train=0))
+        print(f"generate test_data_loaders of {Name}.")
+        write(test_data_loaders, path, name_loader)
+        end_time_convert = time.time()
+        elapsed_time_convert = end_time_convert - start_time_encode
+        print("convert time", elapsed_time_convert)
+    return corpus, test_data_loaders, table_pairs
 
+
+def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, Name=""):
+    corpus, test_data_loaders, table_pairs = convert(dataset, phase=phase, selected=selected, Name=Name)
+    start_time_encode = time.time()
     predicts = evaluate.matchingOutput(encoder, moelayer, classifiers, test_data_loaders[0], args=args)
     end_time_encode = time.time()
+
     elapsed_time_encode = end_time_encode - start_time_encode
     print("encode time", elapsed_time_encode)
+
     start_time_cluster = time.time()
     data_pairs = [(table_pairs[index][0], table_pairs[index][1], predicts[index]) for index in range(len(table_pairs))]
     # write(data_pairs, pathStore(dataset, f"P{phase}", Name), "dataPairs")
@@ -258,22 +281,24 @@ def phase1(encoder, moelayer, classifiers, dataset):
     gt_clusters, ground_t, gt_cluster_dict = data_classes(data_path, ground_truth)
     gt_clusters0, ground_t0, gt_cluster_dict0 = data_classes(data_path, ground_truth, superclass=False)
     del ground_t0, gt_cluster_dict0
-    folderName = os.getcwd() + f"/datasets/{dataset}"
+    # folderName = os.getcwd() + f"/datasets/{dataset}"
     metrics_value = evaluate_cluster(gt_clusters, gt_cluster_dict, clusters, None,
                                      gt_clusters0)
+    return metrics_value
 
 
-def phase2(encoder, moelayer, classifiers, dataset, intervalSlice = 10, delta = 0.01):
+def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01):
     data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
     ground_truth_table = os.getcwd() + f"/datasets/{dataset}/groundTruth.csv"
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        #try:
-            if index>0:
-                tables = [i + ".csv" for i in Ground_t[clu]]
-                clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
-                write(clusters, pathStore(dataset, f"P2", clu), "clusters")
+        # try:
+            print(f"currernt cluster: {clu}")
+            tables = [i + ".csv" for i in Ground_t[clu]]
+            corpus, test_data_loaders, table_pairs = convert(dataset, phase=2, selected=tables, Name=clu)
+            """clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
+            write(clusters, pathStore(dataset, f"P2", clu), "clusters")
                 metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
                 print(clu, metrics_value)
 
@@ -285,9 +310,9 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice = 10, delta = 
                 end_time_cluster = time.time()
                 elapsed_time_cluster = end_time_cluster - start_time_cluster
                 print("P3 time", elapsed_time_cluster)
-                print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
-         #except:
-            #print("failed!")
+                print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)"""
+    # except:
+    # print("failed!")
 
 
 def phase3(dataset, intervalSlice, delta):
