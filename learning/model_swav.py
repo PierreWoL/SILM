@@ -104,9 +104,9 @@ class TransformerModel(nn.Module):
             cls_view1 = cls_indices[j]
             _out = self._extract_columns(x_view1, z_view1, cls_view1)
             print("extract table ",_out.shape)
-            if _out.dim() == 2 and _out.size(0) > 1:
+            #if _out.dim() == 2 and _out.size(0) > 1:
                 # _out = _out.view(-1) flatten
-                _out = torch.mean(_out, dim=0, keepdim=True)
+                #_out = torch.mean(_out, dim=0, keepdim=True)
             # for index in range(_out.size(0)):
             # concat[index] = torch.cat((concat[index], _out[index].unsqueeze(0)), dim=0)
             if j == 0:
