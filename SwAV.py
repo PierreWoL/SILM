@@ -21,14 +21,13 @@ from torch.utils.data.distributed import DistributedSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 from learning.MultiAug import MultiCropTableDataset
 from learning import model_swav as transformer
-import socket
 from learning.util import (
     bool_flag,
     initialize_exp,
     restart_from_checkpoint,
     fix_random_seeds,
     AverageMeter,
-    init_distributed_mode,  ### TODO if you need distributed this needs to be added
+    init_distributed_mode,
 )
 
 logger = getLogger()
@@ -121,7 +120,7 @@ def main():
     args = parser.parse_args()
     # args.local_rank = os.environ['LOCAL_RANK']
     init_distributed_mode(args)
-    """fix_random_seeds(args.seed)
+    fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
 
     # build data
@@ -142,7 +141,8 @@ def main():
     )  #
     # This should be removed later
     for element in train_dataset[0]:
-        logger.info(element)
+        #logger.info(element)
+        print(element)
     padder = train_dataset.pad
     sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
@@ -157,7 +157,7 @@ def main():
     logger.info("Building data done with {} tables loaded.".format(len(train_dataset)))
 
     ### TODO don't know if the device here is appropriate
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' # if torch.cuda.is_available() else 'cpu'
     # build model
     model = transformer.TransformerModel(
         lm=args.lm,
@@ -272,7 +272,7 @@ def main():
                 )
         if queue is not None:
             torch.save({"queue": queue}, queue_path)
-"""
+
 
 
 def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
