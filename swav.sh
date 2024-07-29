@@ -36,7 +36,7 @@ mpirun -np $world_size python -u SwAV.py \
 --epsilon 0.01 \
 --nmb_prototypes 4 \
 --queue_length 20 \
---epochs 1 \
+--epochs 3 \
 --batch_size 3 \
 --sinkhorn_iterations 3 \
 --wd 0.000001 \

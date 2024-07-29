@@ -307,7 +307,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
 
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
-        logger.info(embedding, "\n", output)
+        print(embedding, "\n", output)
         embedding = embedding.detach()
         bs = batch[0].size(0)
         # ============ swav loss ... ============
@@ -315,7 +315,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
-                logger.info("out prototype", out)
+                print("out prototype", out)
                 # time to use the queue
                 if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
@@ -327,7 +327,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
-                    logger.info("out embedding", embedding)
+                    print("out embedding", embedding)
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
 
@@ -335,6 +335,8 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
             subloss = 0
             for v in np.delete(np.arange(np.sum(args.nmb_crops)), crop_id):
                 x = output[bs * v: bs * (v + 1)] / args.temperature
+                print("Shape of q:", q.shape)
+                print("Shape of x:", x.shape)
                 subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
         loss /= len(args.crops_for_assign)  # crops_for_assign
