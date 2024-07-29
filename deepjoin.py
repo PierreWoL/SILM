@@ -16,7 +16,7 @@ parser.add_argument("--batch_size", type=int, default=64)
 parser.add_argument("--learning_rate", type=float, default=2e-5)
 parser.add_argument("--warmup_steps", type=int, default=None)
 parser.add_argument("--weight_decay", type=float, default=0.01)
-parser.add_argument("--num_epochs", type=int, default=3)
+parser.add_argument("--num_epochs", type=int, default=25)
 parser.add_argument("--local-rank", type=int, default=-1, help="Dummy argument for compatibility with transformers")
 
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +49,6 @@ if __name__ == "__main__":
     train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None, model_save_path=f"model/WDC/Deepjoin{dataset}.pt",
                 batch_size=args.batch_size,
                 learning_rate=args.learning_rate, warmup_steps=args.weight_decay,
-                weight_decay=args.weight_decay, num_epochs=args.weight_decay,
+                weight_decay=args.weight_decay, num_epochs=args.num_epochs,
                 device=device)
     

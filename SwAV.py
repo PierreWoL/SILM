@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(description="Implementation of SwAV")
 #########################
 #### data parameters ####
 #########################
-parser.add_argument("--data_path", type=str, default="E:\Project\CurrentDataset\datasets\WDC\Test\\",
+parser.add_argument("--data_path", type=str, default="datasets/WDC/Test/",
                     help="path to dataset repository")
 parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
                     help="list of number of crops (example: [2, 6])")
