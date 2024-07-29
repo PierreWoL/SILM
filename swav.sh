@@ -29,7 +29,7 @@ EXPERIMENT_PATH="./model/swav/12/"
 mkdir -p $EXPERIMENT_PATH
 mpirun -np $world_size python -u SwAV.py \
 --world_size $world_size \
---nmb_crops 2 2 \
+--nmb_crops 3 3 \
 --datasetSize 12 \
 --crops_for_assign 0 1 \
 --temperature 0.1 \
