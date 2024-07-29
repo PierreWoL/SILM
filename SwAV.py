@@ -70,7 +70,7 @@ parser.add_argument("--nmb_prototypes", default=200, type=int,
                     help="number of prototypes")
 parser.add_argument("--queue_length", type=int, default=1000,
                     help="length of the queue (0 for no queue)")
-parser.add_argument("--epoch_queue_starts", type=int, default=15,
+parser.add_argument("--epoch_queue_starts", type=int, default=0,
                     help="from this epoch, we start using a queue")
 
 #########################
@@ -246,6 +246,7 @@ def main():
                 args.queue_length // args.world_size,
                 args.feat_dim,
             ).cuda()
+            print("queue shape: ", queue.shape)
 
         # train the network
         scores, queue = train(train_loader, model, optimizer, epoch, scheduler, scaler, queue)
@@ -328,7 +329,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
-                    print("out embedding for the queue", queue[i, bs:],queue[i, :bs]  )
+                    print("out embedding for the queue", queue[i, bs:],queue[i, :bs])
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
                 print("code q is ", q)
