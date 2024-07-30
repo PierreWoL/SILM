@@ -24,26 +24,25 @@ world_size=$((num_nodes * NGPUS))
 echo "world_size: $world_size "
 
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
-EXPERIMENT_PATH="./model/swav/12/"
+EXPERIMENT_PATH="./model/swav/All/WDC/32"
 mkdir -p $EXPERIMENT_PATH
 mpirun -np $world_size python -u SwAV.py \
 --world_size $world_size \
---nmb_crops 3 3 \
---datasetSize 12 \
+--nmb_crops 2 2 \
 --crops_for_assign 0 1 \
 --temperature 0.1 \
---epsilon 0.01 \
---nmb_prototypes 4 \
---queue_length 20 \
---epochs 2 \
---batch_size 3 \
+--epsilon 0.03 \
+--nmb_prototypes 150 \
+--queue_length 100 \
+--epochs 40 \
+--batch_size 32 \
 --sinkhorn_iterations 3 \
 --wd 0.000001 \
 --use_fp16 true \
 --column \
 --dump_path $EXPERIMENT_PATH
 
-#python -m torch.distributed.run --nproc_per_node=1 --rdzv_id=123 --rdzv_backend=c10d
+#python -m torch.distributed.run --nproc_per_node=1 --rdzv_id=123 --rdzv_backend=c10d --datasetSize 12 \
 
     
 

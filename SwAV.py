@@ -42,7 +42,7 @@ parser.add_argument("--data_path", type=str, default="datasets/WDC/Test/",
                     help="path to dataset repository")
 parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
                     help="list of number of crops (example: [2, 6])")
-parser.add_argument("--percentage_crops", type=float, default=[0.6, 0.4], nargs="+",
+parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.3], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
 parser.add_argument("--datasetSize", default=8, type=int,
                     help="the size of training dataset")
@@ -72,7 +72,7 @@ parser.add_argument("--nmb_prototypes", default=200, type=int,
                     help="number of prototypes")
 parser.add_argument("--queue_length", type=int, default=1000,
                     help="length of the queue (0 for no queue)")
-parser.add_argument("--epoch_queue_starts", type=int, default=0,
+parser.add_argument("--epoch_queue_starts", type=int, default=15,
                     help="from this epoch, we start using a queue")
 
 #########################
@@ -103,7 +103,7 @@ parser.add_argument("--local_rank", default=0, type=int, help="this argument is 
 parser.add_argument("--lm", default="bert", type=str, help="encoding model")  # arch
 parser.add_argument("--hidden_mlp", default=2048, type=int,
                     help="hidden layer dimension in projection head")
-parser.add_argument("--workers", default=10, type=int,
+parser.add_argument("--workers", default=1, type=int,
                     help="number of data loading workers")
 parser.add_argument("--checkpoint_freq", type=int, default=1,
                     help="Save the model periodically")
@@ -222,7 +222,7 @@ def main():
     )
 
     start_epoch = to_restore["epoch"]
-
+    print("start_epoch",start_epoch)
     # build the queue
     queue = None
     queue_path = os.path.join(args.dump_path, "queue" + str(args.rank) + ".pth")
