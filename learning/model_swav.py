@@ -56,7 +56,7 @@ class TransformerModel(nn.Module):
             self.prototypes = MultiPrototypes(output_dim, nmb_prototypes)
         elif nmb_prototypes > 0:
             self.prototypes = nn.Linear(output_dim, nmb_prototypes, bias=False)
-        print(self.prototypes)
+        # print(self.prototypes)
         # cls token id
         self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
 
@@ -91,15 +91,12 @@ class TransformerModel(nn.Module):
     def forward(self, inputs):
         x_vals = inputs[:-1]  # Separate out cls_indices
         cls_indices = inputs[-1]
-        print(len(x_vals))
         # concat = [torch.empty(0) for i in range(len(x_vals[0]))]
         for j in range(len(x_vals)):
-            print(j,"th x_vals: ", x_vals[j].shape)
             x_view1 = x_vals[j].to(self.device)
             z_view1 = self.transformer(x_view1)[0]
             cls_view1 = cls_indices[j]
             _out = self._extract_columns(x_view1, z_view1, cls_view1)
-            print("extract table ",_out.shape)
             #if _out.dim() == 2 and _out.size(0) > 1:
                 # _out = _out.view(-1) flatten
                 #_out = torch.mean(_out, dim=0, keepdim=True)
@@ -109,10 +106,9 @@ class TransformerModel(nn.Module):
                 output = _out
             else:
                 output = torch.cat((output, _out))
-            print("current length",_out.shape, output.shape)#"output",_out, "\n",output
+            # print("current length",_out.shape, output.shape) #"output",_out, "\n",output
             # output=torch.cat(concat, dim=0)
         result=  self.forward_head(output)
-        print(f"Result shape: {result[0].shape if isinstance(result, tuple) else result.shape}")
         return result
 
 

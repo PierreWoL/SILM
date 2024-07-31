@@ -50,19 +50,27 @@ def init_distributed_mode(args):
            - world_size
            - rank
        """
-    args.rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
-    #args.world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
-    print(f"rank is {os.environ['OMPI_COMM_WORLD_RANK']}, world_size is {os.environ['OMPI_COMM_WORLD_SIZE']} ")
+
+    is_SBE_job = "OMPI_COMM_WORLD_RANK" in os.environ
+    if is_SBE_job:
+        args.rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
+        #args.world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
+        print(f"rank is {os.environ['OMPI_COMM_WORLD_RANK']}, world_size is {os.environ['OMPI_COMM_WORLD_SIZE']} ")
+        backend = "nccl"
+    else:
+        backend = "gloo"
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '40000'
     # Prepare distributed
     dist.init_process_group(
-        backend="nccl",
+        backend=backend,
         init_method=args.dist_url,
         world_size=args.world_size,
         rank=args.rank,
     )
     # Set cuda device
     args.gpu_to_work_on = args.rank % torch.cuda.device_count()
-    print(f"rank is {args.rank}, world_size is {args.world_size} and gpu_to_work_on are {args.gpu_to_work_on}")
+    # print(f"rank is {args.rank}, world_size is {args.world_size} and gpu_to_work_on are {args.gpu_to_work_on}")
     torch.cuda.set_device(args.gpu_to_work_on)
 
     return
