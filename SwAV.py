@@ -44,7 +44,7 @@ parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
                     help="list of number of crops (example: [2, 6])")
 parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.3], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
-parser.add_argument("--datasetSize", default=20, type=int,
+parser.add_argument("--datasetSize", default=-1, type=int,
                     help="the size of training dataset")
 
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
@@ -82,11 +82,11 @@ parser.add_argument("--epochs", default=30, type=int,
                     help="number of total epochs to run")
 parser.add_argument("--batch_size", default=5, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
-parser.add_argument("--base_lr", default=4.8, type=float, help="base learning rate")
+parser.add_argument("--base_lr", default=0.4, type=float, help="base learning rate")
 parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
                     help="freeze the prototypes during this many iterations from the start")
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
-parser.add_argument("--warmup_epochs", default=10, type=int, help="number of warmup epochs")
+parser.add_argument("--warmup_epochs", default=0, type=int, help="number of warmup epochs")
 
 parser.add_argument("--dist_url", default="tcp://localhost:40000", type=str, help="""url used to set up distributed
                     training; see https://pytorch.org/docs/stable/distributed.html""") #127.0.0.1
