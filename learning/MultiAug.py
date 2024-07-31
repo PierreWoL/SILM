@@ -12,7 +12,7 @@ from logging import getLogger
 import torch
 from transformers import AutoTokenizer
 
-from Utils import childList
+from Utils import childList, subjectCol
 
 logger = getLogger()
 from torch.utils.data import Dataset
@@ -211,6 +211,10 @@ class MultiCropTableDataset(Dataset):
 
         else:
             data = pd.read_csv(os.path.join(self.path, self.samples[index]))
+        if self.subject_column is True:
+            cols = subjectCol(data)
+            if len(cols) > 0:
+                data = data[cols]
         multi_crops = []
         for index, tuple_aug in enumerate(self.trans):
             percentage, aug_method = tuple_aug
