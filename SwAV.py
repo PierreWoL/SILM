@@ -55,9 +55,12 @@ parser.add_argument("--column", dest="column", action="store_true",
                     help="if the unit of input is a column")
 parser.add_argument("--header", dest="header", action="store_true",
                     help="if include header in the tables")
+parser.add_argument("--subject_column", dest="subject_column", action="store_true",
+                    help="if only included subject attributes")
 #########################
 ## swav specific params #
 #########################
+parser.add_argument("--lm", default="sbert", type=str, help="encoding model")  # arch
 parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1],
                     help="list of crops id used for computing assignments")
 parser.add_argument("--temperature", default=0.1, type=float,
@@ -70,7 +73,7 @@ parser.add_argument("--feat_dim", default=128, type=int,
                     help="feature dimension")
 parser.add_argument("--nmb_prototypes", default=5, type=int,
                     help="number of prototypes")
-parser.add_argument("--queue_length", type=int, default=10,
+parser.add_argument("--queue_length", type=int, default=30,
                     help="length of the queue (0 for no queue)")
 parser.add_argument("--epoch_queue_starts", type=int, default=15,
                     help="from this epoch, we start using a queue")
@@ -100,7 +103,6 @@ parser.add_argument("--local_rank", default=0, type=int, help="this argument is 
 #########################
 #### other parameters ###
 #########################
-parser.add_argument("--lm", default="bert", type=str, help="encoding model")  # arch
 parser.add_argument("--hidden_mlp", default=2048, type=int,
                     help="hidden layer dimension in projection head")
 parser.add_argument("--workers", default=1, type=int,
@@ -138,6 +140,7 @@ def main():
         shuffle_rate=args.shuffle,
         augmentation_methods=augmentation_methods,
         column=args.column,
+        subject_column = args.subject_column,
         header=args.header,
         size_dataset=args.datasetSize
     )  #
