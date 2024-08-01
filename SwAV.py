@@ -184,19 +184,10 @@ def main():
 
     # build optimizer
     optimizer = AdamW(model.parameters(), lr=args.base_lr,weight_decay=args.wd)
-
-    total_steps = len(train_loader) * args.epochs
-    warmup_steps = len(train_loader) * args.warmup_epochs
-
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=warmup_steps,
-        num_training_steps=total_steps
-    )
-   
-    # num_steps = (len(train_dataset) // args.batch_size) * args.epochs
-    # scheduler = get_linear_schedule_with_warmup(optimizer,num_warmup_steps=0,num_training_steps=num_steps)
-
+    num_steps = (len(train_dataset) // args.batch_size) * args.epochs
+    scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                num_warmup_steps=0,
+                                                num_training_steps=num_steps)
     logger.info("Building optimizer done.")
 
 
@@ -219,6 +210,7 @@ def main():
         state_dict=model,
         optimizer=optimizer,
         amp=torch.cuda.amp,
+        args=args
     )
 
     start_epoch = to_restore["epoch"]

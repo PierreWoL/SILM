@@ -15,7 +15,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.parallel
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.optim
 from scipy.sparse import csr_matrix
@@ -23,8 +22,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 from MultiAug import MultiCropTableDataset
-import model_swav as transformer
-
+from learning import model_swav as transformer
 
 from util import (
     initialize_exp,
@@ -160,7 +158,7 @@ def main():
         resize=len(train_dataset.tokenizer)
     )
     # synchronize batch norm layers
-    # model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     # copy model to GPU
     model = model.cuda()
