@@ -3,7 +3,7 @@ import logging
 import os
 import torch
 import pickle
-from Deepjoin.train import construct_train_dataset, train_model2, train_model
+from Deepjoin.train import construct_train_dataset,   train_model
 
 parser = argparse.ArgumentParser()
 
@@ -17,6 +17,9 @@ parser.add_argument("--learning_rate", type=float, default=2e-5)
 parser.add_argument("--warmup_steps", type=int, default=None)
 parser.add_argument("--weight_decay", type=float, default=0.01)
 parser.add_argument("--num_epochs", type=int, default=25)
+parser.add_argument("--dist_url", type=int, default="tcp://")
+parser.add_argument("--world_size", type=int, default=1)
+parser.add_argument("--rank", type=int, default=0)
 parser.add_argument("--local-rank", type=int, default=-1, help="Dummy argument for compatibility with transformers")
 
 logging.basicConfig(level=logging.INFO)
@@ -30,8 +33,8 @@ if __name__ == "__main__":
     model_name = "all-mpnet-base-v2"
     data_path = f"datasets/{dataset}/Test/"
     naming_file = f"datasets/{dataset}/naming.csv"
-    if os.path.isfile(os.path.join(f"datasets/{dataset}/", f'trainDeepJoinData{dataset}.pickle')):
-        with open(os.path.join(f"datasets/{dataset}/", f'trainDeepJoinData{dataset}.pickle'), 'rb') as f:
+    if os.path.isfile(os.path.join(f"datasets/{dataset}/",f'trainDeepJoinData{dataset}_{args.datasetSize}.pickle')):
+        with open(os.path.join(f"datasets/{dataset}/", f'trainDeepJoinData{dataset}_{args.datasetSize}.pickle'), 'rb') as f:
             train_dataset = pickle.load(f)
         print("Read successfully")
     else:
@@ -44,11 +47,10 @@ if __name__ == "__main__":
                                f'trainDeepJoinData{dataset}_{args.datasetSize}.pickle'), 'wb') as f:
             pickle.dump(train_dataset, f)
         print("Succeeded in building and saving training dataset...")
-
-    
-    train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None, model_save_path=f"model/WDC/Deepjoin{dataset}.pt",
+    path = f"model/Deepjoin/{dataset}/{args.datasetSize}/"
+    train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None,
+                model_save_path=os.path.join(path, "fineTune.pt"),
                 batch_size=args.batch_size,
                 learning_rate=args.learning_rate, warmup_steps=args.weight_decay,
                 weight_decay=args.weight_decay, num_epochs=args.num_epochs,
                 device=device)
-    

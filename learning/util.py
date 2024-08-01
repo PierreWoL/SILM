@@ -50,13 +50,13 @@ def init_distributed_mode(args):
            - world_size
            - rank
        """
-
+    cuda_available = torch.cuda.is_available()
     is_SBE_job = "OMPI_COMM_WORLD_RANK" in os.environ
     if is_SBE_job:
         args.rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
         #args.world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
         print(f"rank is {os.environ['OMPI_COMM_WORLD_RANK']}, world_size is {os.environ['OMPI_COMM_WORLD_SIZE']} ")
-        backend = "nccl"
+        backend = "nccl" if cuda_available else "gloo"
     else:
         backend = "gloo"
         os.environ['MASTER_ADDR'] = 'localhost'
@@ -155,6 +155,10 @@ def restart_from_checkpoint(ckp_paths, run_variables=None, **kwargs):
         for var_name in run_variables:
             if var_name in checkpoint:
                 run_variables[var_name] = checkpoint[var_name]
+
+def loadModel(model_path):
+    """Load model from given path"""
+    #ckpt = torch.load(model_path, map_location=torch.device('cuda'))
 
 
 def fix_random_seeds(seed=31):
