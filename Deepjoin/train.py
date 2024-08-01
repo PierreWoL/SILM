@@ -65,7 +65,7 @@ def construct_train_dataset(path, naming_file, model_name: str = None, select_nu
 
 def train_model(model_name: str, train_dataset, dev_samples=None, model_save_path: str = None, batch_size: int = 32,
                 learning_rate: float = 2e-5, warmup_steps: int = None, weight_decay: float = 0.01, num_epochs: int = 3,
-                device="cuda", cpuid=3, dist_url=None, world_size=1, rank=0):
+                device="cuda", cpuid=3, dist_url=None, world_size=1):
     # Here we define our SentenceTransformer model
     #### Just some code to print debug information to stdout
     rank = int(os.environ["OMPI_COMM_WORLD_RANK"])

@@ -53,4 +53,4 @@ if __name__ == "__main__":
                 batch_size=args.batch_size,
                 learning_rate=args.learning_rate, warmup_steps=args.weight_decay,
                 weight_decay=args.weight_decay, num_epochs=args.num_epochs,
-                device=device, dist_url=args.dist_url, world_size=args.world_size, rank=args.rank)
+                device=device, dist_url=args.dist_url, world_size=args.world_size)
