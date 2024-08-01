@@ -1,7 +1,7 @@
 #!/bin/bash --login
 #$ -cwd
 #$ -l nvidia_a100=2
-#$ -pe smp.pe 3
+#$ -pe smp.pe 4
 #$ -ac nvmps
 
 module load mpi/intel-18.0/openmpi/4.0.1-cuda
@@ -21,11 +21,11 @@ dist_url="tcp://$master_node:40000"
 echo "Distributed URL: $dist_url"
 
 num_nodes=$(wc -l < $PE_HOSTFILE)
-world_size=$((num_nodes * NGPUS))
-echo "world_size: $world_size "
+world_size=4
+
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 
-=sbert
+LM=sbert
 selected_datasets=(200 400 -1)
 for size in "${selected_datasets[@]}"
 do
@@ -36,11 +36,12 @@ mpirun -np $world_size python -u SwAV.py \
 --datasetSize $size \
 --nmb_crops 2 4 \
 --lm $LM \
+--dist_url $dist_url \
 --crops_for_assign 0 1 \
 --temperature 0.1 \
 --epsilon 0.03 \
 --subject_column \
---nmb_prototypes 300 \
+--nmb_prototypes 150 \
 --queue_length 30 \
 --epochs 45 \
 --batch_size 22 \
@@ -50,7 +51,7 @@ mpirun -np $world_size python -u SwAV.py \
 --column \
 --dump_path $EXPERIMENT_PATH
 done
-#python -m torch.distributed.run --nproc_per_node=1 --rdzv_id=123 --rdzv_backend=c10d 
+
 
     
 
