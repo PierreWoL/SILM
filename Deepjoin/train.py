@@ -68,7 +68,7 @@ def train_model(model_name: str, train_dataset, dev_samples=None, model_save_pat
                 device="cuda", cpuid=3, dist_url=None, world_size=1, rank=0):
     # Here we define our SentenceTransformer model
     #### Just some code to print debug information to stdout
-
+    rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
     dist.init_process_group(backend='gloo', init_method=dist_url,
                             world_size=world_size, rank=rank)
 
