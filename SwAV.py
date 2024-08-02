@@ -137,17 +137,14 @@ def main():
         args.data_path,
         args.nmb_crops,
         args.percentage_crops,
+        size_dataset=args.datasetSize,
         shuffle_rate=args.shuffle,
+        lm=args.lm,
+        subject_column=args.subject_column,
         augmentation_methods=augmentation_methods,
         column=args.column,
-        subject_column = args.subject_column,
-        header=args.header,
-        size_dataset=args.datasetSize
-    )  #
-    # This should be removed later
-    #for element in train_dataset[0]:
-        #logger.info(element)
-       # print(element)
+        header=args.header)  #
+
     padder = train_dataset.pad
     sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(

@@ -59,6 +59,7 @@ class TransformerModel(nn.Module):
         # print(self.prototypes)
         # cls token id
         self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
+        print(self.cls_token_id)
 
     def _extract_columns(self, x, z, cls_indices=None):
         """
@@ -110,6 +111,13 @@ class TransformerModel(nn.Module):
             # output=torch.cat(concat, dim=0)
         result=  self.forward_head(output)
         return result
+
+    def infer(self, x):
+            x = x.to(self.device)
+            z = self.transformer(x)[0]
+            if self.projection_head is not None:
+                z = self.projection_head(z)
+            return self._extract_columns(x, z)
 
 
 class MultiPrototypes(nn.Module):
