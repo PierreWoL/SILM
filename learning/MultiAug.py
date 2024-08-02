@@ -61,9 +61,6 @@ class MultiCropTableDataset(Dataset):
         else:
             for index, num in enumerate(nmb_crops):
                 self.augmentation_methods.extend([augmentation_methods[index]*num])
-
-
-
         """
         Create args for the augmentation methods
         """
@@ -72,7 +69,7 @@ class MultiCropTableDataset(Dataset):
         """Initialize the data items"""
         self.samples = []
         table_name = [fn for fn in os.listdir(path) if '.csv' in fn]
-        if column is True:
+        if column is True and subject_column is False:
             for fn in table_name:
                 fn_table = os.path.join(self.path, fn)
                 columns = pd.read_csv(fn_table).columns
@@ -95,9 +92,8 @@ class MultiCropTableDataset(Dataset):
         """
         tokenizer
         """
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
-                                                       selectable_pos=1)
-
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
+        print("cls",self.tokenizer.cls_token, self.tokenizer.cls_token_id)
         """
         checkpoint for the tokenizer
         """
@@ -127,7 +123,7 @@ class MultiCropTableDataset(Dataset):
             percentage_list.extend([self.percentage_crops[index]]*number)
         for i in range(len(percentage_list)):
             trans.append((percentage_list[i], self.augmentation_methods[i]))
-        print(trans)
+        #print(trans)
         return trans
 
     def _read_item(self, id):
@@ -135,19 +131,35 @@ class MultiCropTableDataset(Dataset):
         if id in self.cache:
             data = self.cache[id]
         else:
-            if self.column is True:
+            if self.column is True and self.subject_column is False:
                 combination = self.samples[id].split("|")
                 table, column = combination[0], combination[1]
                 fn = os.path.join(self.path, table)
                 column = pd.read_csv(fn)[column]
                 data = pd.DataFrame(column)
+            elif self.subject_column is True:
+                data = pd.read_csv(os.path.join(self.path, self.samples[id]))
+                if self.subject_column is True:
+                    cols = subjectCol(data)
+                    if len(cols) > 0:
+                        data = data[cols]
             else:
                 data = pd.read_csv(os.path.join(self.path, self.samples[id]))
+        self.cache[id] = data
         return data
+
+    def data(self):
+        for item in range(len(self.samples)):
+            self._read_item(item)
+
+        return self.cache
 
     def _column_stratgy(self, table, max_tokens):
         def tokenize(text_ele):
-            return text_ele.lower().split()
+            if isinstance(text_ele, str):
+                return text_ele.lower().split()
+            else:
+                return str(text_ele)
         col_texts = {}
         for index, column in enumerate(table.columns):
             column_values = table.iloc[:, index]
