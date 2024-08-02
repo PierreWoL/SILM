@@ -1,7 +1,7 @@
 #!/bin/bash --login
 #$ -cwd
 #$ -l nvidia_a100=2
-#$ -pe smp.pe 4
+#$ -pe smp.pe 2
 #$ -ac nvmps
 
 module load mpi/intel-18.0/openmpi/4.0.1-cuda
@@ -34,7 +34,7 @@ mkdir -p $EXPERIMENT_PATH
 mpirun -np $world_size python -u SwAV.py \
 --world_size $world_size \
 --datasetSize $size \
---nmb_crops 2 4 \
+--nmb_crops 3 3 \
 --lm $LM \
 --dist_url $dist_url \
 --crops_for_assign 0 1 \
