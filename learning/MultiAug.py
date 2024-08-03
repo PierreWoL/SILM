@@ -69,7 +69,7 @@ class MultiCropTableDataset(Dataset):
         """Initialize the data items"""
         self.samples = []
         table_name = [fn for fn in os.listdir(path) if '.csv' in fn]
-        if column is True and subject_column is False:
+        if self.column is True and self.subject_column is False:
             for fn in table_name:
                 fn_table = os.path.join(self.path, fn)
                 columns = pd.read_csv(fn_table).columns
@@ -79,6 +79,7 @@ class MultiCropTableDataset(Dataset):
             self.samples = [fn for fn in os.listdir(path) if '.csv' in fn]
         if size_dataset >= 0:
             self.samples = childList(self.samples, size_dataset)
+        print("samples are ", self.samples[10])
         self.return_index = return_index
         """
         The views that needs to be shuffled
