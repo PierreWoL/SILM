@@ -108,7 +108,6 @@ def initialize_exp(params, *args, dump_params=True):
         "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(params)).items()))
     )
     logger.info("The experiment will be stored in %s\n" % params.dump_path)
-    logger.info("")
     return logger, training_stats
 
 

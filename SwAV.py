@@ -91,7 +91,7 @@ parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
 parser.add_argument("--warmup_epochs", default=0, type=int, help="number of warmup epochs")
 
-parser.add_argument("--dist_url", default="tcp://localhost:40000", type=str, help="""url used to set up distributed
+parser.add_argument("--dist_url", default="tcp://localhost:12355", type=str, help="""url used to set up distributed
                     training; see https://pytorch.org/docs/stable/distributed.html""") #127.0.0.1
 parser.add_argument("--world_size", default=1, type=int, help="""
                     number of processes: it is set automatically and
@@ -226,6 +226,9 @@ def main():
         logger.info("============ Starting epoch %i ... ============" % epoch)
         # set sampler
         train_loader.sampler.set_epoch(epoch)  # test distibuted
+        print(f"Epoch {epoch}")
+        print(f"Allocated memory: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
+        print(f"Cached memory: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
 
         # optionally starts a queue
         if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
@@ -253,6 +256,7 @@ def main():
                 "epoch": epoch + 1,
                 "state_dict": model.state_dict(),
                 "optimizer": optimizer.state_dict(),
+                "args": args,
             }
             if args.use_fp16:
                 # save_dict["amp"] = apex.amp.state_dict()
@@ -268,7 +272,7 @@ def main():
                 )
         if queue is not None:
             torch.save({"queue": queue}, queue_path)
-
+        torch.cuda.empty_cache()  # 清理缓存（可选）
 
 
 def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
