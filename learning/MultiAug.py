@@ -215,7 +215,7 @@ class MultiCropTableDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index):
-        if self.column is True:
+        if self.column is True and self.subject_column is False:
             combination = self.samples[index].split("|")
             table, column = combination[0], combination[1]
             fn = os.path.join(self.path, table)
