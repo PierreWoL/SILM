@@ -312,7 +312,7 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
             print("P3 time", elapsed_time_cluster)
             print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
             break
-         except ValueError as e:
+         except ValueError, IndexError as e:
              print(e)
 
 
