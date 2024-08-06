@@ -108,6 +108,7 @@ def initialize_exp(params, *args, dump_params=True):
         "\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(params)).items()))
     )
     logger.info("The experiment will be stored in %s\n" % params.dump_path)
+    logger.info("The experiment will be stored in %s\n" % params.dump_path)
     return logger, training_stats
 
 
@@ -136,7 +137,11 @@ def restart_from_checkpoint(ckp_paths, run_variables=None, **kwargs):
     # key is what to look for in the checkpoint file
     # value is the object to load
     # example: {'state_dict': model}
+
+
     for key, value in kwargs.items():
+        if key =='args':
+            continue
         if key in checkpoint and value is not None:
             try:
                 msg = value.load_state_dict(checkpoint[key], strict=False)
