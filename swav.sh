@@ -1,6 +1,6 @@
 #!/bin/bash --login
 #$ -cwd
-#$ -l nvidia_a100=2
+#$ -l nvidia_v100=2
 #$ -pe smp.pe 2
 #$ -ac nvmps
 #$ -m bea
@@ -24,7 +24,7 @@ echo "Distributed URL: $dist_url"
 
 num_nodes=$(wc -l < $PE_HOSTFILE)
 world_size=2
-
+watch -n 1 nvidia-smi
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 dataset=GDS
 dataPath="datasets/$dataset/Test/"
@@ -48,7 +48,7 @@ mpirun -np $world_size python -u SwAV.py \
 --epsilon 0.01 \
 --nmb_prototypes 150 \
 --queue_length 200 \
---epochs 45 \
+--epochs 40 \
 --batch_size 20 \
 --sinkhorn_iterations 3 \
 --wd 0.000001 \

@@ -126,7 +126,7 @@ def main():
     init_distributed_mode(args)
     fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
-
+    #torch.cuda.set_per_process_memory_fraction(0.8)#, device=0
     # build data
     # read the augmentation methods from args
     augmentation_methods = args.augmentation
