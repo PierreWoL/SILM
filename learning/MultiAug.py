@@ -79,7 +79,7 @@ class MultiCropTableDataset(Dataset):
             self.samples = [fn for fn in os.listdir(path) if '.csv' in fn]
         if size_dataset >= 0:
             self.samples = childList(self.samples, size_dataset)
-        print("samples are ", self.samples[10])
+        #print("samples are ", self.samples[10])
         self.return_index = return_index
         """
         The views that needs to be shuffled
@@ -131,6 +131,7 @@ class MultiCropTableDataset(Dataset):
         """Read a data item from the cache"""
         if id in self.cache:
             data = self.cache[id]
+            print("In the cache", data)
         else:
             if self.column is True and self.subject_column is False:
                 combination = self.samples[id].split("|")
@@ -215,7 +216,7 @@ class MultiCropTableDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index):
-        if self.column is True and self.subject_column is False:
+        """if self.column is True and self.subject_column is False:
             combination = self.samples[index].split("|")
             table, column = combination[0], combination[1]
             fn = os.path.join(self.path, table)
@@ -227,7 +228,9 @@ class MultiCropTableDataset(Dataset):
         if self.subject_column is True:
             cols = subjectCol(data)
             if len(cols) > 0:
-                data = data[cols]
+                data = data[cols]"""
+        data = self._read_item(index)
+        #print("current data ",data )
         multi_crops = []
         for index, tuple_aug in enumerate(self.trans):
             percentage, aug_method = tuple_aug

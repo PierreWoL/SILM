@@ -196,7 +196,7 @@ def main():
         scaler = None
 
     # wrap model
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on],find_unused_parameters=True)  # test distributed
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on],find_unused_parameters=True)  # test distributed #
 
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
@@ -272,7 +272,7 @@ def main():
                 )
         if queue is not None:
             torch.save({"queue": queue}, queue_path)
-        torch.cuda.empty_cache() 
+        torch.cuda.empty_cache()
 
 
 def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
@@ -308,7 +308,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
 
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
-        #print("embedding", embedding.shape,output.shape)# ,"\n", embedding, "\n", output
+        #print("embedding",output.shape, output)# ,"\n", embedding, "\n", output
         embedding = embedding.detach()
         bs = batch[0].size(0)
         # print("batch size: ", bs)
@@ -332,19 +332,19 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # print("out embedding for the queue", queue[i, bs:],queue[i, :bs])
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
-                # print("code q is ", q)
+                #print(i, "th code q is ", q)
             # cluster assignment prediction
             subloss = 0
             for v in np.delete(np.arange(np.sum(args.nmb_crops)), crop_id):
                 x = output[bs * v: bs * (v + 1)] / args.temperature
-                # print("Shape of q:", q.shape)
+
                 # print("Shape of x:", x.shape)
                 # print("x is ",x)
                 subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
         loss /= len(args.crops_for_assign)  # crops_for_assign
         # loss = torch.tensor(loss, device=output.device, dtype=torch.float32)
-
+        #torch.cuda.empty_cache()
         # ============ backward and optim step ... ============
         if args.use_fp16:
             with torch.cuda.amp.autocast():
