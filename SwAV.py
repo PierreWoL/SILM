@@ -272,7 +272,7 @@ def main():
                 )
         if queue is not None:
             torch.save({"queue": queue}, queue_path)
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
 
 
 def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
