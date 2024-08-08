@@ -49,7 +49,7 @@ if __name__ == "__main__":
             pickle.dump(train_dataset, f)
         print("Succeeded in building and saving training dataset...")
     path = f"model/Deepjoin/{dataset}/{args.datasetSize}/"
-    mkdir(path)
+    #mkdir(path)
     train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None,
                 model_save_path=os.path.join(path, "fineTune.pt"),
                 batch_size=args.batch_size,

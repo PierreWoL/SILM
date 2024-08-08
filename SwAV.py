@@ -69,7 +69,7 @@ parser.add_argument("--epsilon", default=0.02, type=float,
                     help="regularization parameter for Sinkhorn-Knopp algorithm")
 parser.add_argument("--sinkhorn_iterations", default=3, type=int,
                     help="number of iterations in Sinkhorn-Knopp algorithm")
-parser.add_argument("--feat_dim", default=128, type=int,
+parser.add_argument("--feat_dim", default=768, type=int,
                     help="feature dimension")
 parser.add_argument("--nmb_prototypes", default=5, type=int,
                     help="number of prototypes")
@@ -220,7 +220,7 @@ def main():
     # the queue needs to be divisible by the batch size
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     # cudnn.benchmark = True
-
+    torch.cuda.empty_cache()
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
@@ -272,7 +272,7 @@ def main():
                 )
         if queue is not None:
             torch.save({"queue": queue}, queue_path)
-        #torch.cuda.empty_cache() 
+        torch.cuda.empty_cache() 
 
 
 def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):

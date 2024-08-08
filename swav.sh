@@ -29,7 +29,7 @@ export TORCH_DISTRIBUTED_DEBUG=DETAIL
 dataset=GDS
 dataPath="datasets/$dataset/Test/"
 LM=sbert
-selected_datasets=(-1) #200 400  --column \
+selected_datasets=(-1) #200 400  --column \ --subject_column \
 for size in "${selected_datasets[@]}"
 do
 EXPERIMENT_PATH="./model/swav/$dataset/$LM/$size/"
@@ -38,17 +38,18 @@ mpirun -np $world_size python -u SwAV.py \
 --world_size $world_size \
 --datasetSize $size \
 --data_path $dataPath \
---nmb_crops 2 4 \
+--nmb_crops 4 2 \
+--base_lr 0.00005 \
 --lm $LM \
+--column \
 --dist_url $dist_url \
 --crops_for_assign 0 1 \
 --temperature 0.1 \
---epsilon 0.03 \
---subject_column \
---nmb_prototypes 50 \
---queue_length 20 \
+--epsilon 0.01 \
+--nmb_prototypes 150 \
+--queue_length 200 \
 --epochs 45 \
---batch_size 24 \
+--batch_size 20 \
 --sinkhorn_iterations 3 \
 --wd 0.000001 \
 --use_fp16 true \
