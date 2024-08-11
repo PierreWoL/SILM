@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.parallel
-import torch.distributed as dist
+#import torch.distributed as dist
 import torch.optim
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -40,7 +40,7 @@ parser = argparse.ArgumentParser(description="Implementation of SwAV")
 #########################
 parser.add_argument("--data_path", type=str, default="datasets/WDC/Test/",
                     help="path to dataset repository")
-parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
+parser.add_argument("--nmb_crops", type=int, default=[2, 0], nargs="+",
                     help="list of number of crops (example: [2, 6])")
 parser.add_argument("--percentage_crops", type=float, default=[0.6, 0.3], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
@@ -49,7 +49,7 @@ parser.add_argument("--datasetSize", default=-1, type=int,
 
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
                     help="crops resolutions (example: sample_cells_TFIDF)")
-parser.add_argument("--shuffle", default=0.3, type=float,
+parser.add_argument("--shuffle", default=0.5, type=float,
                     help="portion of views that should be shuffled")
 parser.add_argument("--column", dest="column", action="store_true",
                     help="if the unit of input is a column")
@@ -65,17 +65,17 @@ parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1],
                     help="list of crops id used for computing assignments")
 parser.add_argument("--temperature", default=0.1, type=float,
                     help="temperature parameter in training loss")
-parser.add_argument("--epsilon", default=0.02, type=float,
+parser.add_argument("--epsilon", default=0.01, type=float,
                     help="regularization parameter for Sinkhorn-Knopp algorithm")
 parser.add_argument("--sinkhorn_iterations", default=3, type=int,
                     help="number of iterations in Sinkhorn-Knopp algorithm")
 parser.add_argument("--feat_dim", default=768, type=int,
                     help="feature dimension")
-parser.add_argument("--nmb_prototypes", default=5, type=int,
+parser.add_argument("--nmb_prototypes", default=500, type=int,
                     help="number of prototypes")
-parser.add_argument("--queue_length", type=int, default=30,
+parser.add_argument("--queue_length", type=int, default=0,
                     help="length of the queue (0 for no queue)")
-parser.add_argument("--epoch_queue_starts", type=int, default=40,
+parser.add_argument("--epoch_queue_starts", type=int, default=0,
                     help="from this epoch, we start using a queue")
 
 #########################
@@ -85,7 +85,7 @@ parser.add_argument("--epochs", default=30, type=int,
                     help="number of total epochs to run")
 parser.add_argument("--batch_size", default=5, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
-parser.add_argument("--base_lr", default=0.4, type=float, help="base learning rate")
+parser.add_argument("--base_lr", default=5e-5, type=float, help="base learning rate")
 parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
                     help="freeze the prototypes during this many iterations from the start")
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
@@ -103,7 +103,7 @@ parser.add_argument("--local_rank", default=0, type=int, help="this argument is 
 #########################
 #### other parameters ###
 #########################
-parser.add_argument("--hidden_mlp", default=2048, type=int,
+parser.add_argument("--hidden_mlp", default=0, type=int,
                     help="hidden layer dimension in projection head")
 parser.add_argument("--workers", default=1, type=int,
                     help="number of data loading workers")
@@ -123,7 +123,7 @@ def main():
     global args
     args = parser.parse_args()
     # args.local_rank = os.environ['LOCAL_RANK']
-    init_distributed_mode(args)
+    # init_distributed_mode(args)
     fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
     #torch.cuda.set_per_process_memory_fraction(0.8)#, device=0
@@ -146,10 +146,10 @@ def main():
         header=args.header)  #
 
     padder = train_dataset.pad
-    sampler = DistributedSampler(train_dataset)
+    # sampler = DistributedSampler(train_dataset)
     train_loader = DataLoader(
         train_dataset,
-        sampler=sampler,
+        # sampler=sampler,
         batch_size=args.batch_size,
         num_workers=args.workers,
         pin_memory=True,
@@ -172,11 +172,11 @@ def main():
     )
     logger.info("model initialize ...")
     # synchronize batch norm layers
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    # model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     # copy model to GPU
     model = model.cuda()
-    if args.rank == 0:
-        logger.info(model)
+    #if args.rank == 0:
+    logger.info(model)
     logger.info("Building model done.")
 
     # build optimizer
@@ -196,7 +196,7 @@ def main():
         scaler = None
 
     # wrap model
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on],find_unused_parameters=True)  # test distributed #
+    # model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on],find_unused_parameters=True)  # test distributed #
 
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
@@ -213,7 +213,8 @@ def main():
     start_epoch = to_restore["epoch"]
     print("start_epoch", start_epoch)
     # build the queue
-    queue = None
+    # Disable the queue
+    """queue = None
     logger.info("The current queue is None")
     queue_path = os.path.join(args.dump_path, "queue" + str(args.rank) + ".pth")
     if os.path.isfile(queue_path):
@@ -222,16 +223,19 @@ def main():
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     # cudnn.benchmark = True
     #torch.cuda.empty_cache()
+    """
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
         # set sampler
-        train_loader.sampler.set_epoch(epoch)  # test distibuted
+        # train_loader.sampler.set_epoch(epoch)  # test distibuted
         print(f"Epoch {epoch}")
         print(f"Allocated memory: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
         print(f"Cached memory: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
 
-        # optionally starts a queue
+        """
+         #Currently we disable the queue
+         # optionally starts a queue
         if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
             ###
             #Initialize a new queue with shape (crops_for_assign, queue_length // world_size, feat_dim).
@@ -244,39 +248,40 @@ def main():
                 args.queue_length // args.world_size,
                 args.feat_dim,
             ).cuda()
-            print("queue shape: ", queue.shape)
+            print("queue shape: ", queue.shape)"""
 
         # train the network
-        scores, queue = train(train_loader, model, optimizer, epoch, scheduler, scaler, queue)
+        #scores, queue = train(train_loader, model, optimizer, epoch, scheduler, scaler,queue)
+        scores = train(train_loader, model, optimizer, epoch, scheduler, scaler)
         training_stats.update(scores)
 
 
         # save checkpoints
-        if args.rank == 0:
-            save_dict = {
-                "epoch": epoch + 1,
-                "state_dict": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "args": args,
-            }
-            if args.use_fp16:
-                # save_dict["amp"] = apex.amp.state_dict()
-                save_dict["scaler"] = scaler.state_dict(),  # Save the scaler state
-            torch.save(
-                save_dict,
+        #if args.rank == 0:
+        save_dict = {
+            "epoch": epoch + 1,
+            "state_dict": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "args": args,
+        }
+        if args.use_fp16:
+            # save_dict["amp"] = apex.amp.state_dict()
+            save_dict["scaler"] = scaler.state_dict(),  # Save the scaler state
+        torch.save(
+            save_dict,
+            os.path.join(args.dump_path, "checkpoint.pth.tar"),
+        )
+        if epoch % args.checkpoint_freq == 0 or epoch == args.epochs - 1:
+            shutil.copyfile(
                 os.path.join(args.dump_path, "checkpoint.pth.tar"),
+                os.path.join(args.dump_checkpoints, "ckp-" + str(epoch) + ".pth"),
             )
-            if epoch % args.checkpoint_freq == 0 or epoch == args.epochs - 1:
-                shutil.copyfile(
-                    os.path.join(args.dump_path, "checkpoint.pth.tar"),
-                    os.path.join(args.dump_checkpoints, "ckp-" + str(epoch) + ".pth"),
-                )
-        if queue is not None:
-            torch.save({"queue": queue}, queue_path)
+        #if queue is not None:
+           # torch.save({"queue": queue}, queue_path)
         #torch.cuda.empty_cache()
 
 
-def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
+def train(train_loader, model, optimizer, epoch, scheduler, scaler):#, queue
     def loss_model_fp16(loss):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -303,9 +308,11 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
 
         # normalize the prototypes
         with torch.no_grad():
-            w = model.module.prototypes.weight.data.clone()  # for test distributed
+            #w = model.module.prototypes.weight.data.clone()  # for test distributed
+            w = model.prototypes.weight.data.clone() #serial
             w = nn.functional.normalize(w, dim=1, p=2)
-            model.module.prototypes.weight.copy_(w)  # for test distributed
+            #model.module.prototypes.weight.copy_(w)  # for test distributed
+            model.prototypes.weight.copy_(w)  # serial
 
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
@@ -320,7 +327,8 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
                 # print("out prototype",out.shape, out)
                 # time to use the queue
-                if queue is not None:
+                # Disable the queue
+                """if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
                         use_the_queue = True
                         out = torch.cat((torch.mm(
@@ -329,7 +337,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                         ), out))
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
-                    queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
+                    queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]"""
                     # print("out embedding for the queue", queue[i, bs:],queue[i, :bs])
                 # get assignments
                 q = distributed_sinkhorn(out)[-bs:]
@@ -379,7 +387,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):
                     # lr=optimizer.optim.param_groups[0]["lr"],
                 )
             )
-    return (epoch, losses.avg), queue
+    return (epoch, losses.avg) #, queue
 
 
 @torch.no_grad()
@@ -390,13 +398,13 @@ def distributed_sinkhorn(out):
 
     # make the matrix sums to 1
     sum_Q = torch.sum(Q)
-    dist.all_reduce(sum_Q)  # test distributed
+    # dist.all_reduce(sum_Q)  # test distributed
     Q /= sum_Q
 
     for it in range(args.sinkhorn_iterations):
         # normalize each row: total weight per prototype must be 1/K
         sum_of_rows = torch.sum(Q, dim=1, keepdim=True)
-        dist.all_reduce(sum_of_rows)  # test distributed
+        # dist.all_reduce(sum_of_rows)  # test distributed
 
         Q /= sum_of_rows
         Q /= K

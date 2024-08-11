@@ -254,9 +254,13 @@ class MultiCropTableDataset(Dataset):
     def pad(self, batch):
         # Dynamically determine the number of sequences
         num_sequences = len(batch[0])
+        #for ba in batch:
+            #print(ba[0])
         sequences = list(zip(*batch))
-        x_seqs = sequences[:-1]
+        x_seqs = sequences[:-1] if self.return_index is False else sequences[1:-1]
+        indexes = sequences[0]
         cls_indices = sequences[-1]
+        #print("indexes", indexes,"\n cls_indices", cls_indices)
         # print(cls_indices)
         # Determine maximum length across all sequences
         maxlen = max([max([len(x) for x in seq]) for seq in x_seqs])
@@ -279,4 +283,6 @@ class MultiCropTableDataset(Dataset):
                         table_batch_indices[i].append(idx)
                 for i, item in enumerate(table_batch_indices):
                     cls_lists[i].append(item)
+        if self.return_index is True:
+            return indexes, *x_new_seqs, cls_lists
         return *x_new_seqs, cls_lists
