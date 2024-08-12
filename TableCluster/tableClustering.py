@@ -390,7 +390,7 @@ def P2(hp: Namespace):
         conceptualAttri(hp)
     else:
         files = [fn for fn in os.listdir(datafile_path) if
-                 '.pkl' in fn and f"_{hp.embed}_" in fn and 'subCol' not in fn and '8' in fn]
+                 '.pkl' in fn and f"_{hp.embed}_" in fn and '_column.pkl' in fn]
         # if fn.endswith('_column.pkl') and hp.embed in fn] and 'Pretrain' in fn and 'subCol' not in fn
         # if fn.endswith("_column.pkl") and '8' in fn
         files = [fn for fn in files]
