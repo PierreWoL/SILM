@@ -293,13 +293,12 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-         try:
             print(f"currernt cluster: {clu}")
             tables = [i + ".csv" for i in Ground_t[clu]]
             #corpus, test_data_loaders, table_pairs = convert(dataset, phase=2, selected=tables, Name=clu)
             clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
             write(clusters, pathStore(dataset, f"P2", clu), "clusters")
-            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
+            """metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
             print(clu, metrics_value)
 
             start_time_cluster = time.time()
@@ -310,10 +309,8 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
             end_time_cluster = time.time()
             elapsed_time_cluster = end_time_cluster - start_time_cluster
             print("P3 time", elapsed_time_cluster)
-            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
-            break
-         except (ValueError,IndexError) as e:
-             print(e)
+            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)"""
+
 
 
 def phase3(dataset, intervalSlice, delta):
@@ -369,3 +366,13 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+"""WDCresult = "result/P2/WDC/WDC/"
+print(os.listdir(WDCresult))
+for name in os.listdir(WDCresult):
+        path_result = os.path.join(WDCresult, name)
+        with open( os.path.join(path_result,"clusters_WDC.pickle"), 'rb') as f:
+            cluster = pickle.load(f)
+       
+        print(cluster)
+"""
