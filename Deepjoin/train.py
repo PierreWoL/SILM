@@ -64,13 +64,12 @@ def construct_train_dataset(path, naming_file, model_name: str = None, select_nu
 
 
 def train_model(model_name: str, train_dataset, dev_samples=None, model_save_path: str = None, batch_size: int = 32,
-                learning_rate: float = 2e-5, warmup_steps: int = None, weight_decay: float = 0.01, num_epochs: int = 3,
-                device="cuda", cpuid=3, dist_url=None, world_size=1):
+                 warmup_steps: int = None, weight_decay: float = 0.01, num_epochs: int = 3,
+                device="cuda", cpuid=2):#learning_rate: float = 2e-5,dist_url=None,,  world_size=1
     # Here we define our SentenceTransformer model
     #### Just some code to print debug information to stdout
-    rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
-    dist.init_process_group(backend='gloo', init_method=dist_url,
-                            world_size=world_size, rank=rank)
+    #rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
+    #dist.init_process_group(backend='gloo', init_method=dist_url, world_size=world_size, rank=rank)
 
     logging.basicConfig(format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
@@ -79,7 +78,7 @@ def train_model(model_name: str, train_dataset, dev_samples=None, model_save_pat
 
     model = SentenceTransformer(model_name)
     model = model.to(device)
-    nodes = os.cpu_count()
+    
 
     if device == "cuda":
         # set cuda
@@ -91,43 +90,37 @@ def train_model(model_name: str, train_dataset, dev_samples=None, model_save_pat
             device_ids = [0, 1]
             torch.cuda.set_device(device_ids[0])
             model = DataParallel(model, device_ids=[0, 1])
-            model = model.module  # 获取原始模型
+            model = model.module
         else:
             pass
-    else:
-        if nodes > 1:
-            torch.set_num_threads(nodes)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank)  # 包装模型以支持分布式训练
 
     # Special data loader that avoid duplicates within a batch
     train_dataset = [InputExample(texts=[a, b], label=1) for a, b in train_dataset]
     sentence_label_dataset = SentenceLabelDataset(train_dataset)
-    train_sampler = DistributedSampler(sentence_label_dataset, num_replicas=world_size, rank=rank)
-    train_dataloader = DataLoader(sentence_label_dataset, batch_size=batch_size, num_workers=nodes,
-                                  sampler=train_sampler)
-    train_loss = losses.MultipleNegativesRankingLoss(model.module)
+    #train_sampler = DistributedSampler(sentence_label_dataset, num_replicas=world_size, rank=rank)
+    train_dataloader = DataLoader(sentence_label_dataset, batch_size=batch_size)#, sampler=train_sampler
+    train_loss = losses.MultipleNegativesRankingLoss(model=model)
     # Configure the training
     if warmup_steps is None:
         warmup_steps = math.ceil(len(train_dataloader) * num_epochs * 0.1)  # 10% of train data for warm-up
     logging.info(f"Warmup-steps: {warmup_steps}, "
                  f"Weight-decay: {weight_decay}, "
-                 f"Learning-rate: {learning_rate}, "
                  f"Batch-size: {batch_size}, "
                  f"Num-epochs: {num_epochs}")
     if dev_samples is not None:
         evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples)
     else:
         evaluator = None
-    model.module.fit(
+    model.fit(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=num_epochs,
         evaluator=evaluator,
-        optimizer_params={"lr": learning_rate},
+        #optimizer_params={"lr": learning_rate},
         warmup_steps=warmup_steps,
         weight_decay=weight_decay,
         output_path=model_save_path,
         use_amp=True,  # Set to True, if your GPU supports FP16 operations
     )
     logging.info("Training completed.")
-    dist.destroy_process_group()
+    
     return model
