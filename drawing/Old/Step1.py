@@ -120,7 +120,7 @@ def metric_ALL(tar_path, index, embeddingMethods: list, fileName, colors, title,
 
 dataset = "WDC"  # TabFact GoogleSearch
 Table_content = "All"  # Subject_Col All
-subCol_path = "E:/Project/CurrentDataset/result/P1/WDC/All"
+subCol_path = "E:/Project/CurrentDataset/result/P1/WDC/Subject_Col"
 #subCol_path= os.path.join(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/{Table_content}")
 print(subCol_path)
 data_summarize(subCol_path)

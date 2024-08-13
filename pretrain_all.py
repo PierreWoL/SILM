@@ -12,7 +12,7 @@ from Utils import subjectColDetection
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="WDC")  # TabFact open_data WDC
+    parser.add_argument("--dataset", type=str, default="GDS")  # TabFact open_data WDC
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=8)
@@ -42,7 +42,10 @@ if __name__ == '__main__':
     parser.add_argument("--sample_meth", type=str, default='head')  # head tfidfrow tfidf_cell
     # mlflow tag
     parser.add_argument("--mlflow_tag", type=str, default=None)
-    parser.add_argument("--datasetSize", type=int, default=200)
+    parser.add_argument("--datasetSize", type=int, default=-1)
+    parser.add_argument("--deepjoin", dest="deepjoin", action="store_true")
+    parser.add_argument("--DPpath", type=str, default="E:/Project/CurrentDataset/model/Deepjoin/WebData/200/fineTuneSBERT")
+
 
     hp = parser.parse_args()
 
@@ -78,7 +81,12 @@ if __name__ == '__main__':
         end_time_pretrain = time.time()
         time_difference_pretrain = end_time_pretrain - start_time_pretrain
         print(f"Encode time: {time_difference_pretrain}\n ")
-
+    elif hp.deepjoin:
+        start_time_pretrain = time.time()
+        trainset.encodings(output_path, setting=hp.NoContext)
+        end_time_pretrain = time.time()
+        time_difference_pretrain = end_time_pretrain - start_time_pretrain
+        print(f"Encode time: {time_difference_pretrain}\n ")
     else:
 
         start_time_train = time.time()

@@ -147,10 +147,10 @@ def find_clusters(data_pairs, dataset=None):
         # if len(result_set) > 0:
         # print(len(result_set), result_set)
 
-        lef_clusters = set(dataset) - result_set
+        """lef_clusters = set(dataset) - result_set
         # print(lef_clusters)
         for table in lef_clusters:
-            clusters.append([table])
+            clusters.append([table])"""
     cluster_dict = {index: [i for i in cluster] for index, cluster in enumerate(clusters)}
     return cluster_dict
 
@@ -256,6 +256,7 @@ def convert(dataset, phase=1, selected=None, Name=""):
 
 def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, Name=""):
     corpus, test_data_loaders, table_pairs = convert(dataset, phase=phase, selected=selected, Name=Name)
+    print(len(table_pairs))
     start_time_encode = time.time()
     predicts = evaluate.matchingOutput(encoder, moelayer, classifiers, test_data_loaders[0], args=args)
     end_time_encode = time.time()
@@ -268,6 +269,7 @@ def clustering(encoder, moelayer, classifiers, dataset, phase=1, selected=None, 
     # write(data_pairs, pathStore(dataset, f"P{phase}", Name), "dataPairs")
     table_names = list(corpus.keys())
     clusters = find_clusters(data_pairs, table_names)
+    print(clusters)
     end_time_cluster = time.time()
     elapsed_time_cluster = end_time_cluster - start_time_cluster
     print("cluster time", elapsed_time_cluster)
@@ -291,14 +293,15 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
     data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
     ground_truth_table = os.getcwd() + f"/datasets/{dataset}/groundTruth.csv"
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
+
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
+        if len(Ground_t[clu])>=100:
             print(f"currernt cluster: {clu}")
             tables = [i + ".csv" for i in Ground_t[clu]]
-            #corpus, test_data_loaders, table_pairs = convert(dataset, phase=2, selected=tables, Name=clu)
             clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
             write(clusters, pathStore(dataset, f"P2", clu), "clusters")
-            """metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
+            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
             print(clu, metrics_value)
 
             start_time_cluster = time.time()
@@ -309,7 +312,7 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
             end_time_cluster = time.time()
             elapsed_time_cluster = end_time_cluster - start_time_cluster
             print("P3 time", elapsed_time_cluster)
-            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)"""
+            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
 
 
 
@@ -366,13 +369,42 @@ def main():
 
 if __name__ == '__main__':
     main()
+    """data_path = os.getcwd() + f"/datasets/{ args.dataset}/Test/"
+    ground_truth_table = os.getcwd() + f"/datasets/{ args.dataset}/groundTruth.csv"
+    Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
+    encoder = DebertaBaseEncoder()
+    classifiers = MOEClassifier(args.units)
+    exp = args.expertsnum
+    moelayer = MoEModule(args.size_output, args.units, exp, load_balance=args.load_balance)
 
-"""WDCresult = "result/P2/WDC/WDC/"
-print(os.listdir(WDCresult))
-for name in os.listdir(WDCresult):
-        path_result = os.path.join(WDCresult, name)
-        with open( os.path.join(path_result,"clusters_WDC.pickle"), 'rb') as f:
-            cluster = pickle.load(f)
-       
-        print(cluster)
+    encoder = init_model(args, encoder, restore=args.modelname + "_" + param.encoder_path)
+    classifiers = init_model(args, classifiers, restore=args.modelname + "_" + param.cls_path)
+    moelayer = init_model(args, moelayer, restore=args.modelname + "_" + param.moe_path)
+    gt_clusters, ground_t, gt_cluster_dict = column_gts( args.dataset)
+    WDCresult = "result/P2/WDC/"
+    for index, clu in enumerate(list(gt_cluster_dict.keys())):
+        if len(Ground_t[clu]) < 100:
+            print(f"currernt cluster: {clu}")
+            tables = [i + ".csv" for i in Ground_t[clu]]
+            #clusters = clustering(encoder, moelayer, classifiers, args.dataset, phase=2, selected=tables, Name=clu)
+            #write(clusters, pathStore(args.dataset, f"P2", clu), "clusters")
+            path_result = os.path.join(WDCresult, clu)
+            with open(os.path.join(path_result, "clusters_WDC.pickle"), 'rb') as f:
+                clusters = pickle.load(f)
+            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
+            print(clu, metrics_value)
+            print(clusters)
+
+            start_time_cluster = time.time()
+            jaccard_score = JaccardMatrix(clusters, data_path)[2]
+            TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", args.dataset,
+                                                        cluster_name="Connect", Naming=str(index),
+                                                        sliceInterval=10, delta=0.01)[:-1]
+            end_time_cluster = time.time()
+            elapsed_time_cluster = end_time_cluster - start_time_cluster
+            print("P3 time", elapsed_time_cluster)
+            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
 """
+
+
+

@@ -15,6 +15,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
+
 class TransformerModel(nn.Module):
     def __init__(
             self,
@@ -92,32 +93,24 @@ class TransformerModel(nn.Module):
     def forward(self, inputs):
         x_vals = inputs[:-1]  # Separate out cls_indices
         cls_indices = inputs[-1]
-        # concat = [torch.empty(0) for i in range(len(x_vals[0]))]
         for j in range(len(x_vals)):
             x_view1 = x_vals[j].to(self.device)
             z_view1 = self.transformer(x_view1)[0]
             cls_view1 = cls_indices[j]
             _out = self._extract_columns(x_view1, z_view1, cls_view1)
-            #if _out.dim() == 2 and _out.size(0) > 1:
-                # _out = _out.view(-1) flatten
-                #_out = torch.mean(_out, dim=0, keepdim=True)
-            # for index in range(_out.size(0)):
-            # concat[index] = torch.cat((concat[index], _out[index].unsqueeze(0)), dim=0)
             if j == 0:
                 output = _out
             else:
                 output = torch.cat((output, _out))
-            # print("current length",_out.shape, output.shape) #"output",_out, "\n",output
-            # output=torch.cat(concat, dim=0)
-        result=  self.forward_head(output)
+        result = self.forward_head(output)
         return result
 
     def infer(self, x):
-            x = x.to(self.device)
-            z = self.transformer(x)[0]
-            if self.projection_head is not None:
-                z = self.projection_head(z)
-            return self._extract_columns(x, z)
+        x = x.to(self.device)
+        z = self.transformer(x)[0]
+        if self.projection_head is not None:
+            z = self.projection_head(z)
+        return self._extract_columns(x, z)
 
 
 class MultiPrototypes(nn.Module):
