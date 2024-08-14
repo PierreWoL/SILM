@@ -42,7 +42,7 @@ parser.add_argument("--data_path", type=str, default="datasets/WDC/Test/",
                     help="path to dataset repository")
 parser.add_argument("--nmb_crops", type=int, default=[2, 0], nargs="+",
                     help="list of number of crops (example: [2, 6])")
-parser.add_argument("--percentage_crops", type=float, default=[0.6, 0.3], nargs="+",
+parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.3], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
 parser.add_argument("--datasetSize", default=-1, type=int,
                     help="the size of training dataset")
@@ -221,7 +221,7 @@ def main():
     # the queue needs to be divisible by the batch size
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     # cudnn.benchmark = True
-    #torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
 
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch

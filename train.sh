@@ -10,11 +10,11 @@
 module load libs/cuda
 conda activate py39
 source /mnt/iusers01/fatpou01/compsci01/c29770zw/test/CurrentDataset/datavenv/bin/activate
-datasets=("GDS")
+datasets=("GDS" "WDC")
 check_subject_Columns=("none")
 models=("sbert")
 augmentation=("sample_cells_TFIDF") #"sample_cells"  sample_cells_TFIDF  "header" --column \
-aug_times=(6) #1
+aug_times=(4 6 8) #1
 selected_datasets=(-1)
 for dataset in "${datasets[@]}"
 do
@@ -37,8 +37,11 @@ do
                         augment_methods+="$aug,"
                     fi
                     if (( time>=6 )); then
-                      batch=10
-                      epoches=15
+                      batch=8
+                      epoches=10
+                    elif (( time==4 )); then
+                      batch=12
+                      epoches=20
                     else
                         batch=64
                         epoches=35

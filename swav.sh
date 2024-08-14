@@ -38,7 +38,7 @@ datasets=("WDC" "GDS")
 for ds in "${datasets[@]}"
   do
     dataPath="datasets/$ds/Test/"
-    EXPERIMENT_PATH="./model/swav/$ds/sbert/-1/20/distributed/num500/"
+    EXPERIMENT_PATH="./model/swav/$ds/sbert/-1/20/distributed/num500/T0.07"
     mkdir -p $EXPERIMENT_PATH
     mpirun -np $world_size python -u SwAV.py \
     --datasetSize -1 \
@@ -50,12 +50,12 @@ for ds in "${datasets[@]}"
     --world_size $world_size \
     --queue_length 0 \
     --crops_for_assign 0 1 \
-    --temperature 0.1 \
+    --temperature 0.07 \
     --epsilon 0.01 \
     --subject_column \
-    --nmb_prototypes 500 \
+    --nmb_prototypes 600 \
     --dist_url $dist_url \
-    --epochs 150 \
+    --epochs 80 \
     --batch_size 60 \
     --sinkhorn_iterations 3 \
     --wd 0.000001 \
