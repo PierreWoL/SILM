@@ -26,7 +26,8 @@ class TransformerModel(nn.Module):
             nmb_prototypes=0,
             normalize=False,
             eval_mode=False,
-            resize=-1
+            resize=-1,
+            cls=True
     ):
         super(TransformerModel, self).__init__()
         self.eval_mode = eval_mode
@@ -61,6 +62,7 @@ class TransformerModel(nn.Module):
         # cls token id
         self.cls_token_id = AutoTokenizer.from_pretrained(lm_mp[lm]).cls_token_id
         print(self.cls_token_id)
+        self.cls=cls
 
     def _extract_columns(self, x, z, cls_indices=None):
         """

@@ -111,6 +111,8 @@ parser.add_argument("--checkpoint_freq", type=int, default=10,
                     help="Save the model periodically")
 parser.add_argument("--use_fp16", type=bool_flag, default=True,
                     help="whether to train with mixed precision or not")
+parser.add_argument("--cls", type=bool_flag, default=True,
+                    help="whether to train using cls")
 parser.add_argument("--sync_bn", type=str, default="pytorch", help="synchronize bn")
 parser.add_argument("--syncbn_process_group_size", type=int, default=8, help=""" see
                     https://github.com/NVIDIA/apex/blob/master/apex/parallel/__init__.py#L58-L67""")
@@ -167,7 +169,8 @@ def main():
         hidden_mlp=args.hidden_mlp,
         output_dim=args.feat_dim,
         nmb_prototypes=args.nmb_prototypes,
-        resize=len(train_dataset.tokenizer)
+        resize=len(train_dataset.tokenizer),
+        cls=args.cls
     )
     logger.info("model initialize ...")
     # synchronize batch norm layers
