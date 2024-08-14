@@ -41,7 +41,7 @@ class  PretrainTableDataset(data.Dataset):
                  sample_meth='wordProb',
                  table_order='column',
                  check_subject_Column='subjectheader',
-                 select = 200):
+                 select = -1):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
                                                        selectable_pos=1)
         # pretained-LM

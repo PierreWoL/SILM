@@ -198,12 +198,12 @@ def encoding(dataPath, isTransfer=""):
     return dataEmbeds
 
 
-path = "model/SwAV/GDS/sbert/-1/20/serial/num500"
-encode_path = "datasets/GDS/Test/"
+path = "model/SwAV/WDC/ep02lr0001/" #
+encode_path = ""#datasets/WDC/Test/
 embeddings = encoding(path,encode_path)
-out = "result/embedding/GDS/"
+out = "result/embedding/WDC/"
 mkdir(out)
-with open(os.path.join(out, "20_sbert_500SerialEmbeddings.pkl"), "wb") as f:
+with open(os.path.join(out, "20_sbert_ep02lr0001.pkl"), "wb") as f:
     pickle.dump(embeddings, f)
 """
 checkpoint =torch.load(os.path.join(path ,"checkpoint.pth.tar") , map_location=torch.device('cuda'))
