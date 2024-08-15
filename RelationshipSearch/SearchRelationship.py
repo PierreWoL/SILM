@@ -213,7 +213,7 @@ def relationshipDiscovery(hp: Namespace):
 
 
 def relationshipGT(dataset):
-    gt = pd.read_excel(f"datasets\{dataset}\Relationship.xlsx")
+    gt = pd.read_excel(f"datasets/{dataset}/Relationship.xlsx")
     gt_dict = {}
     for index, row in gt.iterrows():
         t1, t2 = row[gt.columns[0]], row[gt.columns[2]]

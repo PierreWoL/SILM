@@ -49,7 +49,7 @@ parser.add_argument("--datasetSize", default=-1, type=int,
 
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
                     help="crops resolutions (example: sample_cells_TFIDF)")
-parser.add_argument("--shuffle", default=0.5, type=float,
+parser.add_argument("--shuffle", default=0.1, type=float,
                     help="portion of views that should be shuffled")
 parser.add_argument("--column", dest="column", action="store_true",
                     help="if the unit of input is a column")
@@ -107,7 +107,7 @@ parser.add_argument("--hidden_mlp", default=0, type=int,
                     help="hidden layer dimension in projection head")
 parser.add_argument("--workers", default=1, type=int,
                     help="number of data loading workers")
-parser.add_argument("--checkpoint_freq", type=int, default=10,
+parser.add_argument("--checkpoint_freq", type=int, default=5,
                     help="Save the model periodically")
 parser.add_argument("--use_fp16", type=bool_flag, default=True,
                     help="whether to train with mixed precision or not")
