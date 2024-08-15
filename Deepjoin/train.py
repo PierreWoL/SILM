@@ -27,7 +27,7 @@ def construct_train_dataset(path, naming_file, model_name: str = None, select_nu
         shuffle = True
     else:
         shuffle = False
-    col_to_text = ColToTextTransformer(path, naming_file, model.tokenizer, shuffle=shuffle, select=select_num)
+    col_to_text = ColToTextTransformer(path,  model.tokenizer, naming_file, shuffle=shuffle, select=select_num)
     column_representations, shuffled_column_representations = (
         col_to_text.get_all_column_representations(method=column_to_text_transformation))
     with open(os.path.join(path, f'column_representations.pickle'), 'wb') as f:
