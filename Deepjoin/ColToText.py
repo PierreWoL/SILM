@@ -28,7 +28,7 @@ def _calculate_column_statistics(column: pd.Series) -> Tuple[int, int, int, floa
 
 class ColToTextTransformer:
 
-    def __init__(self, path, naming_file, tokenizer, max_length: int = 512, shuffle=False,select=200):
+    def __init__(self, path,  tokenizer, naming_file="",max_length: int = 512, shuffle=False,select=200):
         self.path = path
         self.table_cache = {}
         self.tokenizer = tokenizer
@@ -36,8 +36,11 @@ class ColToTextTransformer:
         # self.column_contexts = column_contexts
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
         self.tables = childList(self.tables,select )
-        naming_df = pd.read_csv(naming_file)
-        self.naming_dict = naming_df.set_index(naming_df.columns[0])[naming_df.columns[1]].to_dict()
+        if naming_file == "" or os.path.exists(naming_file) is False:
+            naming_df = pd.read_csv(naming_file)
+            self.naming_dict = naming_df.set_index(naming_df.columns[0])[naming_df.columns[1]].to_dict()
+        else:
+            self.naming_dict = None
         self.shuffle = shuffle
         # naming_dict[table_name]
         for index, table_name in enumerate(self.tables):
