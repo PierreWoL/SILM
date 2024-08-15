@@ -101,9 +101,7 @@ def relationshipDiscovery(hp: Namespace):
     # load the embedding file of different embedding methods
     datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
-             fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if
-             not fn.endswith("subCol.pkl") and '1' not in fn]  # and 'Pretrain' in fn and 'header' in fn
+             fn.endswith('.pkl') and f"_{hp.embed}_" in fn]
     print("files", len(files))
     # create the folder that stores the scores of column matching using
     score_path = os.path.join(os.getcwd(), f"result/P4/{hp.dataset}/")
