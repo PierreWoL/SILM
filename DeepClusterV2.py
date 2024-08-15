@@ -21,11 +21,12 @@ from scipy.sparse import csr_matrix
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
-from MultiAug import MultiCropTableDataset
+from learning.MultiAug import MultiCropTableDataset
 from learning import model_swav as transformer
 
-from util import (
+from learning.util import (
     initialize_exp,
+bool_flag,
     restart_from_checkpoint,
     fix_random_seeds,
     AverageMeter,
@@ -39,10 +40,14 @@ parser = argparse.ArgumentParser(description="Implementation of DeepCluster-v2")
 #########################
 #### data parameters ####
 #########################
-parser.add_argument("--data_path", type=str, default="E:\Project\CurrentDataset\datasets\WDC\Test\\",
+parser.add_argument("--data_path", type=str, default="datasets/WDC/Test/",
                     help="path to dataset repository")
-parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.4, 0.6], nargs="+",
+parser.add_argument("--nmb_crops", type=int, default=[2, 4], nargs="+",
+                    help="list of number of crops (example: [2, 6])")
+parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.3], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
+parser.add_argument("--datasetSize", default=-1, type=int,
+                    help="the size of training dataset")
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
                     help="crops resolutions (example: sample_cells_TFIDF)")
 parser.add_argument("--shuffle", default=0.3, type=float,
@@ -51,28 +56,30 @@ parser.add_argument("--column", dest="column", action="store_true",
                     help="if the unit of input is a column")
 parser.add_argument("--header", dest="header", action="store_true",
                     help="if include header in the tables")
+parser.add_argument("--subject_column", dest="subject_column", action="store_true",
+                    help="if only included subject attributes")
 #########################
 ## dcv2 specific params #
 #########################
-parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1, 2],
+parser.add_argument("--lm", default="sbert", type=str, help="encoding model")  # arch
+parser.add_argument("--crops_for_assign", type=int, nargs="+", default=[0, 1],
                     help="list of crops id used for computing assignments")
 parser.add_argument("--temperature", default=0.1, type=float,
                     help="temperature parameter in training loss")
-parser.add_argument("--feat_dim", default=128, type=int,
+parser.add_argument("--feat_dim", default=768, type=int,
                     help="feature dimension")
-parser.add_argument("--nmb_prototypes", default=[3000, 3000, 3000], type=int, nargs="+",
+parser.add_argument("--nmb_prototypes", default=[200, 300, 400], type=int, nargs="+",
                     help="number of prototypes - it can be multihead")
 
 #########################
 #### optim parameters ###
 #########################
-parser.add_argument("--epochs", default=100, type=int,
+parser.add_argument("--epochs", default=35, type=int,
                     help="number of total epochs to run")
-parser.add_argument("--batch_size", default=64, type=int,
+parser.add_argument("--batch_size", default=24, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
-#parser.add_argument("--base_lr", default=4.8, type=float, help="base learning rate")
-#parser.add_argument("--final_lr", type=float, default=0, help="final learning rate")
-parser.add_argument("--freeze_prototypes_niters", default=1e10, type=int,
+parser.add_argument("--base_lr", default=0.4, type=float, help="base learning rate")
+parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
                     help="freeze the prototypes during this many iterations from the start")
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
 parser.add_argument("--warmup_epochs", default=10, type=int, help="number of warmup epochs")
@@ -82,25 +89,24 @@ parser.add_argument("--start_warmup", default=0, type=float,
 #########################
 #### dist parameters ###
 #########################
-parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up distributed
-                    training; see https://pytorch.org/docs/stable/distributed.html""")
-parser.add_argument("--world_size", default=-1, type=int, help="""
+parser.add_argument("--dist_url", default="tcp://localhost:12355", type=str, help="""url used to set up distributed
+                                        training; see https://pytorch.org/docs/stable/distributed.html""")
+parser.add_argument("--world_size", default=1, type=int, help="""
                     number of processes: it is set automatically and
                     should not be passed as argument""")
 parser.add_argument("--rank", default=0, type=int, help="""rank of this process:
                     it is set automatically and should not be passed as argument""")
-parser.add_argument("--local_rank", default=0, type=int,
-                    help="this argument is not used and should be ignored")
-
+parser.add_argument("--local_rank", default=0, type=int, help="this argument is not used and should be ignored")
+parser.add_argument("--use_fp16", type=bool_flag, default=True,
+                    help="whether to train with mixed precision or not")
 #########################
 #### other parameters ###
 #########################
-parser.add_argument("--arch", default="resnet50", type=str, help="convnet architecture")
 parser.add_argument("--hidden_mlp", default=2048, type=int,
                     help="hidden layer dimension in projection head")
-parser.add_argument("--workers", default=10, type=int,
+parser.add_argument("--workers", default=1, type=int,
                     help="number of data loading workers")
-parser.add_argument("--checkpoint_freq", type=int, default=25,
+parser.add_argument("--checkpoint_freq", type=int, default=5,
                     help="Save the model periodically")
 parser.add_argument("--sync_bn", type=str, default="pytorch", help="synchronize bn")
 parser.add_argument("--syncbn_process_group_size", type=int, default=8, help=""" see
@@ -125,12 +131,16 @@ def main():
     # read the dataset from the data path
     train_dataset = MultiCropTableDataset(
         args.data_path,
+        args.nmb_crops,
         args.percentage_crops,
+        size_dataset=args.datasetSize,
         shuffle_rate=args.shuffle,
+        lm=args.lm,
+        subject_column=args.subject_column,
         augmentation_methods=augmentation_methods,
         column=args.column,
-        header=args.header,
-    )  # size_dataset=10
+        return_index=True,
+        header=args.header)  #
     # This should be removed later
     for element in train_dataset[0]:
         print(element, type(element))
@@ -149,17 +159,22 @@ def main():
     logger.info("Building data done with {} tables loaded.".format(len(train_dataset)))
 
 
+
     # build model
-    model = transformer.__dict__[args.arch](
+    device = 'cuda'  # if torch.cuda.is_available() else 'cpu'
+    # build model
+    model = transformer.TransformerModel(
+        lm=args.lm,
+        device=device,
         normalize=True,
         hidden_mlp=args.hidden_mlp,
         output_dim=args.feat_dim,
         nmb_prototypes=args.nmb_prototypes,
         resize=len(train_dataset.tokenizer)
     )
+    logger.info("model initialize ...")
     # synchronize batch norm layers
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
     # copy model to GPU
     model = model.cuda()
     if args.rank == 0:
@@ -336,10 +351,10 @@ def init_memory(dataloader, model):
     start_idx = 0
     with torch.no_grad():
         logger.info('Start initializing the memory banks')
+        print(len(dataloader))
         for index, inputs in dataloader:
             nmb_unique_idx = inputs[0].size(0)
             index = index.cuda(non_blocking=True)
-
             # get embeddings
             outputs = []
             for crop_idx in args.crops_for_assign:
