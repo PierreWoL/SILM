@@ -6,6 +6,7 @@ import pandas as pd
 
 from ClusterHierarchy.ClusterDecompose import tree_consistency_metric
 from ClusterHierarchy.JaccardMetric import JaccardMatrix
+from RelationshipSearch.SearchRelationship import relationshipGT
 from TableCluster.tableClustering import column_gts
 from Unicorn.unicorn.model.encoder import DebertaBaseEncoder
 from Unicorn.unicorn.model.matcher import MOEClassifier
@@ -18,7 +19,7 @@ from Unicorn.unicorn.dataprocess import predata
 from clustering import data_classes, evaluate_cluster, evaluate_col_cluster
 import csv
 import argparse
-from Utils import subjectColDetection
+from Utils import subjectColDetection, mkdir
 
 limit = 10000
 csv.field_size_limit(500 * 1024 * 1024)
@@ -42,7 +43,7 @@ def parse_arguments():
                         help='Force to pretrain source encoder/moe/classifier')
     parser.add_argument('--dataset', type=str, default="WDC",
                         help="chosen dataset")
-    parser.add_argument('--step', type=str, default="P2",
+    parser.add_argument('--step', type=str, default="P4",
                         help="chosen PHASE")
     parser.add_argument('--seed', type=int, default=42,
                         help="Specify random state")
@@ -61,7 +62,8 @@ def parse_arguments():
 
     parser.add_argument("--max_grad_norm", default=1.0, type=float,
                         help="Max gradient norm.")
-
+    parser.add_argument('--ratio', type=float, default=0.3,
+                        help="ratio of non-subject attributes")
     parser.add_argument("--clip_value", type=float, default=0.01,
                         help="lower and upper clip value for disc. weights")
 
@@ -173,7 +175,7 @@ def transfromCol(column: pd.Series):
     return text
 
 
-def read_column_corpus(dataset, isSubCol=False, rest=False, max_token=255, selected_dataset=None) -> dict:
+def read_column_corpus(dataset, isSubCol=False, rest=False, NE=False, max_token=255, selected_dataset=None) -> dict:
     def cut(tokenizer, sentence):
         encoded_input = tokenizer(sentence)
         token_count = len(encoded_input['input_ids'])
@@ -188,27 +190,32 @@ def read_column_corpus(dataset, isSubCol=False, rest=False, max_token=255, selec
     if selected_dataset is not None:
         table_names = [i for i in table_names if i in selected_dataset]
     SE = subjectColDetection(dataPath, resultPath)
-    # tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base")
     for table_name in table_names:
         table = pd.read_csv(os.path.join(dataPath, table_name))
         annotation, NE_column_score = SE[table_name]
         sub_index = -1
+        NE_indexes = []
         rest_index = range(len(table.columns))
         if NE_column_score:
             max_score = max(NE_column_score.values())
             sub_index = [key for key, value in NE_column_score.items() if value == max_score][0]
+            NE_indexes = [key for key, value in NE_column_score.items() if value != max_score]
         if isSubCol is True:
             if sub_index != -1:
                 column_store = transfromCol(table.iloc[:, sub_index])
-                # column_store = cut(tokenizer,column_store)
                 table_dict[table_name[:-4]] = column_store
         elif rest is True:
-            rest_index = [i for i in rest_index if i != sub_index]
-            for index in rest_index:
-                column_store = transfromCol(table.iloc[:, index])
-                col_name = table.columns[index]
-                # column_store = cut(tokenizer, column_store)
-                table_dict[f"{table_name[:-4]}.{col_name}"] = column_store
+            if NE is False:
+                rest_index = [i for i in rest_index if i != sub_index]
+                for index in rest_index:
+                    column_store = transfromCol(table.iloc[:, index])
+                    col_name = table.columns[index]
+                    table_dict[f"{table_name[:-4]}.{col_name}"] = column_store
+            else:
+                for index in NE_indexes:
+                    column_store = transfromCol(table.iloc[:, index])
+                    col_name = table.columns[index]
+                    table_dict[f"{table_name[:-4]}.{col_name}"] = column_store
     return table_dict
 
 
@@ -223,10 +230,13 @@ def convert(dataset, phase=1, selected=None, Name=""):
         if phase == 1:
             corpus = read_column_corpus(dataset, isSubCol=True)
         else:
-            if selected is not None:
-                corpus = read_column_corpus(dataset, rest=True, selected_dataset=selected)
+            if phase == 4:
+                corpus = read_column_corpus(dataset, isSubCol=True, selected_dataset=selected)
             else:
-                corpus = read_column_corpus(dataset, rest=True)
+                if selected is not None:
+                    corpus = read_column_corpus(dataset, rest=True, selected_dataset=selected)
+                else:
+                    corpus = read_column_corpus(dataset, rest=True)
         write(corpus, path, name_corpus)
         print(f"generate corpus of {Name}.")
     name_loader = "testDataLoader"
@@ -296,7 +306,7 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
 
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if len(Ground_t[clu])>=100:
+        if len(Ground_t[clu]) >= 100:
             print(f"currernt cluster: {clu}")
             tables = [i + ".csv" for i in Ground_t[clu]]
             clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
@@ -307,13 +317,12 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
             start_time_cluster = time.time()
             jaccard_score = JaccardMatrix(clusters, data_path)[2]
             TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
-                                                        cluster_name="Connect", Naming=str(index),
-                                                        sliceInterval=intervalSlice, delta=delta)[:-1]
+                                                    cluster_name="Connect", Naming=str(index),
+                                                    sliceInterval=intervalSlice, delta=delta)[:-1]
             end_time_cluster = time.time()
             elapsed_time_cluster = end_time_cluster - start_time_cluster
             print("P3 time", elapsed_time_cluster)
             print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
-
 
 
 def phase3(dataset, intervalSlice, delta):
@@ -323,19 +332,104 @@ def phase3(dataset, intervalSlice, delta):
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if clu == "['CreativeWork']":
-            print(f"Now is {clu}")
-            tables = [i + ".csv" for i in Ground_t[clu]]
-            corpus = read(pathStore(dataset, f"P2", clu), "corpus")
-            data_pairs = read(pathStore(dataset, f"P2", clu), "dataPairs")
-            colClusters = find_clusters(data_pairs, list(corpus.keys()))
-            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], colClusters)
-            print(clu, metrics_value)
-            jaccard_score = JaccardMatrix(colClusters, data_path)[2]
-            TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
-                                                    cluster_name="Connect", Naming=str(index),
-                                                    sliceInterval=intervalSlice, delta=delta)[:-1]
-            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
+        print(f"Now is {clu}")
+        tables = [i + ".csv" for i in Ground_t[clu]]
+        corpus = read(pathStore(dataset, f"P2", clu), "corpus")
+        data_pairs = read(pathStore(dataset, f"P2", clu), "dataPairs")
+        colClusters = find_clusters(data_pairs, list(corpus.keys()))
+        metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], colClusters)
+        print(clu, metrics_value)
+        jaccard_score = JaccardMatrix(colClusters, data_path)[2]
+        TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
+                                                cluster_name="Connect", Naming=str(index),
+                                                sliceInterval=intervalSlice, delta=delta)[:-1]
+        print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
+
+
+def phase4(encoder, moelayer, classifiers, dataset, ratio):
+    def conceptualAttriClusters(ts):
+        corpus_SC = read_column_corpus(dataset, isSubCol=True, selected_dataset=ts)
+        corpus_NE = read_column_corpus(dataset, rest=True, NE=True, selected_dataset=ts)
+        NE_dict = gt_clusters[clu_i]
+        CNE_clusters = {}
+        for attri in corpus_NE.keys():
+            cne = NE_dict[attri]
+            if cne in CNE_clusters.keys():
+                CNE_clusters[cne].append(attri)
+            else:
+                CNE_clusters[cne] = [attri]
+        return corpus_SC, corpus_NE, CNE_clusters
+    def attriPair(corpus_SC, corpus_NEo, CNEo_clusters, clu1, clu2):
+        pairs = {}
+        for cne in CNEo_clusters.keys():
+            pairs[cne] = {}
+            pairs[cne]['pairs'] = []
+            pairs[cne]['table_pairs'] = []
+
+            attris = CNEo_clusters[cne]
+            pairs[cne]['cne_num'] =len(attris)
+            for attri in attris:
+                for subAttri in corpus_SC.keys():
+                    pairs[cne]['table_pairs'].append((attri,subAttri ))
+                    pairs[cne]['pairs'].append([corpus_NEo[attri] + " [SEP] " + corpus_SC[subAttri]])
+        path = f"result/P4/{dataset}/{clu1}_{clu2}/"
+        mkdir(path)
+        write(pairs,path ,"attrPairs")
+        print(pairs.keys())
+        return pairs
+
+    def cluster_pair_loader(pairs_dict, clu1, clu2):
+        tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-base')
+        test_data_loaders = {}
+        results = {}
+        print( pairs_dict.keys())
+        for cne in list(pairs_dict.keys()):
+            cne_pair_dict = pairs_dict[cne]
+            pairs = cne_pair_dict['pairs']
+            table_pairs = cne_pair_dict['table_pairs']
+            results[cne]={}
+            test_data_loaders[cne]=[]
+            fea = predata.convert_examples_to_features(pairs, max_seq_length=args.max_seq_length, tokenizer=tokenizer)
+            test_data_loaders[cne].append(predata.convert_fea_to_tensor(fea, 64, do_train=0))
+            predicts_cne = evaluate.matchingOutput(encoder, moelayer, classifiers, test_data_loaders[cne][0], args=args)
+            attris = set([table_pairs[predicts_cne.index(i)][0] for i in predicts_cne if i ==1])
+            results[cne]['predicts'] = predicts_cne
+            if len(attris)/pairs_dict[cne]['cne_num']>=ratio:
+                results[cne]['isJoin']=True
+            else:
+                results[cne]['isJoin'] = False
+        path = f"result/P4/{dataset}/{clu1}_{clu2}/"
+        mkdir(path)
+        write(test_data_loaders,path,"test_data_loaders")
+        write(results, path, "results")
+        return results
+
+    gt_relationship = relationshipGT(args.dataset)
+    print(gt_relationship)
+    data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
+    ground_truth_table = os.getcwd() + f"/datasets/{dataset}/groundTruth.csv"
+    Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
+    gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
+    keys = list(gt_cluster_dict.keys())
+    for index_i, clu_i in enumerate(keys):
+        #if 'Event' in clu_i:
+            tables_i = [i + ".csv" for i in Ground_t[clu_i]]
+            corpus_SCi, corpus_NEi,CNEi_clusters = conceptualAttriClusters(tables_i)
+            for clu_j in keys[index_i + 1:]:
+                #if 'Intangible' in clu_j:
+                    tables_j = [i + ".csv" for i in Ground_t[clu_i]]
+                    print(f"Now is {clu_i} nad {clu_j}")
+                    corpus_SCj, corpus_NEj, CNEj_clusters = conceptualAttriClusters(tables_j)
+                    CNE_pairs_ij = attriPair(corpus_SCi, corpus_NEj, CNEj_clusters, clu_i,clu_j)
+                    results_ij = cluster_pair_loader(CNE_pairs_ij, clu_i, clu_j)
+                    CNE_pairs_ji = attriPair(corpus_SCj, corpus_NEi, CNEi_clusters, clu_j, clu_i)
+                    results_ji = cluster_pair_loader(CNE_pairs_ji, clu_j, clu_i)
+
+
+
+
+
+
 
 
 def main():
@@ -347,7 +441,7 @@ def main():
     print("max_seq_length: " + str(args.max_seq_length))
     print("batch_size: " + str(args.batch_size))
     print("epochs: " + str(args.pre_epochs))
-
+    print("ratio: " + str(args.ratio))
     encoder = DebertaBaseEncoder()
     classifiers = MOEClassifier(args.units)
     exp = args.expertsnum
@@ -364,47 +458,9 @@ def main():
     if args.step == "P3":
         phase3(args.dataset, 10, 0.01)
     if args.step == "P4":
-        phase1(encoder, moelayer, classifiers, args.dataset)
+        phase4(encoder, moelayer, classifiers, args.dataset, args.ratio)
 
 
 if __name__ == '__main__':
     main()
-    """data_path = os.getcwd() + f"/datasets/{ args.dataset}/Test/"
-    ground_truth_table = os.getcwd() + f"/datasets/{ args.dataset}/groundTruth.csv"
-    Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
-    encoder = DebertaBaseEncoder()
-    classifiers = MOEClassifier(args.units)
-    exp = args.expertsnum
-    moelayer = MoEModule(args.size_output, args.units, exp, load_balance=args.load_balance)
-
-    encoder = init_model(args, encoder, restore=args.modelname + "_" + param.encoder_path)
-    classifiers = init_model(args, classifiers, restore=args.modelname + "_" + param.cls_path)
-    moelayer = init_model(args, moelayer, restore=args.modelname + "_" + param.moe_path)
-    gt_clusters, ground_t, gt_cluster_dict = column_gts( args.dataset)
-    WDCresult = "result/P2/WDC/"
-    for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if len(Ground_t[clu]) < 100:
-            print(f"currernt cluster: {clu}")
-            tables = [i + ".csv" for i in Ground_t[clu]]
-            #clusters = clustering(encoder, moelayer, classifiers, args.dataset, phase=2, selected=tables, Name=clu)
-            #write(clusters, pathStore(args.dataset, f"P2", clu), "clusters")
-            path_result = os.path.join(WDCresult, clu)
-            with open(os.path.join(path_result, "clusters_WDC.pickle"), 'rb') as f:
-                clusters = pickle.load(f)
-            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
-            print(clu, metrics_value)
-            print(clusters)
-
-            start_time_cluster = time.time()
-            jaccard_score = JaccardMatrix(clusters, data_path)[2]
-            TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", args.dataset,
-                                                        cluster_name="Connect", Naming=str(index),
-                                                        sliceInterval=10, delta=0.01)[:-1]
-            end_time_cluster = time.time()
-            elapsed_time_cluster = end_time_cluster - start_time_cluster
-            print("P3 time", elapsed_time_cluster)
-            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
-"""
-
-
 
