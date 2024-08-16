@@ -37,10 +37,10 @@ class ColToTextTransformer:
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
         self.tables = childList(self.tables,select )
         if naming_file == "" or os.path.exists(naming_file) is False:
+            self.naming_dict = None
+        else:
             naming_df = pd.read_csv(naming_file)
             self.naming_dict = naming_df.set_index(naming_df.columns[0])[naming_df.columns[1]].to_dict()
-        else:
-            self.naming_dict = None
         self.shuffle = shuffle
         # naming_dict[table_name]
         for index, table_name in enumerate(self.tables):
@@ -54,7 +54,7 @@ class ColToTextTransformer:
         shuffled_representations = {}
         n = 0
         for table_name, table in self.table_cache.items():
-            print(n, table_name, self.naming_dict[table_name])
+            print(n, table_name,)# self.naming_dict[table_name]
             table_column_representations = {}
             shuffled_column_representations = {}
             for column in table.columns:

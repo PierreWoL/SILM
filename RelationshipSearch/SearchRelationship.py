@@ -255,7 +255,7 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
     print(cluster_relationships)
     # read generated conceptual attributes of the embedding methods
     gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
-    datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+    datafile_path = os.path.join(os.getcwd(), "result/P4/", hp.dataset,
                                  "All/" + embedding_file[:-4] + "/column")
     # type of the table
     ground_truth = os.path.join(os.getcwd(), f"datasets/{hp.dataset}/groundTruth.csv")
