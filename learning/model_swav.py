@@ -116,7 +116,10 @@ class TransformerModel(nn.Module):
         z = self.transformer(x)[0]
         if self.projection_head is not None:
             z = self.projection_head(z)
-        return self._extract_columns(x, z)
+        if self.cls is True:
+            return self._extract_columns(x, z)
+        else:
+            return  torch.mean(z, dim=1, keepdim=True)[0]
 
 
 class MultiPrototypes(nn.Module):
