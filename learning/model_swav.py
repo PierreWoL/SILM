@@ -119,7 +119,7 @@ class TransformerModel(nn.Module):
         if self.cls is True:
             return self._extract_columns(x, z)
         else:
-            return  torch.mean(z, dim=1, keepdim=True)[0]
+            return torch.mean(z, dim=1, keepdim=True)[0]
 
 
 class MultiPrototypes(nn.Module):
