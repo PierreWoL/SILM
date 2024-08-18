@@ -94,7 +94,6 @@ class MultiCropTableDataset(Dataset):
         tokenizer
         """
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm])
-        print("cls",self.tokenizer.cls_token, self.tokenizer.cls_token_id)
         """
         checkpoint for the tokenizer
         """
