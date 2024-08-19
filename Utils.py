@@ -125,6 +125,7 @@ def findSubCol(table_path: str, table: str):
         subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
         for index in subcol_index:
             sub_cols_header.append(df_table.columns[index])
+    del df_table,SubjectCol_dict,annotation, NE_column_score
     return sub_cols_header
 
 

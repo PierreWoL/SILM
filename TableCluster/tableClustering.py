@@ -230,10 +230,10 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None):
 
         checkfile = f"{index}_colcluster_dict.pickle"
         if "D3L" in embedding_file:
-            datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+            datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                          "All/" + embedding_file + "/column")
         else:
-            datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+            datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                          "All/" + embedding_file[:-4] + "/column")
         if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             startTimeTH = time.time()
@@ -242,7 +242,7 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None):
             TimespanTH = endTimeTH - startTimeTH
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
                                   columns=['type', 'time'])
-            timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+            timing.to_csv(os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                        "All/" + embedding_file[:-4], "timing.csv"))
 
 
@@ -298,9 +298,9 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     if embedding_file.endswith("_column.pkl"):
         tables = [i for i in os.listdir(f"datasets/{hp.dataset}/Test/") if i.endswith(".csv")]
         for table in tables:
-            subcols = findSubCol(f"datasets/{hp.dataset}/Test/", table)
-            if subcols is not []:
-                for subcol in subcols:
+            table_subCol = findSubCol(f"datasets/{hp.dataset}/Test/", table)
+            if table_subCol is not []:
+                for subcol in table_subCol:
                     subcols.append(f"{table[:-4]}.{subcol}")
     for vector in content:
         if embedding_file.endswith("_column.pkl"):
