@@ -98,8 +98,15 @@ class TransformerModel(nn.Module):
         for j in range(len(x_vals)):
             x_view1 = x_vals[j].to(self.device)
             z_view1 = self.transformer(x_view1)[0]
+
             cls_view1 = cls_indices[j]
-            _out = self._extract_columns(x_view1, z_view1, cls_view1)
+            if self.cls is True:
+                _out = self._extract_columns(x_view1, z_view1, cls_view1)
+                #print("x_vals",len(x_vals),"z_view",_out.shape)
+            else:
+
+                _out = torch.mean(z_view1, dim=1)
+                #print("x_vals",len(x_vals),"z_view",z_view1.shape,_out.shape)
             if j == 0:
                 output = _out
             else:
@@ -112,7 +119,10 @@ class TransformerModel(nn.Module):
         z = self.transformer(x)[0]
         if self.projection_head is not None:
             z = self.projection_head(z)
-        return self._extract_columns(x, z)
+        if self.cls is True:
+            return self._extract_columns(x, z)
+        else:
+            return torch.mean(z, dim=1)
 
 
 class MultiPrototypes(nn.Module):

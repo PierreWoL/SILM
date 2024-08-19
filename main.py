@@ -10,14 +10,14 @@ from Runtime import Running
 from TestNaming import testNaming
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default="WDC")
-    parser.add_argument("--embed", type=str, default='DP')
+    parser.add_argument("--dataset", type=str, default="GDS")
+    parser.add_argument("--embed", type=str, default='sbert')
     parser.add_argument("--baseline", dest="baseline", action="store_true")
     parser.add_argument("--clustering", type=str, default='Agglomerative')
     parser.add_argument("--iteration", type=int, default=1)
 
     """ This is for the testing of different steps """
-    parser.add_argument("--step", type=int, default=4)
+    parser.add_argument("--step", type=int, default=1)
     parser.add_argument("--phaseTest",dest="phaseTest", action="store_true")
     """ This is the parameter for P1"""
     parser.add_argument("--estimateNumber", type=int, default=8)
