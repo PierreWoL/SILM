@@ -27,11 +27,20 @@ def construct_train_dataset(path, naming_file, model_name: str = None, select_nu
         shuffle = True
     else:
         shuffle = False
-    col_to_text = ColToTextTransformer(path,  model.tokenizer, naming_file, shuffle=shuffle, select=select_num)
-    column_representations, shuffled_column_representations = (
-        col_to_text.get_all_column_representations(method=column_to_text_transformation))
-    with open(os.path.join(path, f'column_representations.pickle'), 'wb') as f:
-        pickle.dump(column_representations, f)
+    col_path =os.path.join(path, f'column_representations.pickle')
+    if os.path.exists(col_path):
+      
+      with open(os.path.join(path, f'column_representations.pickle'), 'rb') as f:
+        column_representations = pickle.load(f)
+      with open(os.path.join(path, f'shuffled_column_representations.pickle'), 'rb') as f:
+        shuffled_column_representations = pickle.load(f)
+    else:
+        col_to_text = ColToTextTransformer(path,  model.tokenizer, naming_file, shuffle=shuffle, select=select_num)
+        column_representations, shuffled_column_representations = col_to_text.get_all_column_representations(method=column_to_text_transformation)
+        with open(os.path.join(path, f'column_representations.pickle'), 'wb') as f:
+          pickle.dump(column_representations, f)
+        with open(os.path.join(path, f'shuffled_column_representations.pickle'), 'wb') as f:
+          pickle.dump(shuffled_column_representations, f)
     # To get the positive pairs, we follow the approach in OmniMatch, where "positive training pairs are generated
     # based on pairwise cosine similarity of initial column representations (more than or equal to 0.9 ot ensure
     # high true positive rates)".

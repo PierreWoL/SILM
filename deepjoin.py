@@ -50,7 +50,7 @@ if __name__ == "__main__":
                                f'trainDeepJoinData{dataset}_{args.datasetSize}.pickle'), 'wb') as f:
             pickle.dump(train_dataset, f)
         print("Succeeded in building and saving training dataset...")
-    """
+    
     path = f"model/Deepjoin/{dataset}/{args.datasetSize}/"
     #mkdir(path)
     num_gpus = torch.cuda.device_count()
@@ -69,4 +69,4 @@ if __name__ == "__main__":
                 warmup_steps=args.warmup_steps, cpuid = cupid,
                 weight_decay=args.weight_decay, num_epochs=args.num_epochs,
                 device=device)
-    """
+    
