@@ -102,8 +102,11 @@ class TransformerModel(nn.Module):
             cls_view1 = cls_indices[j]
             if self.cls is True:
                 _out = self._extract_columns(x_view1, z_view1, cls_view1)
+                #print("x_vals",len(x_vals),"z_view",_out.shape)
             else:
-                _out = torch.mean(z_view1, dim=1, keepdim=True)[0]
+
+                _out = torch.mean(z_view1, dim=1)
+                #print("x_vals",len(x_vals),"z_view",z_view1.shape,_out.shape)
             if j == 0:
                 output = _out
             else:
@@ -119,7 +122,7 @@ class TransformerModel(nn.Module):
         if self.cls is True:
             return self._extract_columns(x, z)
         else:
-            return torch.mean(z, dim=1, keepdim=True)[0]
+            return torch.mean(z, dim=1)
 
 
 class MultiPrototypes(nn.Module):
