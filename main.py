@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument("--iteration", type=int, default=1)
 
     """ This is for the testing of different steps """
-    parser.add_argument("--step", type=int, default=1)
+    parser.add_argument("--step", type=int, default=2)
     parser.add_argument("--phaseTest",dest="phaseTest", action="store_true")
     """ This is the parameter for P1"""
     parser.add_argument("--estimateNumber", type=int, default=8)
