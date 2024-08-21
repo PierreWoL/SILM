@@ -306,7 +306,7 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
 
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if len(Ground_t[clu]) >= 100:
+        if len(Ground_t[clu]) <= 100:
             print(f"currernt cluster: {clu}")
             tables = [i + ".csv" for i in Ground_t[clu]]
             clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
@@ -353,7 +353,8 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
         NE_dict = gt_clusters[clu_i]
         CNE_clusters = {}
         for attri in corpus_NE.keys():
-            cne = NE_dict[attri]
+            if attri in NE_dict.keys():
+                cne = NE_dict[attri]
             if cne in CNE_clusters.keys():
                 CNE_clusters[cne].append(attri)
             else:
@@ -412,11 +413,12 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     keys = list(gt_cluster_dict.keys())
     for index_i, clu_i in enumerate(keys):
-        #if 'Event' in clu_i:
+        if "'Place', 'Organization'" in clu_i:
             tables_i = [i + ".csv" for i in Ground_t[clu_i]]
-            corpus_SCi, corpus_NEi,CNEi_clusters = conceptualAttriClusters(tables_i)
+
             for clu_j in keys[index_i + 1:]:
-                #if 'Intangible' in clu_j:
+                if 'Place' in clu_j:
+                    corpus_SCi, corpus_NEi, CNEi_clusters = conceptualAttriClusters(tables_i)
                     tables_j = [i + ".csv" for i in Ground_t[clu_i]]
                     print(f"Now is {clu_i} nad {clu_j}")
                     corpus_SCj, corpus_NEj, CNEj_clusters = conceptualAttriClusters(tables_j)
@@ -424,6 +426,8 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
                     results_ij = cluster_pair_loader(CNE_pairs_ij, clu_i, clu_j)
                     CNE_pairs_ji = attriPair(corpus_SCj, corpus_NEi, CNEi_clusters, clu_j, clu_i)
                     results_ji = cluster_pair_loader(CNE_pairs_ji, clu_j, clu_i)
+                    break
+            break
 
 
 
