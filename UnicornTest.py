@@ -413,12 +413,11 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     keys = list(gt_cluster_dict.keys())
     for index_i, clu_i in enumerate(keys):
-        if "'Place', 'Organization'" in clu_i:
+        #if "'Place', 'Organization'" in clu_i:
             tables_i = [i + ".csv" for i in Ground_t[clu_i]]
-
+            corpus_SCi, corpus_NEi, CNEi_clusters = conceptualAttriClusters(tables_i)
             for clu_j in keys[index_i + 1:]:
-                if 'Place' in clu_j:
-                    corpus_SCi, corpus_NEi, CNEi_clusters = conceptualAttriClusters(tables_i)
+                #if 'Place' in clu_j:
                     tables_j = [i + ".csv" for i in Ground_t[clu_i]]
                     print(f"Now is {clu_i} nad {clu_j}")
                     corpus_SCj, corpus_NEj, CNEj_clusters = conceptualAttriClusters(tables_j)
@@ -426,9 +425,6 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
                     results_ij = cluster_pair_loader(CNE_pairs_ij, clu_i, clu_j)
                     CNE_pairs_ji = attriPair(corpus_SCj, corpus_NEi, CNEi_clusters, clu_j, clu_i)
                     results_ji = cluster_pair_loader(CNE_pairs_ji, clu_j, clu_i)
-                    break
-            break
-
 
 
 
