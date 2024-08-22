@@ -1,12 +1,13 @@
 #!/bin/bash --login
 #$ -cwd
-#$ -l a100=1
+#$ -l mem512     # For 32GB per core, any of the CPU types below (system chooses)
+
 module load libs/cuda
 conda activate py39
 source /mnt/iusers01/fatpou01/compsci01/c29770zw/test/CurrentDataset/datavenv/bin/activate
-deltas=(0.1 0.15 0.2)
-datasets=("GDS" "WDC")
-models=("roberta" "sbert" "bert")
+deltas=(0.15)
+datasets=("WDC" "GDS")
+models=("sbert")
 for data in "${datasets[@]}"
 do
 for model in "${models[@]}"

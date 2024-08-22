@@ -1,6 +1,6 @@
 #!/bin/bash --login
 #$ -cwd
-#$ -l nvidia_v100=2           
+#$ -l nvidia_a100=2           
 #$ -pe smp.pe 2 
 #$ -ac nvmps
 #$ -m bea
@@ -38,27 +38,27 @@ datasets=("WDC" "GDS")
 for ds in "${datasets[@]}"
   do
     dataPath="datasets/$ds/Test/"
-    EXPERIMENT_PATH="./model/swav/$ds/A3P600"
+    EXPERIMENT_PATH="./model/swav/$ds/I1N5002"
     mkdir -p $EXPERIMENT_PATH
     mpirun -np $world_size python -u SwAV.py \
     --datasetSize -1 \
     --base_lr 0.00005 \
     --data_path $dataPath \
-    --nmb_crops 3 0 \
+    --nmb_crops 2 0 \
     --hidden_mlp 0 \
     --lm sbert \
     --world_size $world_size \
     --queue_length 0 \
-    --crops_for_assign 0 1 2 \
+    --crops_for_assign 0 1 \
     --temperature 0.1 \
-    --epsilon 0.01 \
+    --epsilon 0.03 \
     --subject_column \
-    --nmb_prototypes 600 \
+    --nmb_prototypes 500 \
     --dist_url $dist_url \
     --epochs 80 \
-    --batch_size 24 \
+    --batch_size 60 \
+    --cls False \
     --sinkhorn_iterations 3 \
     --wd 0.000001 \
-    --use_fp16 True \
     --dump_path $EXPERIMENT_PATH  
  done
