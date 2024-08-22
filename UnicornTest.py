@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 import time
 
 import pandas as pd
@@ -360,6 +361,7 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
             else:
                 CNE_clusters[cne] = [attri]
         return corpus_SC, corpus_NE, CNE_clusters
+
     def attriPair(corpus_SC, corpus_NEo, CNEo_clusters, clu1, clu2):
         pairs = {}
         for cne in CNEo_clusters.keys():
@@ -368,14 +370,14 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
             pairs[cne]['table_pairs'] = []
 
             attris = CNEo_clusters[cne]
-            pairs[cne]['cne_num'] =len(attris)
+            pairs[cne]['cne_num'] = len(attris)
             for attri in attris:
                 for subAttri in corpus_SC.keys():
-                    pairs[cne]['table_pairs'].append((attri,subAttri ))
+                    pairs[cne]['table_pairs'].append((attri, subAttri))
                     pairs[cne]['pairs'].append([corpus_NEo[attri] + " [SEP] " + corpus_SC[subAttri]])
         path = f"result/P4/{dataset}/{clu1}_{clu2}/"
         mkdir(path)
-        write(pairs,path ,"attrPairs")
+        write(pairs, path, "attrPairs")
         print(pairs.keys())
         return pairs
 
@@ -383,25 +385,25 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
         tokenizer = DebertaTokenizer.from_pretrained('microsoft/deberta-base')
         test_data_loaders = {}
         results = {}
-        print( pairs_dict.keys())
+        print(pairs_dict.keys())
         for cne in list(pairs_dict.keys()):
             cne_pair_dict = pairs_dict[cne]
             pairs = cne_pair_dict['pairs']
             table_pairs = cne_pair_dict['table_pairs']
-            results[cne]={}
-            test_data_loaders[cne]=[]
+            results[cne] = {}
+            test_data_loaders[cne] = []
             fea = predata.convert_examples_to_features(pairs, max_seq_length=args.max_seq_length, tokenizer=tokenizer)
             test_data_loaders[cne].append(predata.convert_fea_to_tensor(fea, 64, do_train=0))
             predicts_cne = evaluate.matchingOutput(encoder, moelayer, classifiers, test_data_loaders[cne][0], args=args)
-            attris = set([table_pairs[predicts_cne.index(i)][0] for i in predicts_cne if i ==1])
+            attris = set([table_pairs[predicts_cne.index(i)][0] for i in predicts_cne if i == 1])
             results[cne]['predicts'] = predicts_cne
-            if len(attris)/pairs_dict[cne]['cne_num']>=ratio:
-                results[cne]['isJoin']=True
+            if len(attris) / pairs_dict[cne]['cne_num'] >= ratio:
+                results[cne]['isJoin'] = True
             else:
                 results[cne]['isJoin'] = False
         path = f"result/P4/{dataset}/{clu1}_{clu2}/"
         mkdir(path)
-        write(test_data_loaders,path,"test_data_loaders")
+        write(test_data_loaders, path, "test_data_loaders")
         write(results, path, "results")
         return results
 
@@ -413,23 +415,18 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     keys = list(gt_cluster_dict.keys())
     for index_i, clu_i in enumerate(keys):
-        #if "'Place', 'Organization'" in clu_i:
-            tables_i = [i + ".csv" for i in Ground_t[clu_i]]
-            corpus_SCi, corpus_NEi, CNEi_clusters = conceptualAttriClusters(tables_i)
-            for clu_j in keys[index_i + 1:]:
-                #if 'Place' in clu_j:
-                    tables_j = [i + ".csv" for i in Ground_t[clu_i]]
-                    print(f"Now is {clu_i} nad {clu_j}")
-                    corpus_SCj, corpus_NEj, CNEj_clusters = conceptualAttriClusters(tables_j)
-                    CNE_pairs_ij = attriPair(corpus_SCi, corpus_NEj, CNEj_clusters, clu_i,clu_j)
-                    results_ij = cluster_pair_loader(CNE_pairs_ij, clu_i, clu_j)
-                    CNE_pairs_ji = attriPair(corpus_SCj, corpus_NEi, CNEi_clusters, clu_j, clu_i)
-                    results_ji = cluster_pair_loader(CNE_pairs_ji, clu_j, clu_i)
-
-
-
-
-
+        # if "'Place', 'Organization'" in clu_i:
+        tables_i = [i + ".csv" for i in Ground_t[clu_i]]
+        corpus_SCi, corpus_NEi, CNEi_clusters = conceptualAttriClusters(tables_i)
+        for clu_j in keys[index_i + 1:]:
+            # if 'Place' in clu_j:
+            tables_j = [i + ".csv" for i in Ground_t[clu_i]]
+            print(f"Now is {clu_i} nad {clu_j}")
+            corpus_SCj, corpus_NEj, CNEj_clusters = conceptualAttriClusters(tables_j)
+            CNE_pairs_ij = attriPair(corpus_SCi, corpus_NEj, CNEj_clusters, clu_i, clu_j)
+            results_ij = cluster_pair_loader(CNE_pairs_ij, clu_i, clu_j)
+            CNE_pairs_ji = attriPair(corpus_SCj, corpus_NEi, CNEi_clusters, clu_j, clu_i)
+            results_ji = cluster_pair_loader(CNE_pairs_ji, clu_j, clu_i)
 
 
 def main():
@@ -462,5 +459,43 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    path = f"result/P4/{args.dataset}/Unicorn/"
+    pair_names = os.listdir(path)
+    print(pair_names)
+    gt_relationship = relationshipGT(args.dataset)
+    print(gt_relationship)
+    gt_num = len(gt_relationship[1])
+    TP = 0
+    Detect = 0
 
+    for pair_name in pair_names:
+       if "['Place', 'Organization']" in pair_name:
+           pair_name2 = pair_name.replace("['Place', 'Organization']", "['Organization']")
+           categories = re.findall(r"\['(.*?)'\]", pair_name2)
+       else:
+           categories = re.findall(r"\['(.*?)'\]", pair_name)
+       categories_tuple = tuple(categories)
+       NE_relationship_gt = []
+       if categories_tuple in gt_relationship:
+           NE_relationship_gt = gt_relationship[categories_tuple]
+       with open(os.path.join(path, pair_name, "results_WDC.pickle"), 'rb') as f:
+           results_WDC = pickle.load(f)
+       with open(os.path.join(path, pair_name, "attrPairs_WDC.pickle"), 'rb') as f:
+           attrPairs_WDC = pickle.load(f)
+
+       for NE_name in results_WDC.keys():
+           table_pairs = attrPairs_WDC[NE_name]
+           predicts_cne = results_WDC[NE_name]['predicts']
+           attris = set([table_pairs['table_pairs'][predicts_cne.index(i)][0] for i in predicts_cne if i == 1])
+
+           if len(attris)>0:
+               Detect +=1
+               if len(attris) / table_pairs['cne_num'] >= args.ratio:
+                   #print(categories_tuple, NE_relationship_gt, NE_name, attris)
+                   if NE_name in NE_relationship_gt:
+                        TP +=1
+
+    recall = TP/gt_num
+    precision = TP/Detect
+    print("ratio is ",args.ratio,"recall is :", recall,"Precision is :", precision )
