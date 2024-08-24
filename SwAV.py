@@ -223,14 +223,13 @@ def main():
         queue = torch.load(queue_path)["queue"]
     # the queue needs to be divisible by the batch size
     args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
-    # cudnn.benchmark = True
     torch.cuda.empty_cache()
 
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
         # set sampler
-        # train_loader.sampler.set_epoch(epoch)  # test distibuted
+        train_loader.sampler.set_epoch(epoch)
         print(f"Epoch {epoch}")
         print(f"Allocated memory: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
         print(f"Cached memory: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
@@ -296,7 +295,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
-
+    softmax = nn.Softmax(dim=1).cuda()
     model.train()
     
     use_the_queue = False
@@ -313,9 +312,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
             w = model.module.prototypes.weight.data.clone()  # for test distributed
             #w = model.prototypes.weight.data.clone() #serial
             w = nn.functional.normalize(w, dim=1, p=2)
-            model.module.prototypes.weight.copy_(w)  # for test distributed
-            #model.prototypes.weight.copy_(w)  # serial
-
+            model.module.prototypes.weight.copy_(w)
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
         #print("embedding",output.shape, output)# ,"\n", embedding, "\n", output
@@ -327,9 +324,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
-                # print("out prototype",out.shape, out)
-                # time to use the queue
-                # Disable the queue
+
                 if queue is not None:
                     if use_the_queue or not torch.all(queue[i, -1, :] == 0):
                         use_the_queue = True
@@ -342,19 +337,17 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
                     queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
                     # print("out embedding for the queue", queue[i, bs:],queue[i, :bs])
                 # get assignments
-                q = distributed_sinkhorn(out)[-bs:]
+                q = out / args.epsilon
+                q = torch.exp(q).t()
+                q = distributed_sinkhorn(q, args.sinkhorn_iterations)[-bs:]
                 #print(i, "th code q is ", q)
             # cluster assignment prediction
             subloss = 0
             for v in np.delete(np.arange(np.sum(args.nmb_crops)), crop_id):
-                x = output[bs * v: bs * (v + 1)] / args.temperature
-
-                # print("Shape of x:", x.shape)
-                # print("x is ",x)
-                subloss -= torch.mean(torch.sum(q * F.log_softmax(x, dim=1), dim=1))
+                p = softmax(output[bs * v: bs * (v + 1)] / args.temperature)
+                subloss -= torch.mean(torch.sum(q * torch.log(p), dim=1))
             loss += subloss / (np.sum(args.nmb_crops) - 1)
         loss /= len(args.crops_for_assign)  # crops_for_assign
-        # loss = torch.tensor(loss, device=output.device, dtype=torch.float32)
 
         # ============ backward and optim step ... ============
         if args.use_fp16:
@@ -392,31 +385,42 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
     return (epoch, losses.avg), queue
 
 
-@torch.no_grad()
-def distributed_sinkhorn(out):
-    Q = torch.exp(out / args.epsilon).t()  # Q is K-by-B for consistency with notations from our paper
-    B = Q.shape[1] * args.world_size  # number of samples to assign
-    K = Q.shape[0]  # how many prototypes
+def distributed_sinkhorn(Q, nmb_iters):
+    with torch.no_grad():
+        Q = shoot_infs(Q)
+        sum_Q = torch.sum(Q)
+        dist.all_reduce(sum_Q)
+        Q /= sum_Q
+        r = torch.ones(Q.shape[0]).cuda(non_blocking=True) / Q.shape[0]
+        c = torch.ones(Q.shape[1]).cuda(non_blocking=True) / (args.world_size * Q.shape[1])
+        for it in range(nmb_iters):
+            u = torch.sum(Q, dim=1)
+            dist.all_reduce(u)
+            u = r / u
+            u = shoot_infs(u)
+            Q *= u.unsqueeze(1)
+            Q *= (c / torch.sum(Q, dim=0)).unsqueeze(0)
+        return (Q / torch.sum(Q, dim=0, keepdim=True)).t().float()
 
-    # make the matrix sums to 1
-    sum_Q = torch.sum(Q)
-    dist.all_reduce(sum_Q)  # test distributed
-    Q /= sum_Q
 
-    for it in range(args.sinkhorn_iterations):
-        # normalize each row: total weight per prototype must be 1/K
-        sum_of_rows = torch.sum(Q, dim=1, keepdim=True)
-        dist.all_reduce(sum_of_rows)  # test distributed
+def shoot_infs(inp_tensor):
+    """Replaces inf by maximum of tensor"""
+    mask_inf = torch.isinf(inp_tensor)
+    ind_inf = torch.nonzero(mask_inf)
+    if len(ind_inf) > 0:
+        for ind in ind_inf:
+            if len(ind) == 2:
+                inp_tensor[ind[0], ind[1]] = 0
+            elif len(ind) == 1:
+                inp_tensor[ind[0]] = 0
+        m = torch.max(inp_tensor)
+        for ind in ind_inf:
+            if len(ind) == 2:
+                inp_tensor[ind[0], ind[1]] = m
+            elif len(ind) == 1:
+                inp_tensor[ind[0]] = m
+    return inp_tensor
 
-        Q /= sum_of_rows
-        Q /= K
-
-        # normalize each column: total weight per sample must be 1/B
-        Q /= torch.sum(Q, dim=0, keepdim=True)
-        Q /= B
-
-    Q *= B  # the columns must sum to 1 so that Q is an assignment
-    return Q.t()
 
 
 if __name__ == "__main__":
