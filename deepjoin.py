@@ -52,7 +52,7 @@ if __name__ == "__main__":
         print("Succeeded in building and saving training dataset...")
     
     path = f"model/Deepjoin/{dataset}/{args.datasetSize}/"
-    #mkdir(path)
+    mkdir(path)
     num_gpus = torch.cuda.device_count()
     cupid = 0
     if num_gpus >= 2:

@@ -1,6 +1,6 @@
 #!/bin/bash --login
 #$ -cwd 
-#$ -l a100=2         # A 1-GPU request (v100 is just a shorter name for nvidia_v100)
+#$ -l a100=1        # A 1-GPU request (v100 is just a shorter name for nvidia_v100)
                      # Can instead use 'a100' for the A100 GPUs (if permitted!)
                      # 8 CPU cores available to the host code
                      # Can use up to 12 CPUs with an A100 GPU. --datasetSize $num \
@@ -14,7 +14,7 @@ datasets=("GDS" "WDC")
 check_subject_Columns=("none")
 models=("sbert")
 augmentation=("sample_cells_TFIDF") #"sample_cells"  sample_cells_TFIDF  "header" --column \
-aug_times=(4 6 8) #1
+aug_times=(6) #1
 selected_datasets=(-1)
 for dataset in "${datasets[@]}"
 do
@@ -38,7 +38,7 @@ do
                     fi
                     if (( time>=6 )); then
                       batch=8
-                      epoches=10
+                      epoches=12
                     elif (( time==4 )); then
                       batch=12
                       epoches=20
@@ -55,7 +55,8 @@ do
                   --fp16 \
                   --n_epochs $epoches \
                   --save_model \
-                  --subject_column \
+                  --column \
+                  --header \
                   --augment_op $augment_methods \
                   --check_subject_Column $check_subject_Column \
                   --sample_meth head \

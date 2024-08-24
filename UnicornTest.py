@@ -4,7 +4,7 @@ import re
 import time
 
 import pandas as pd
-
+import torch
 from ClusterHierarchy.ClusterDecompose import tree_consistency_metric
 from ClusterHierarchy.JaccardMetric import JaccardMatrix
 from RelationshipSearch.SearchRelationship import relationshipGT
@@ -55,7 +55,7 @@ def parse_arguments():
     parser.add_argument('--load', default=False, action='store_true',
                         help="Load saved model")
 
-    parser.add_argument('--model', type=str, default="bert",
+    parser.add_argument('--model', type=str, default="deberta_base",
                         help="Specify model type")
 
     parser.add_argument('--max_seq_length', type=int, default=128,
@@ -460,11 +460,11 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    path = f"result/P4/{args.dataset}/Unicorn/"
-    pair_names = os.listdir(path)
-    print(pair_names)
+    path = f"result/P4/{args.dataset}/"
+    pair_names = [i for i in os.listdir(path) if '[' in i]
+    #print(pair_names)
     gt_relationship = relationshipGT(args.dataset)
-    print(gt_relationship)
+    #print(gt_relationship)
     gt_num = len(gt_relationship[1])
     TP = 0
     Detect = 0
@@ -480,7 +480,8 @@ if __name__ == '__main__':
        if categories_tuple in gt_relationship:
            NE_relationship_gt = gt_relationship[categories_tuple]
        with open(os.path.join(path, pair_name, "results_WDC.pickle"), 'rb') as f:
-           results_WDC = pickle.load(f)
+           #results_WDC = pickle.load(f)
+             results_WDC = torch.load(f, map_location=torch.device('cpu'))
        with open(os.path.join(path, pair_name, "attrPairs_WDC.pickle"), 'rb') as f:
            attrPairs_WDC = pickle.load(f)
 
