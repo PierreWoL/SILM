@@ -1,6 +1,6 @@
 #!/bin/bash --login
 #$ -cwd 
-#$ -l a100=1        # A 1-GPU request (v100 is just a shorter name for nvidia_v100)
+#$ -l a100=2        # A 1-GPU request (v100 is just a shorter name for nvidia_v100)
                      # Can instead use 'a100' for the A100 GPUs (if permitted!)
                      # 8 CPU cores available to the host code
                      # Can use up to 12 CPUs with an A100 GPU. --datasetSize $num \
@@ -10,8 +10,8 @@
 module load libs/cuda
 conda activate py39
 source /mnt/iusers01/fatpou01/compsci01/c29770zw/test/CurrentDataset/datavenv/bin/activate
-datasets=("GDS" "WDC")
-check_subject_Columns=("none")
+datasets=("WDC")
+check_subject_Columns=("header")
 models=("sbert")
 augmentation=("sample_cells_TFIDF") #"sample_cells"  sample_cells_TFIDF  "header" --column \
 aug_times=(6) #1
@@ -37,8 +37,8 @@ do
                         augment_methods+="$aug,"
                     fi
                     if (( time>=6 )); then
-                      batch=8
-                      epoches=12
+                      batch=10
+                      epoches=8
                     elif (( time==4 )); then
                       batch=12
                       epoches=20
@@ -56,7 +56,6 @@ do
                   --n_epochs $epoches \
                   --save_model \
                   --column \
-                  --header \
                   --augment_op $augment_methods \
                   --check_subject_Column $check_subject_Column \
                   --sample_meth head \
