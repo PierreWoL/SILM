@@ -103,15 +103,15 @@ class MultiCropTableDataset(Dataset):
         add special tokens
         """
         if lm == 'roberta' or lm == 'bert':
+            special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
+            self.header_token = ('[header]', '[/header]')
+            self.SC_token = ('[subjectcol]', '[/subjectcol]')
+        else:
+
             special_tokens_dict = {
                 'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
             self.header_token = ('<header>', '</header>')
             self.SC_token = ('<subjectcol>', '</subjectcol>')
-        else:
-            special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
-            self.header_token = ('[header]', '[/header]')
-            self.SC_token = ('[subjectcol]', '[/subjectcol]')
-
         self.tokenizer.add_special_tokens(special_tokens_dict)
         self.tokenizer.special_tokens_map.items()
         self.max_len = max_length
@@ -176,10 +176,8 @@ class MultiCropTableDataset(Dataset):
             col_text = self.tokenizer.cls_token + " "
             # value in column as a whole string mode
             if self.header:
-                col_text += str(column) + " "
-            # column value concatenating mode
-            else:
-                col_text += string_token + " "
+                col_text += self.header_token[0] + " " + str(column) + " " + self.header_token[1] + " "  #
+            col_text += string_token + " "
             #col_texts[column] = col_text
             col_texts[index] = col_text
         return col_texts

@@ -29,11 +29,10 @@ from learning.util import (
     AverageMeter,
     init_distributed_mode,
 )
+
 os.environ['TORCH_DISTRIBUTED_DEBUG'] = 'DETAIL'  # Enable detailed debug information
 logger = getLogger()
 parser = argparse.ArgumentParser(description="Implementation of SwAV")
-
-
 
 #########################
 #### data parameters ####
@@ -92,7 +91,7 @@ parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
 parser.add_argument("--warmup_epochs", default=0, type=int, help="number of warmup epochs")
 
 parser.add_argument("--dist_url", default="tcp://localhost:12355", type=str, help="""url used to set up distributed
-                    training; see https://pytorch.org/docs/stable/distributed.html""") #127.0.0.1
+                    training; see https://pytorch.org/docs/stable/distributed.html""")  # 127.0.0.1
 parser.add_argument("--world_size", default=1, type=int, help="""
                     number of processes: it is set automatically and
                     should not be passed as argument""")
@@ -123,7 +122,7 @@ def main():
     global args
     args = parser.parse_args()
     # args.local_rank = os.environ['LOCAL_RANK']
-    init_distributed_mode(args)
+
     fix_random_seeds(args.seed)
     logger, training_stats = initialize_exp(args, "epoch", "loss")
     # build data
@@ -145,10 +144,9 @@ def main():
         header=args.header)  #
 
     padder = train_dataset.pad
-    sampler = DistributedSampler(train_dataset)
+
     train_loader = DataLoader(
         train_dataset,
-        sampler=sampler,
         batch_size=args.batch_size,
         num_workers=args.workers,
         pin_memory=True,
@@ -158,7 +156,7 @@ def main():
     logger.info("Building data done with {} tables loaded.".format(len(train_dataset)))
 
     ### TODO don't know if the device here is appropriate
-    device = 'cuda' # if torch.cuda.is_available() else 'cpu'
+    device = 'cuda'  # if torch.cuda.is_available() else 'cpu'
     # build model
     model = transformer.TransformerModel(
         lm=args.lm,
@@ -171,22 +169,18 @@ def main():
         cls=args.cls
     )
     logger.info("model initialize ...")
-    # synchronize batch norm layers
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    # copy model to GPU
     model = model.cuda()
-    #if args.rank == 0:
+    # if args.rank == 0:
     logger.info(model)
     logger.info("Building model done.")
 
     # build optimizer
-    optimizer = AdamW(model.parameters(), lr=args.base_lr,weight_decay=args.wd)
+    optimizer = AdamW(model.parameters(), lr=args.base_lr, weight_decay=args.wd)
     num_steps = (len(train_dataset) // args.batch_size) * args.epochs
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,
                                                 num_training_steps=num_steps)
     logger.info("Building optimizer done.")
-
 
     # init mixed precision
     if args.use_fp16:
@@ -194,9 +188,6 @@ def main():
         logger.info("Initializing mixed precision done.")
     else:
         scaler = None
-
-    # wrap model
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu_to_work_on],find_unused_parameters=True)  # test distributed #
 
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
@@ -214,49 +205,25 @@ def main():
     print("start_epoch", start_epoch)
     # build the queue
     # Disable the queue
-    queue = None
     logger.info("The current queue is None")
     queue_path = os.path.join(args.dump_path, "queue" + str(args.rank) + ".pth")
-    if os.path.isfile(queue_path):
-        queue = torch.load(queue_path)["queue"]
-    # the queue needs to be divisible by the batch size
-    args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     torch.cuda.empty_cache()
 
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
         # set sampler
-        train_loader.sampler.set_epoch(epoch)
         print(f"Epoch {epoch}")
         print(f"Allocated memory: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
         print(f"Cached memory: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
 
-
-         #Currently we disable the queue
-         # optionally starts a queue
-        if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
-            ###
-            #Initialize a new queue with shape (crops_for_assign, queue_length // world_size, feat_dim).
-            # len(args.crops_for_assign) indicates the number of crops assigned to the job,
-             # args.queue_length // args.world_size indicates the queue length is divided equally among each process
-             #  and args.feat_dim indicates the feature dimension. The queue is assigned to the GPU (using .cuda()).
-           ###
-            queue = torch.zeros(
-                len(args.crops_for_assign),  # crops_for_assign
-                args.queue_length // args.world_size,
-                args.feat_dim,
-            ).cuda()
-            print("queue shape: ", queue.shape)
-
         # train the network
-        scores, queue = train(train_loader, model, optimizer, epoch, scheduler, scaler,queue)
-        #scores = train(train_loader, model, optimizer, epoch, scheduler, scaler)
+        scores = train(train_loader, model, optimizer, epoch, scheduler, scaler)
+        # scores = train(train_loader, model, optimizer, epoch, scheduler, scaler)
         training_stats.update(scores)
 
-
         # save checkpoints
-        #if args.rank == 0:
+        # if args.rank == 0:
         save_dict = {
             "epoch": epoch + 1,
             "state_dict": model.state_dict(),
@@ -275,12 +242,10 @@ def main():
                 os.path.join(args.dump_path, "checkpoint.pth.tar"),
                 os.path.join(args.dump_checkpoints, "ckp-" + str(epoch) + ".pth"),
             )
-        if queue is not None:
-            torch.save({"queue": queue}, queue_path)
-        #torch.cuda.empty_cache()
+        # torch.cuda.empty_cache()
 
 
-def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
+def train(train_loader, model, optimizer, epoch, scheduler, scaler):  #
     def loss_model_fp16(loss):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -295,7 +260,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
     losses = AverageMeter()
     softmax = nn.Softmax(dim=1).cuda()
     model.train()
-    
+
     use_the_queue = False
     end = time.time()
     for it, batch in enumerate(train_loader):
@@ -307,13 +272,12 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
 
         # normalize the prototypes
         with torch.no_grad():
-            w = model.module.prototypes.weight.data.clone()  # for test distributed
-            #w = model.prototypes.weight.data.clone() #serial
+            w = model.prototypes.weight.data.clone()
             w = nn.functional.normalize(w, dim=1, p=2)
-            model.module.prototypes.weight.copy_(w)
+            model.prototypes.weight.copy_(w)
         # ============ multi-res forward passes ... ============
         embedding, output = model(batch)
-        #print("embedding",output.shape, output)# ,"\n", embedding, "\n", output
+        # print("embedding",output.shape, output)# ,"\n", embedding, "\n", output
         embedding = embedding.detach()
         bs = batch[0].size(0)
         # print("batch size: ", bs)
@@ -322,23 +286,11 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
-
-                if queue is not None:
-                    if use_the_queue or not torch.all(queue[i, -1, :] == 0):
-                        use_the_queue = True
-                        out = torch.cat((torch.mm(
-                            queue[i],
-                            model.module.prototypes.weight.t()
-                        ), out))
-                    # fill the queue
-                    queue[i, bs:] = queue[i, :-bs].clone()
-                    queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
-                    # print("out embedding for the queue", queue[i, bs:],queue[i, :bs])
                 # get assignments
                 q = out / args.epsilon
                 q = torch.exp(q).t()
                 q = distributed_sinkhorn(q, args.sinkhorn_iterations)[-bs:]
-                #print(i, "th code q is ", q)
+                # print(i, "th code q is ", q)
             # cluster assignment prediction
             subloss = 0
             for v in np.delete(np.arange(np.sum(args.nmb_crops)), crop_id):
@@ -380,20 +332,18 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):#
                     # lr=optimizer.optim.param_groups[0]["lr"],
                 )
             )
-    return (epoch, losses.avg), queue
+    return (epoch, losses.avg)
 
 
 def distributed_sinkhorn(Q, nmb_iters):
     with torch.no_grad():
         Q = shoot_infs(Q)
         sum_Q = torch.sum(Q)
-        dist.all_reduce(sum_Q)
         Q /= sum_Q
         r = torch.ones(Q.shape[0]).cuda(non_blocking=True) / Q.shape[0]
         c = torch.ones(Q.shape[1]).cuda(non_blocking=True) / (args.world_size * Q.shape[1])
         for it in range(nmb_iters):
             u = torch.sum(Q, dim=1)
-            dist.all_reduce(u)
             u = r / u
             u = shoot_infs(u)
             Q *= u.unsqueeze(1)
@@ -418,7 +368,6 @@ def shoot_infs(inp_tensor):
             elif len(ind) == 1:
                 inp_tensor[ind[0]] = m
     return inp_tensor
-
 
 
 if __name__ == "__main__":
