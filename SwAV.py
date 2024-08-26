@@ -44,7 +44,7 @@ parser.add_argument("--nmb_crops", type=int, default=[2, 0], nargs="+",
                     help="list of number of crops (example: [2, 6])")
 parser.add_argument("--percentage_crops", type=float, default=[0.5, 0.3], nargs="+",
                     help="crops of tables (example: [0.5, 0.6])")
-parser.add_argument("--datasetSize", default=12, type=int,
+parser.add_argument("--datasetSize", default=4, type=int,
                     help="the size of training dataset")
 
 parser.add_argument("--augmentation", type=str, default="sample_cells_TFIDF",
@@ -83,7 +83,7 @@ parser.add_argument("--epoch_queue_starts", type=int, default=0,
 #########################
 parser.add_argument("--epochs", default=3, type=int,
                     help="number of total epochs to run")
-parser.add_argument("--batch_size", default=4, type=int,
+parser.add_argument("--batch_size", default=2, type=int,
                     help="batch size per gpu, i.e. how many unique instances per gpu")
 parser.add_argument("--base_lr", default=5e-5, type=float, help="base learning rate")
 parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
@@ -114,8 +114,6 @@ parser.add_argument("--use_fp16", type=bool_flag, default=True,
 parser.add_argument("--cls", type=bool_flag, default=True,
                     help="whether to train using cls")
 parser.add_argument("--sync_bn", type=str, default="pytorch", help="synchronize bn")
-parser.add_argument("--syncbn_process_group_size", type=int, default=8, help=""" see
-                    https://github.com/NVIDIA/apex/blob/master/apex/parallel/__init__.py#L58-L67""")
 parser.add_argument("--dump_path", type=str, default="model/SwAV/",
                     help="experiment dump path for checkpoints and log")
 parser.add_argument("--seed", type=int, default=31, help="seed")
