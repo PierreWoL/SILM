@@ -205,8 +205,13 @@ def main():
     print("start_epoch", start_epoch)
     # build the queue
     # Disable the queue
+    queue = None
     logger.info("The current queue is None")
     queue_path = os.path.join(args.dump_path, "queue" + str(args.rank) + ".pth")
+    if os.path.isfile(queue_path):
+        queue = torch.load(queue_path)["queue"]
+    # the queue needs to be divisible by the batch size
+    args.queue_length -= args.queue_length % (args.batch_size * args.world_size)
     torch.cuda.empty_cache()
 
     for epoch in range(start_epoch, args.epochs):
@@ -215,9 +220,24 @@ def main():
         print(f"Epoch {epoch}")
         print(f"Allocated memory: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
         print(f"Cached memory: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
+        # Currently we disable the queue
+        # optionally starts a queue
+        if args.queue_length > 0 and epoch >= args.epoch_queue_starts and queue is None:
+            ###
+            # Initialize a new queue with shape (crops_for_assign, queue_length // world_size, feat_dim).
+            # len(args.crops_for_assign) indicates the number of crops assigned to the job,
+            # args.queue_length // args.world_size indicates the queue length is divided equally among each process
+            #  and args.feat_dim indicates the feature dimension. The queue is assigned to the GPU (using .cuda()).
+            ###
+            queue = torch.zeros(
+                len(args.crops_for_assign),  # crops_for_assign
+                args.queue_length // args.world_size,
+                args.feat_dim,
+            ).cuda()
+            print("queue shape: ", queue.shape)
 
         # train the network
-        scores = train(train_loader, model, optimizer, epoch, scheduler, scaler)
+        scores, queue = train(train_loader, model, optimizer, epoch, scheduler, scaler, queue)
         # scores = train(train_loader, model, optimizer, epoch, scheduler, scaler)
         training_stats.update(scores)
 
@@ -241,10 +261,12 @@ def main():
                 os.path.join(args.dump_path, "checkpoint.pth.tar"),
                 os.path.join(args.dump_checkpoints, "ckp-" + str(epoch) + ".pth"),
             )
+        if queue is not None:
+            torch.save({"queue": queue}, queue_path)
         # torch.cuda.empty_cache()
 
 
-def train(train_loader, model, optimizer, epoch, scheduler, scaler):  #
+def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):  #
     def loss_model_fp16(loss):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -285,10 +307,21 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler):  #
         for i, crop_id in enumerate(args.crops_for_assign):
             with torch.no_grad():
                 out = output[bs * crop_id: bs * (crop_id + 1)].detach()
+                if queue is not None:
+                    if use_the_queue or not torch.all(queue[i, -1, :] == 0):
+                        use_the_queue = True
+                        out = torch.cat((torch.mm(
+                            queue[i],
+                            model.module.prototypes.weight.t()
+                        ), out))
+                    # fill the queue
+                    queue[i, bs:] = queue[i, :-bs].clone()
+                    queue[i, :bs] = embedding[crop_id * bs: (crop_id + 1) * bs]
                 # get assignments
                 q = out / args.epsilon
                 q = torch.exp(q).t()
-                q = distributed_sinkhorn(q, args.sinkhorn_iterations)[-bs:]
+                q = sinkhorn(q, args.sinkhorn_iterations)[-bs:]
+
                 # print(i, "th code q is ", q)
             # cluster assignment prediction
             subloss = 0
@@ -331,7 +364,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler):  #
                     # lr=optimizer.optim.param_groups[0]["lr"],
                 )
             )
-    return (epoch, losses.avg)
+    return (epoch, losses.avg), queue
 
 def sinkhorn(Q, nmb_iters):
     with torch.no_grad():
@@ -339,18 +372,13 @@ def sinkhorn(Q, nmb_iters):
         sum_Q = torch.sum(Q)
         Q /= sum_Q  
         r = torch.ones(Q.shape[0], device=Q.device) / Q.shape[0] 
-        c = torch.ones(Q.shape[1], device=Q.device) / Q.shape[1] 
-
+        c = torch.ones(Q.shape[1], device=Q.device) / Q.shape[1]
         for it in range(nmb_iters):
             u = torch.sum(Q, dim=1) 
             u = r / u
             u = shoot_infs(u)
             Q *= u.unsqueeze(1)
-
-            v = torch.sum(Q, dim=0)  
-            v = c / v
-            v = shoot_infs(v)
-            Q *= v.unsqueeze(0)
+            Q *= (c / torch.sum(Q, dim=0)).unsqueeze(0)
 
         return (Q / torch.sum(Q, dim=0, keepdim=True)).t().float()
 
