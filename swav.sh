@@ -1,6 +1,6 @@
 #!/bin/bash --login
 #$ -cwd
-#$ -l nvidia_a100=2           
+#$ -l nvidia_v100=2           
 #$ -pe smp.pe 2 
 #$ -ac nvmps
 #$ -m bea
@@ -45,9 +45,11 @@ for ds in "${datasets[@]}"
     --temperature 0.1 \
     --epsilon 0.01 \
     --subject_column \
-    --nmb_prototypes 500 \
+    --column \
+    --header \
+    --nmb_prototypes 3500 \
     --dist_url $dist_url \
-    --epochs 64 \
+    --epochs 36 \
     --batch_size 60 \
     --cls False \
     --sinkhorn_iterations 3 \

@@ -212,7 +212,6 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         # train the network for one epoch
         logger.info("============ Starting epoch %i ... ============" % epoch)
-        # set sampler
         print(f"Epoch {epoch}")
         print(f"Allocated memory: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
         print(f"Cached memory: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
@@ -334,20 +333,25 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler):  #
             )
     return (epoch, losses.avg)
 
-
-def distributed_sinkhorn(Q, nmb_iters):
+def sinkhorn(Q, nmb_iters):
     with torch.no_grad():
         Q = shoot_infs(Q)
         sum_Q = torch.sum(Q)
-        Q /= sum_Q
-        r = torch.ones(Q.shape[0]).cuda(non_blocking=True) / Q.shape[0]
-        c = torch.ones(Q.shape[1]).cuda(non_blocking=True) / (args.world_size * Q.shape[1])
+        Q /= sum_Q  
+        r = torch.ones(Q.shape[0], device=Q.device) / Q.shape[0] 
+        c = torch.ones(Q.shape[1], device=Q.device) / Q.shape[1] 
+
         for it in range(nmb_iters):
-            u = torch.sum(Q, dim=1)
+            u = torch.sum(Q, dim=1) 
             u = r / u
             u = shoot_infs(u)
             Q *= u.unsqueeze(1)
-            Q *= (c / torch.sum(Q, dim=0)).unsqueeze(0)
+
+            v = torch.sum(Q, dim=0)  
+            v = c / v
+            v = shoot_infs(v)
+            Q *= v.unsqueeze(0)
+
         return (Q / torch.sum(Q, dim=0, keepdim=True)).t().float()
 
 
