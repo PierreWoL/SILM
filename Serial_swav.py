@@ -192,7 +192,7 @@ def main():
     # optionally resume from a checkpoint
     to_restore = {"epoch": 0}
 
-    restart_from_checkpoint(
+    restart_from_checkpoint_serial(
         os.path.join(args.dump_path, "checkpoint.pth.tar"),
         run_variables=to_restore,
         state_dict=model,
