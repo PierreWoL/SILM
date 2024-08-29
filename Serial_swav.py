@@ -24,7 +24,7 @@ from learning import model_swav as transformer
 from learning.util import (
     bool_flag,
     initialize_exp,
-    restart_from_checkpoint,
+    restart_from_checkpoint_serial,
     fix_random_seeds,
     AverageMeter,
     init_distributed_mode,
@@ -312,7 +312,7 @@ def train(train_loader, model, optimizer, epoch, scheduler, scaler, queue):  #
                         use_the_queue = True
                         out = torch.cat((torch.mm(
                             queue[i],
-                            model.module.prototypes.weight.t()
+                            model.prototypes.weight.t()
                         ), out))
                     # fill the queue
                     queue[i, bs:] = queue[i, :-bs].clone()
