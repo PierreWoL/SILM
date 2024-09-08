@@ -10,7 +10,7 @@ models=("sbert")
 datasets=("GDS")
 for data in "${datasets[@]}"
 do
-for i in $(seq 0.7 0.1 0.9)
+for i in $(seq 0.5 0.1 0.9)
 do
   for p in $(seq 0.1 0.1 0.9)
   do

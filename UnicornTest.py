@@ -300,15 +300,16 @@ def phase1(encoder, moelayer, classifiers, dataset):
     return metrics_value
 
 
-def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01):
+def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.15):
     data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
     ground_truth_table = os.getcwd() + f"/datasets/{dataset}/groundTruth.csv"
     Ground_t = data_classes(data_path, ground_truth_table, Nochange=True)[1]
 
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if len(Ground_t[clu]) <= 100:
-            print(f"currernt cluster: {clu}")
+        if 'CreativeWork' in clu or 'Event' in clu:
+          try:
+            print(f"currernt cluster: {clu}", len(Ground_t[clu]))
             tables = [i + ".csv" for i in Ground_t[clu]]
             clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
             write(clusters, pathStore(dataset, f"P2", clu), "clusters")
@@ -324,7 +325,9 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.01
             elapsed_time_cluster = end_time_cluster - start_time_cluster
             print("P3 time", elapsed_time_cluster)
             print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
-
+          except:
+            print("error!")
+        
 
 def phase3(dataset, intervalSlice, delta):
     data_path = os.getcwd() + f"/datasets/{dataset}/Test/"
@@ -459,7 +462,8 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
+    main()
+    """
     path = f"result/P4/{args.dataset}/"
     pair_names = [i for i in os.listdir(path) if '[' in i]
     #print(pair_names)
@@ -500,3 +504,4 @@ if __name__ == '__main__':
     recall = TP/gt_num
     precision = TP/Detect
     print("ratio is ",args.ratio,"recall is :", recall,"Precision is :", precision )
+    """

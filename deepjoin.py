@@ -63,8 +63,8 @@ if __name__ == "__main__":
       print("NO GPU AVAILABLE!")
       sys.exit(1)
       
-    train_model(model_name=model_name, train_dataset=train_dataset, dev_samples=None,
-                model_save_path=os.path.join(path, "fineTuneSBERT.pt"),
+    train_model(model_name=model_name, train_dataset=train_dataset[:320000], dev_samples=None,
+                model_save_path=os.path.join(path, "fineTuneSBERT61.pt"),
                 batch_size=args.batch_size,
                 warmup_steps=args.warmup_steps, cpuid = cupid,
                 weight_decay=args.weight_decay, num_epochs=args.num_epochs,
