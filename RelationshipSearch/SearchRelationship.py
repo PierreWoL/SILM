@@ -56,7 +56,7 @@ def MetricType(groundTruth, results):
     TP = [i for i in results if i in groundTruth]
     FP = [i for i in results if i not in groundTruth]
     FN = [i for i in groundTruth if i not in results]
-
+    print(f"TP{TP}\n FP{FP}\n FN{FN}\n")
     precision = len(TP) / (len(TP) + len(FP)) if (len(TP) + len(FP)) > 0 else 0
     recall = len(TP) / (len(TP) + len(FN)) if (len(TP) + len(FN)) > 0 else 0
     F1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
@@ -101,7 +101,7 @@ def relationshipDiscovery(hp: Namespace):
     # load the embedding file of different embedding methods
     datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
-             fn.endswith('.pkl') and f"_{hp.embed}_" in fn]
+             fn.endswith('.pkl') and f"_{hp.embed}_" in fn and 'subCol' not in fn]
     print("files", len(files))
     # create the folder that stores the scores of column matching using
     score_path = os.path.join(os.getcwd(), f"result/P4/{hp.dataset}/")
@@ -117,17 +117,23 @@ def relationshipDiscovery(hp: Namespace):
                 cluster1 = Ground_t[type_i]
                 cluster2 = Ground_t[type_j]
 
+
                 # if type_i == 'Organization' and type_j == 'Person':
                 cluster1_embedding = [i for i in content if i[0] in cluster1]
                 cluster2_embedding = [i for i in content if i[0] in cluster2]
+
                 relationship1 = entityTypeRelationship(cluster1_embedding, cluster2_embedding, hp.similarity,
                                                        SE, isEuclidean=hp.Euclidean, dataset=hp.dataset)
+
                 relationship2 = entityTypeRelationship(cluster2_embedding, cluster1_embedding, hp.similarity,
                                                        SE, isEuclidean=hp.Euclidean, dataset=hp.dataset)
                 if len(relationship1) > 0:
                     cluster_relationships[(type_i, type_j)] = relationship1
                 if len(relationship2) > 0:
                     cluster_relationships[(type_j, type_i)] = relationship2
+
+                #break
+            #break
         endTimeS = time.time()
         timing.append({'Embedding File': embedding_file, "timing": endTimeS - startTimeS})
         gt_relationship = relationshipGT(hp.dataset)
@@ -175,6 +181,7 @@ def relationshipDiscovery(hp: Namespace):
         else:
             df.loc[str(hp.similarity), 'Similarity'] = hp.similarity
             df.loc[str(hp.similarity), 'Portion'] = hp.portion
+            df.loc[str(hp.similarity), 'Portion_SA'] = hp.portionSA
             df.loc[str(hp.similarity), 'Embedding'] = embedding_file[:-4]
             df.loc[str(hp.similarity), 'Precision'] = p
             df.loc[str(hp.similarity), 'Recall'] = r
@@ -203,6 +210,7 @@ def relationshipDiscovery(hp: Namespace):
         else:
             df.loc[str(hp.similarity), 'Similarity'] = hp.similarity
             df.loc[str(hp.similarity), 'Portion'] = hp.portion
+            df.loc[str(hp.similarity), 'Portion_SA'] = hp.portionSA
             df.loc[str(hp.similarity), 'Embedding'] = embedding_file[:-4]
             df.loc[str(hp.similarity), 'Precision'] = precision
             df.loc[str(hp.similarity), 'Recall'] = recall
@@ -245,7 +253,8 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
 
     def metric(gt_list, result_list, metric='P'):
         resultK = [i for i in result_list if i in gt_list]
-        print(resultK, "\n", result_list)
+        wrong = [i for i in result_list if i not in gt_list]
+        print("correct ones ",resultK, "\n", "\n Wrong ones",wrong)
         if metric == 'P':
             metric_score = len(resultK) / len(result_list) if len(result_list) > 0 else 0
         else:
@@ -300,18 +309,25 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
                 [key for key, value in Ground_t.items() if type_pair[1] in key and attribute_pair[1] in ground_t[key]][
                     0]
             portion_attribute_RA = len(attribute_dict["tables_RA"]) / len(ground_t[type_table_RA][attribute_pair[1]])
-            type_table_SA = [key for key, value in Ground_t.items() if type_pair[0] in key][0]
+            type_table_SA = \
+                [key for key, value in Ground_t.items() if type_pair[0] in key and attribute_pair[0] in ground_t[key]][
+                    0]
 
+            type_table_SA = [key for key, value in Ground_t.items() if type_pair[0] in key][0]
             portion_attribute_SA = len(attribute_dict["tables_SA"]) / len(Ground_t[type_table_SA])
+            print(
+                f" {attribute_pair} portion attribute SA {portion_attribute_SA} portion attribute RA {portion_attribute_RA} \n")
             # print(attribute_pair, portion_attribute_SA)
             # print(attribute_pair,len(ground_t[type_table][attribute_pair[1]]), portion_attribute, attribute_dict )
             if portion_attribute_RA >= hp.portion:  # and portion_attribute_SA >= hp.portion
-                attri_combine1 = f"{type_pair[0]}"
-                attri_combine2 = f"{type_pair[1]}.{attribute_pair[1]}"
-                sim_attri = sum(attribute_similarities) / len(attribute_similarities)
-                overall_results[(attri_combine1, attri_combine2)] = {'sim': sim_attri,
-                                                                     'portion_SA': portion_attribute_SA,
-                                                                     'portion_RA': portion_attribute_RA}
+                if portion_attribute_SA >= hp.portionSA:
+
+                    attri_combine1 = f"{type_pair[0]}"
+                    attri_combine2 = f"{type_pair[1]}.{attribute_pair[1]}"
+                    sim_attri = sum(attribute_similarities) / len(attribute_similarities)
+                    overall_results[(attri_combine1, attri_combine2)] = {'sim': sim_attri,
+                                                                         'portion_SA': portion_attribute_SA,
+                                                                         'portion_RA': portion_attribute_RA}
     precision, TN = metric(gt_attributes, overall_results)
     recall = metric(gt_attributes, overall_results, metric='R')[0]
     return precision, recall, overall_results, TN
@@ -355,8 +371,8 @@ def attributeRelation(dataset, target_path, cluster_relationships, file_target):
             t2_conceptual = find_conceptualAttribute(ground_t, type_2_list, t2, t2_cols)
             for t2_col_concept in t2_conceptual:
                 column_relationships.append(
-                    {'Type1': type_pair[1], 'SubAttribute': concept, 'table1': t1, 'subcol': t1_subcol,
-                     'T2': type_pair[0], 'Attribute': t2_col_concept, 'table2': t2,
+                    {'Type1': type_pair[0], 'SubAttribute': concept, 'table1': t1, 'subcol': t1_subcol,
+                     'T2': type_pair[1], 'Attribute': t2_col_concept, 'table2': t2,
                      'similarity': t2_cols_score[t2_conceptual.index(t2_col_concept)]})
 
     column_relationships = pd.DataFrame(column_relationships)

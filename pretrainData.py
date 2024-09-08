@@ -57,7 +57,7 @@ class  PretrainTableDataset(data.Dataset):
             self.model = SentenceTransformer(self.dpPath)
             print("load DP successfully")
         else:
-            if lm == 'roberta' or lm == 'bert':
+            if lm == 'roberta' or lm == 'sbert':
                 special_tokens_dict = {
                     'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
                 self.header_token = ('<header>', '</header>')
