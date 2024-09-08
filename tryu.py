@@ -118,7 +118,7 @@ from learning.MultiAug import MultiCropTableDataset
 def Encode(model: transformer.TransformerModel,
            unlabeled: MultiCropTableDataset,
            batch_size=128,
-           total=None):
+           total=None,cls=True):
     tables_dict = unlabeled.data()
     tables = list(tables_dict.values())
     total = total if total is not None else len(tables)
@@ -134,18 +134,23 @@ def Encode(model: transformer.TransformerModel,
                 # print("All", x,len(x))
                 # all column vectors in the batch
                 column_vectors = model.infer(x)
-                # print("column_vectors ", column_vectors,column_vectors.shape)
-                ptr = 0
-                for xi in x:
 
-                    current = []
-                    for token_id in xi:
-                        if token_id == unlabeled.tokenizer.cls_token_id:
-                            current.append(column_vectors[ptr].cpu().numpy())
-                            ptr += 1
-                    results.append(current)
+                if cls is False:
+                    list_of_tensors = column_vectors.cpu().numpy()
+                    for tensor in list_of_tensors:
+                        results.append(tensor[np.newaxis, :])
+                    #print(column_vectors.tolist()[0], "\n", column_vectors.shape)
+                # print("column_vectors ", column_vectors,column_vectors.shape)
+                else:
+                    ptr = 0
+                    for xi in x:
+                        current = []
+                        for token_id in xi:
+                            if token_id == unlabeled.tokenizer.cls_token_id:
+                                current.append(column_vectors[ptr].cpu().numpy())
+                                ptr += 1
+                        results.append(current)
             batch.clear()
-    print(len(results))
     return unlabeled.samples, results
 
 
@@ -153,7 +158,7 @@ def remove_module_prefix(state_dict):
     return {k.replace('module.', ''): v for k, v in state_dict.items()}
 
 
-def encoding(dataPath, isTransfer=""):
+def encoding(dataPath, isTransfer="",cls=True):
     checkpoint = torch.load(os.path.join(dataPath, "checkpoint.pth.tar"), map_location=torch.device('cuda'))
     state_dict_model = checkpoint['state_dict']
     state_dict_model = remove_module_prefix(state_dict_model)
@@ -169,7 +174,7 @@ def encoding(dataPath, isTransfer=""):
         args.percentage_crops,
         shuffle_rate=args.shuffle,
         augmentation_methods=args.augmentation,
-        subject_column=args.subject_column,
+        subject_column= args.subject_column,
         header=args.header,
         column=args.column,
         lm=args.lm)  #
@@ -182,72 +187,30 @@ def encoding(dataPath, isTransfer=""):
         hidden_mlp=args.hidden_mlp,
         output_dim=args.feat_dim,#
         nmb_prototypes=args.nmb_prototypes,
-        resize=len(train_dataset.tokenizer)
+        resize=len(train_dataset.tokenizer),
+        cls=cls
     )
     model = model.to("cuda")
 
     model.load_state_dict(state_dict_model)
-    tables, results = Encode(model, train_dataset, batch_size=32)
+    tables, results = Encode(model, train_dataset, batch_size=32,cls=cls)
     dfs_count = 0
     dataEmbeds = []
+
     for i, file in enumerate(tables):
+        if args.column is True:
+            file = file.replace(".csv|", ".")
         dfs_count += 1
         cl_features_file = np.array(results[i])
         dataEmbeds.append((file, cl_features_file))
-    print(dataEmbeds[0], dataEmbeds[0][1].shape)
+    print( dataEmbeds[0],dataEmbeds[0][1].shape)
     return dataEmbeds
 
-
-path = "model/SwAV/WDC/ep02lr0001/" #
-encode_path = ""#datasets/WDC/Test/
-embeddings = encoding(path,encode_path)
-out = "result/embedding/WDC/"
+dataset = "GDS"
+path = f"model/SwAV/{dataset}/40248HTT03T2/" #
+encode_path = f"datasets/{dataset}/Test/"#
+embeddings = encoding(path,encode_path,cls=True)
+out = f"result/embedding/{dataset}/"
 mkdir(out)
-with open(os.path.join(out, "20_sbert_ep02lr0001.pkl"), "wb") as f:
+with open(os.path.join(out, f"{dataset}_sbert_40248HTT03T2_column.pkl"), "wb") as f:
     pickle.dump(embeddings, f)
-"""
-checkpoint =torch.load(os.path.join(path ,"checkpoint.pth.tar") , map_location=torch.device('cuda'))
-state_dict = checkpoint['state_dict']
-args_model = checkpoint['args']
-print(args_model)
-state_dict = checkpoint['state_dict']
-state_dict = remove_module_prefix(state_dict)
-if 'transformer.embeddings.position_ids' in state_dict:
-    print("position_ids",state_dict['transformer.embeddings.position_ids'])
-    del state_dict['transformer.embeddings.position_ids']
-
-train_dataset = MultiCropTableDataset(
-    "datasets/WDC/Test/",
-    [3, 2],
-    [0.5, 0.3],
-    shuffle_rate=0.3,
-    augmentation_methods="sample_cells_TFIDF",
-    subject_column=True,
-    header=False,
-    lm='sbert')#
-model = transformer.TransformerModel(
-    lm="sbert",
-    device="cuda",
-    normalize=True,
-    hidden_mlp=2048,
-    output_dim=128,
-    nmb_prototypes=8,
-    resize=len(train_dataset.tokenizer)
-)
-# for name, param in model.state_dict().items():
-#  print(f"Name: {name}, Shape: {param.shape}")
-
-model = model.to("cuda")
-# for name, param in state_dict.items():
-# print(f"Name: {name}, Shape: {param.shape}")
-model.load_state_dict(state_dict)
-
-tables, results  = Encode(model, train_dataset, batch_size=32)
-dfs_count = 0
-dataEmbeds = []
-for i, file in enumerate(tables):
-    dfs_count += 1
-    # get features for this file / dataset
-    cl_features_file = np.array(results[i])
-    dataEmbeds.append((file, cl_features_file))
-print(dataEmbeds[0])"""
