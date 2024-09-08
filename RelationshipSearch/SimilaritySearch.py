@@ -46,7 +46,7 @@ def entityTypeRelationship(cluster1, cluster2, threshold1, EntityColumns,  datas
 
             if len(similar_pairs) != 0:
                 table_pairs[(table_1, table_2)] = similar_pairs
-
+    #print(table_pairs)
     return table_pairs
 
 

@@ -716,7 +716,7 @@ def clustering_results(input_data, tables, data_path, clusteringName, groundTrut
 def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     star_time = time.time()
-    number_estimate = len(gt_cluster_dict) // 3
+    number_estimate = len(gt_cluster_dict) // 2
     min = number_estimate
     max = 2 * number_estimate
     cluster_dict = clustering(input_data, columns, min, clusteringName, max=max)

@@ -12,7 +12,7 @@ def get_n_colors(n):
 
 dataset = "GDS"
 
-target_path = os.path.abspath(os.path.dirname(os.getcwd())) + f"/result/SILM/Column/{dataset}/_gt_cluster.pickle"
+target_path = os.path.abspath(os.path.dirname(os.getcwd())) + f"/result/P2/Column/{dataset}/_gt_cluster.pickle"
 F_cluster = open(target_path, 'rb')
 KEYS = pickle.load(F_cluster)
 #print( len(KEYS),KEYS)
@@ -21,7 +21,7 @@ RI = {'Agglomerative': {} }  # 'BIRCH': {},
 Purity = {'Agglomerative': {} }
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), f"result/SILM/{dataset}/All")
+data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), f"result/P2/{dataset}/All")
 
 """EMBEDMETHODS = ['SBERT_Instance', 'RoBERTa_Instance',
                 'SBERT_SubAttr', 'RoBERTa_SubAttr',
@@ -70,6 +70,8 @@ def reName(fileName:str):
         re_name +=fileName[0]+"_"+meta
     elif fileName.startswith("D3L"):
         re_name += "D3L"
+    else:
+        re_name = fileName
     return re_name
 test = "cl_sample_cells_lm_sbert_head_column_0_subjectheader_subCol_metrics.csv".split("_metrics.csv")[0]
 
@@ -98,9 +100,6 @@ def dataframes(folds,clustering_algo):
 
 
 
-
-metric = ['Rand Index', 'ARI', 'Purity']
-algo = ['Agglomerative']  #'Agglomerative',
 
 
 def random_color():
@@ -154,6 +153,9 @@ def to_xlsx(df, file_path='', name='Agglomerative'):
             df.to_excel(writer, sheet_name=name, index=True)
 
 
+metric = ['Rand Index', 'ARI', 'Purity']
+algo = ['Agglomerative']  #'Agglomerative',
+
 def naming2(metric_index, algo_index, tar_path):
     name = f"{metric[metric_index]} of Column clustering using {algo[algo_index]} clustering"
     fn = os.path.join(tar_path, f"{metric[metric_index]}_{algo[algo_index]}.png")
@@ -182,7 +184,7 @@ def drawing():
         #box_plot(df_P_A, colors, y_name, name, fn)
 
 
-#drawing()
+drawing()
 """
 df_RI_A = pd.read_excel(os.path.join(data_path, "RI.xlsx"),sheet_name=algo[0])
 print(df_RI_A,len(df_RI_A.columns)-1)

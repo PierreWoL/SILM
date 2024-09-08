@@ -90,7 +90,6 @@ parser.add_argument("--freeze_prototypes_niters", default=313, type=int,
                     help="freeze the prototypes during this many iterations from the start")
 parser.add_argument("--wd", default=1e-6, type=float, help="weight decay")
 parser.add_argument("--warmup_epochs", default=0, type=int, help="number of warmup epochs")
-
 parser.add_argument("--dist_url", default="tcp://localhost:12355", type=str, help="""url used to set up distributed
                     training; see https://pytorch.org/docs/stable/distributed.html""") #127.0.0.1
 parser.add_argument("--world_size", default=1, type=int, help="""
