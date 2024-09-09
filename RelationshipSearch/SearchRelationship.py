@@ -169,7 +169,7 @@ def relationshipDiscovery(hp: Namespace):
         Eu = "EU_" if hp.Euclidean is True else "COS_"
         index = Eu + str(hp.similarity) + embedding_file[:-4] +"P"+ str(hp.portion) + "SA"+str(hp.portionSA)
         if index not in df.index:
-            new_data = {'Similarity': hp.similarity, 'Portion': hp.portion,
+            new_data = {'Similarity': hp.similarity, 'Portion': hp.portion,'Portion_SA': hp.portion_SA,
                         'Embedding': embedding_file[:-4], "Precision": p,
                         "Recall": r, "F1-score": f1}
             # print(new_data)
@@ -194,11 +194,11 @@ def relationshipDiscovery(hp: Namespace):
             df = pd.read_csv(os.path.join(score_path, attri_csv), index_col=0)
         else:
             df = pd.DataFrame(
-                columns=['Similarity', 'Portion', 'Embedding', 'Precision', 'Recall', "attribute result", "TN"])
+                columns=['Similarity', 'Portion', 'Portion_SA','Embedding', 'Precision', 'Recall', "attribute result", "TN"])
             df.to_csv(os.path.join(score_path, attri_csv))
 
         if index not in df.index:
-            new_data = {'Similarity': hp.similarity, 'Portion': hp.portion, 'Embedding': embedding_file[:-4],
+            new_data = {'Similarity': hp.similarity, 'Portion': hp.portion, 'Portion_SA':hp.portionSA, 'Embedding': embedding_file[:-4],
                         "Precision": precision, "Recall": recall,
                         "attribute result": attribute_pairs, "TN": TN}
             # print(new_data)
