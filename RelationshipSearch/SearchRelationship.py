@@ -141,7 +141,7 @@ def relationshipDiscovery(hp: Namespace):
                                    f"result/P4/{hp.dataset}/{embedding_file[:-4]}/")
         mkdir(target_path)
         mid_string = "_Base" if hp.baseline is True else ""
-        file_pickle = f'Relationships_{mid_string}_{str(hp.similarity)}_{hp.embed}_por{str(hp.portion)}_Eu{hp.Euclidean}.pickle'
+        file_pickle = f'Relationships_{mid_string}_{str(hp.similarity)}_{hp.embed}_por{str(hp.portion)}_porSA{str(hp.portionSA)}_Eu{hp.Euclidean}.pickle'
         attributeRelation(hp.dataset, target_path, cluster_relationships, file_pickle.split(".pickle")[0] + ".csv")
         ### Todo STOP HERE: Needs to refine the metric function
         # timing_df = pd.DataFrame(timing)
@@ -167,7 +167,7 @@ def relationshipDiscovery(hp: Namespace):
             df.to_csv(os.path.join(score_path, type_csv))
 
         Eu = "EU_" if hp.Euclidean is True else "COS_"
-        index = Eu + str(hp.similarity) + embedding_file[:-4] + str(hp.portion)
+        index = Eu + str(hp.similarity) + embedding_file[:-4] +"P"+ str(hp.portion) + "SA"+str(hp.portionSA)
         if index not in df.index:
             new_data = {'Similarity': hp.similarity, 'Portion': hp.portion,
                         'Embedding': embedding_file[:-4], "Precision": p,
