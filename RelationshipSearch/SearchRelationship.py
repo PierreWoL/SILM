@@ -163,7 +163,7 @@ def relationshipDiscovery(hp: Namespace):
         if type_csv in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, type_csv), index_col=0)
         else:
-            df = pd.DataFrame(columns=['Similarity', 'Portion', 'Embedding', 'Precision', 'Recall', 'F1-score'])
+            df = pd.DataFrame(columns=['Similarity', 'Portion', 'Portion_SA', 'Embedding', 'Precision', 'Recall', 'F1-score'])
             df.to_csv(os.path.join(score_path, type_csv))
 
         Eu = "EU_" if hp.Euclidean is True else "COS_"
