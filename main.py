@@ -10,7 +10,7 @@ from Runtime import Running
 from TestNaming import testNaming
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default="WDC")
+    parser.add_argument("--dataset", type=str, default="GDS")
     parser.add_argument("--embed", type=str, default='sbert')
     parser.add_argument("--baseline", dest="baseline", action="store_true")
     parser.add_argument("--clustering", type=str, default='Agglomerative')

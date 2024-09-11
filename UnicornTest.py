@@ -44,7 +44,7 @@ def parse_arguments():
                         help='Force to pretrain source encoder/moe/classifier')
     parser.add_argument('--dataset', type=str, default="WDC",
                         help="chosen dataset")
-    parser.add_argument('--step', type=str, default="P4",
+    parser.add_argument('--step', type=str, default="P2",
                         help="chosen PHASE")
     parser.add_argument('--seed', type=int, default=42,
                         help="Specify random state")
@@ -309,22 +309,24 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.15
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
         #if 'CreativeWork' in clu or 'Event' in clu:
           try:
-            print(f"currernt cluster: {clu}", len(Ground_t[clu]))
-            tables = [i + ".csv" for i in Ground_t[clu]]
-            clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
-            write(clusters, pathStore(dataset, f"P2", clu), "clusters")
-            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
-            print(clu, metrics_value)
+                print(f"currernt cluster: {clu}", len(Ground_t[clu]))
+                tables = [i + ".csv" for i in Ground_t[clu]]
+                clusters = clustering(encoder, moelayer, classifiers, dataset, phase=2, selected=tables, Name=clu)
+                write(clusters, pathStore(dataset, f"P2", clu), "clusters")
+                print(clusters)
+                if len(clusters) > 0:
+                    metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], clusters)
+                    print(clu, metrics_value)
 
-            start_time_cluster = time.time()
-            jaccard_score = JaccardMatrix(clusters, data_path)[2]
-            TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
-                                                    cluster_name="Connect", Naming=str(index),
-                                                    sliceInterval=intervalSlice, delta=delta)[:-1]
-            end_time_cluster = time.time()
-            elapsed_time_cluster = end_time_cluster - start_time_cluster
-            print("P3 time", elapsed_time_cluster)
-            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
+                    start_time_cluster = time.time()
+                    jaccard_score = JaccardMatrix(clusters, data_path)[2]
+                    TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
+                                                            cluster_name="Connect", Naming=str(index),
+                                                            sliceInterval=intervalSlice, delta=delta)[:-1]
+                    end_time_cluster = time.time()
+                    elapsed_time_cluster = end_time_cluster - start_time_cluster
+                    print("P3 time", elapsed_time_cluster)
+                    print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
           except:
             print("error!")
         
@@ -341,13 +343,15 @@ def phase3(dataset, intervalSlice, delta):
         corpus = read(pathStore(dataset, f"P2", clu), "corpus")
         data_pairs = read(pathStore(dataset, f"P2", clu), "dataPairs")
         colClusters = find_clusters(data_pairs, list(corpus.keys()))
-        metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], colClusters)
-        print(clu, metrics_value)
-        jaccard_score = JaccardMatrix(colClusters, data_path)[2]
-        TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
-                                                cluster_name="Connect", Naming=str(index),
-                                                sliceInterval=intervalSlice, delta=delta)[:-1]
-        print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
+        print("colClusters",colClusters)
+        if colClusters !={}:
+            metrics_value = evaluate_col_cluster(gt_clusters[clu], gt_cluster_dict[clu], colClusters)
+            print(clu, metrics_value)
+            jaccard_score = JaccardMatrix(colClusters, data_path)[2]
+            TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, "Unicorn", dataset,
+                                                    cluster_name="Connect", Naming=str(index),
+                                                    sliceInterval=intervalSlice, delta=delta)[:-1]
+            print('Top level type ', clu, 'Tree Consistency Score:', TCS, "#Paths:", ALL_path)
 
 
 def phase4(encoder, moelayer, classifiers, dataset, ratio):
@@ -431,6 +435,7 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
             results_ij = cluster_pair_loader(CNE_pairs_ij, clu_i, clu_j)
             CNE_pairs_ji = attriPair(corpus_SCj, corpus_NEi, CNEi_clusters, clu_j, clu_i)
             results_ji = cluster_pair_loader(CNE_pairs_ji, clu_j, clu_i)
+            print(results_ij,results_ji )
 
 
 def main():
@@ -463,8 +468,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    """
+    #main()
+
     path = f"result/P4/{args.dataset}/"
     pair_names = [i for i in os.listdir(path) if '[' in i]
     #print(pair_names)
@@ -489,7 +494,7 @@ if __name__ == '__main__':
              results_WDC = torch.load(f, map_location=torch.device('cpu'))
        with open(os.path.join(path, pair_name, "attrPairs_WDC.pickle"), 'rb') as f:
            attrPairs_WDC = pickle.load(f)
-
+       print(results_WDC,attrPairs_WDC )
        for NE_name in results_WDC.keys():
            table_pairs = attrPairs_WDC[NE_name]
            predicts_cne = results_WDC[NE_name]['predicts']
@@ -505,4 +510,3 @@ if __name__ == '__main__':
     recall = TP/gt_num
     precision = TP/Detect
     print("ratio is ",args.ratio,"recall is :", recall,"Precision is :", precision )
-    """
