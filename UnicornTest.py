@@ -307,7 +307,7 @@ def phase2(encoder, moelayer, classifiers, dataset, intervalSlice=10, delta=0.15
 
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset)
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
-        if 'CreativeWork' in clu or 'Event' in clu:
+        #if 'CreativeWork' in clu or 'Event' in clu:
           try:
             print(f"currernt cluster: {clu}", len(Ground_t[clu]))
             tables = [i + ".csv" for i in Ground_t[clu]]
@@ -400,6 +400,7 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
             predicts_cne = evaluate.matchingOutput(encoder, moelayer, classifiers, test_data_loaders[cne][0], args=args)
             attris = set([table_pairs[predicts_cne.index(i)][0] for i in predicts_cne if i == 1])
             results[cne]['predicts'] = predicts_cne
+            results[cne]['ratio']=len(attris) / pairs_dict[cne]['cne_num']
             if len(attris) / pairs_dict[cne]['cne_num'] >= ratio:
                 results[cne]['isJoin'] = True
             else:
@@ -407,7 +408,7 @@ def phase4(encoder, moelayer, classifiers, dataset, ratio):
         path = f"result/P4/{dataset}/{clu1}_{clu2}/"
         mkdir(path)
         write(test_data_loaders, path, "test_data_loaders")
-        write(results, path, "results")
+        write(results, path, f"results_{ratio}")
         return results
 
     gt_relationship = relationshipGT(args.dataset)
@@ -456,7 +457,7 @@ def main():
     if args.step == "P2":
         phase2(encoder, moelayer, classifiers, args.dataset)
     if args.step == "P3":
-        phase3(args.dataset, 10, 0.01)
+        phase3(args.dataset, 10, 0.15)
     if args.step == "P4":
         phase4(encoder, moelayer, classifiers, args.dataset, args.ratio)
 
