@@ -23,6 +23,7 @@ def find_labels(col_list, gtclusters):
     for column in col_list:
         if column in gtclusters.keys():
             label = gtclusters[column]
+
             if type(label) is list:
                 for item_label in label:
                     labels.append(item_label)
@@ -44,6 +45,7 @@ def find_conceptualAttri(cols_dict, table, attributes, gtclusters=None):
 
     """
     combines = [f"{table[:-4]}.{attribute}" for attribute in attributes]
+    #print(f"attributes {attributes}, combines {combines}")
     if gtclusters is None:
         conceptualAttributes = [cols_dict[i] for i in combines if i in cols_dict.keys()]
     else:
@@ -56,7 +58,7 @@ def MetricType(groundTruth, results):
     TP = [i for i in results if i in groundTruth]
     FP = [i for i in results if i not in groundTruth]
     FN = [i for i in groundTruth if i not in results]
-    print(f"TP{TP}\n FP{FP}\n FN{FN}\n")
+    #print(f"TP{TP}\n FP{FP}\n FN{FN}\n")
     precision = len(TP) / (len(TP) + len(FP)) if (len(TP) + len(FP)) > 0 else 0
     recall = len(TP) / (len(TP) + len(FN)) if (len(TP) + len(FN)) > 0 else 0
     F1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
@@ -147,7 +149,9 @@ def relationshipDiscovery(hp: Namespace):
         # timing_df = pd.DataFrame(timing)
         # timing_df.to_csv(os.path.join(os.getcwd(), f"result/P4/{hp.dataset}/timing_{hp.embed}.csv"))
         result_type_pairs = list(cluster_relationships.keys())
+
         p, r, f1 = MetricType(list(gt_relationship[0].keys()), result_type_pairs)
+        print("gt_relationship",gt_relationship[1])
         precision, recall, sort_result, TN = attributeRelationshipSearch(cluster_relationships, hp, embedding_file, SE,
                                                                          gt_relationship[1])
         attribute_pairs = [i for i in sort_result]
@@ -246,12 +250,15 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
             # TODO needs to change this in the table clustering -> clustering into soft coded
             col_cluster = pickle.load(F_cluster)[hp.clustering]
             gt_clusters_type = gtClusters[type]
+
             conceptual = find_conceptualAttri(col_cluster, table, subcols, gtclusters=gt_clusters_type)
         else:
             conceptual = find_conceptualAttri(gtClusters[type], table, subcols)
+            #print("conceptual, subcols",conceptual, subcols)
         return conceptual
 
     def metric(gt_list, result_list, metric='P'):
+        print("gt_list, result_list",gt_list,"\n", result_list)
         resultK = [i for i in result_list if i in gt_list]
         wrong = [i for i in result_list if i not in gt_list]
         print("correct ones ",resultK, "\n", "\n Wrong ones",wrong)
@@ -261,7 +268,7 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
             metric_score = len(resultK) / len(gt_list)
         return metric_score, resultK
 
-    print(cluster_relationships)
+    #print(cluster_relationships)
     # read generated conceptual attributes of the embedding methods
     gt_clusters, ground_t, gt_cluster_dict = column_gts(hp.dataset)
     datafile_path = os.path.join(os.getcwd(), "result/P4/", hp.dataset,
@@ -281,10 +288,12 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
             subcol_index = [key for key, value in NE_column_score.items() if value == max(NE_column_score.values())] \
                 if len(NE_column_score) > 0 else []
             t1_subcol = columns1[subcol_index[0]] if len(subcol_index) != 0 else columns1[0]
-
+            t1_subcol = [t1_subcol]
             t2_cols = list(similarities.keys())
+            #print("t1_subcol!")
             t1_Attribute = check_conceptualAttri(Ground_t, gt_clusters, t1, t1_subcol,
                                                  gt_clusterDict=gt_cluster_dict)
+            #print("\nt2_col!")
             t2_Attribute = check_conceptualAttri(Ground_t, gt_clusters, t2, t2_cols,
                                                  gt_clusterDict=gt_cluster_dict)
             for Attri_i in t1_Attribute:
@@ -300,10 +309,11 @@ def attributeRelationshipSearch(cluster_relationships, hp: Namespace, embedding_
                         if t1 not in relationships[type_pair][(Attri_i, Attri_j)]['tables_SA']:
                             relationships[type_pair][(Attri_i, Attri_j)]['tables_SA'].append(t1)
     overall_results = {}
-    ### TODO I think this needs to simplify
-    ### TODO maybe we need to move this to some other place when we simplify the matching process
+
+    print("relationships",relationships)
     for type_pair, attribute_pair_dict in relationships.items():
         for attribute_pair, attribute_dict in attribute_pair_dict.items():
+            #print(attribute_pair)
             attribute_similarities = attribute_dict["similarity"]
             type_table_RA = \
                 [key for key, value in Ground_t.items() if type_pair[1] in key and attribute_pair[1] in ground_t[key]][

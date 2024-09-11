@@ -206,11 +206,11 @@ def encoding(dataPath, isTransfer="",cls=True):
     print( dataEmbeds[0],dataEmbeds[0][1].shape)
     return dataEmbeds
 
-dataset = "GDS"
-path = f"model/SwAV/{dataset}/40248HTT03T2/" #
+dataset = "WDC"
+path = f"model/SwAV/{dataset}/42HTT/" #
 encode_path = f"datasets/{dataset}/Test/"#
-embeddings = encoding(path,encode_path,cls=True)
+embeddings = encoding(path,encode_path,cls=False)
 out = f"result/embedding/{dataset}/"
 mkdir(out)
-with open(os.path.join(out, f"{dataset}_sbert_40248HTT03T2_column.pkl"), "wb") as f:
+with open(os.path.join(out, f"{dataset}_sbert_42HTT_column.pkl"), "wb") as f:
     pickle.dump(embeddings, f)
