@@ -536,7 +536,7 @@ def evaluate_col_cluster(gtclusters, gtclusters_dict, clusterDict: dict, folder=
 
             columns_ref.append([column_list, cluster_label, false_cols])
         # print(1 - len(false_cols) / len(column_list),len(false_cols), len(column_list))
-
+    print(gt_column_label)
     if type(gt_column_label[0]) is not list:
         metric_dict = metric_Spee(gt_column_label, column_label_index)
     else:

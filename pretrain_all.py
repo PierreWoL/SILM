@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument("--mlflow_tag", type=str, default=None)
     parser.add_argument("--datasetSize", type=int, default=-1)
     parser.add_argument("--deepjoin", dest="deepjoin", action="store_true")
-    parser.add_argument("--DPpath", type=str, default="model/Deepjoin/WebData/1600/fineTuneSBERT")
+    parser.add_argument("--DPpath", type=str, default="model/Deepjoin/GoogleDatasetSearch/fineTuneSBERT61/")
 
 
     hp = parser.parse_args()

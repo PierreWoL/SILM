@@ -4,7 +4,7 @@ import pickle
 import pandas as pd
 
 from TableCluster.tableClustering import P1, P2, P3, baselineP1
-from EndToEnd.EndToEnd import endToEnd
+from EndToEnd.EndToEnd import endToEnd,ttt
 from RelationshipSearch.SearchRelationship import relationshipDiscovery
 from Runtime import Running
 from TestNaming import testNaming
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument("--intervalSlice", type=int, default=10)
     parser.add_argument("--delta", type=float, default=0.15)
     """ Step 4 parameter """
-    parser.add_argument("--similarity", type=float, default=0.85)
+    parser.add_argument("--similarity", type=float, default=0.9)
     parser.add_argument("--portion", type=float, default=0.8)
     parser.add_argument("--portionSA", type=float, default=0.05)
     parser.add_argument("--Euclidean", dest="Euclidean", action="store_true")
@@ -33,10 +33,10 @@ if __name__ == '__main__':
     parser.add_argument("--subjectCol", dest="subjectCol", action="store_true")
     # row / column-ordered for preprocessing
     """Parameter for End To End """
-    parser.add_argument("--P1Embed", type=str, default='cl_SCT6_lm_sbert_head_column_0_none_subCol.pkl')
+    parser.add_argument("--P1Embed", type=str, default='WDC_sbert_53num50hTT_subcol.pkl')
     #cl_SCT8_lm_sbert_head_column_0_none_subCol.pkl
-    parser.add_argument("--P23Embed", type=str, default='cl_SC8_lm_sbert_head_column_0_header_column.pkl')
-    parser.add_argument("--P4Embed", type=str, default='cl_SC8_lm_bert_head_column_0_none_column.pkl')
+    parser.add_argument("--P23Embed", type=str, default='WDC_sbert_30248HeaderTT_column.pkl')
+    parser.add_argument("--P4Embed", type=str, default='WDC_sbert_30248HeaderTT_column.pkl')
     # parser.add_argument("--slice_start", type=int, default=0)
     # parser.add_argument("--slice_stop", type=int, default=1)
     """ This is randomly selecting tables from the datasets """
@@ -56,7 +56,8 @@ if __name__ == '__main__':
     elif hp.step == 4:
         relationshipDiscovery(hp)
     elif hp.step == -1:
-        endToEnd(hp)
+        #endToEnd(hp)
+        ttt(hp)
     elif hp.step == 9:
 
         names = pd.read_csv(f"datasets/{hp.dataset}/naming.csv")
@@ -70,7 +71,6 @@ if __name__ == '__main__':
         AI_Ins = [f"The tables are web tables. The cluster possibly indicates an top level conceptual type in Schema.org. Schema.org's top-level types are {top_level_nodes}"] # their closest children types
         instruction = ["Background: The cluster of tables is derived from a hierarchical clustering algorithm applied to the embeddings of tables."
             "This clustering indicates a mutual conceptual entity type among the tables.",
-
              "Data Provided: all tables in the cluster."
              "Each table is separated by <table> </table> ."
                       "Each TABLE follows the format: <table> TABLE_INDEX: HEADER1|HEADER2|HEADER3|\n Instance11| Instance12|Instance13| \n Instance21| Instance22|Instance23| \n....</table>.",
@@ -83,7 +83,7 @@ if __name__ == '__main__':
         "The name should be descriptive and relevant to the context of the data. AND NO OTHER TEXT!"]
 
 
-        testNaming(hp, groundtruth = False, format=2, sampling=None, sampling_number=5, header=False, table_names=None,
+        testNaming(hp, groundtruth = False, format=3, sampling=None, sampling_number=5, header=True, table_names=name_dict,
                    instruction=instruction, AI_instruction=AI_Ins)
 
 

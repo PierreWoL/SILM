@@ -2,6 +2,8 @@ import os
 import random
 import pickle
 import pandas as pd
+
+from EndToEnd.EndToEnd import type_info, hierarchy
 from Naming import GPTnaming,TableType
 from TableCluster.tableClustering import  typeInference
 from argparse import Namespace
@@ -21,6 +23,17 @@ def read_clusters_tables(dataset, cluster):
 def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sampling_number=2, header=True, table_names=None, instruction = None, shorts = None, AI_instruction=None):
     if groundtruth is False:
         cluster_dict = typeInference(hp.P1Embed, hp)["Agglomerative"]
+        """
+        name_dict = {row["table"]: row["name"] for index, row in
+                     pd.read_csv(f"datasets/{hp.dataset}/naming.csv").iterrows()}
+        cluster_dict_all = type_info(cluster_dict, hp.dataset, nameDict=name_dict)
+        
+        print("top level type number: ", len(cluster_dict), len(cluster_dict_all))
+        del cluster_dict
+        hierarchy(cluster_dict_all, hp, name_dict)
+        print(cluster_dict_all)"""
+        #with open(f"datasets/{hp.dataset}/naming", "rb") as f:
+            #cluster_dict = pickle.load(open(f"datasets/{hp.dataset}"))
         results = pd.read_csv(f"result/P1/{hp.dataset}/All/{hp.P1Embed[:-4]}/purityCluster1.csv", index_col=0)
     else:
         gt_df = pd.read_csv("datasets/WDC/groundTruth.csv")
@@ -50,7 +63,7 @@ def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sam
         names = None
         if table_names is not None:
             names = [table_names[i] for i in cluster]
-        naming = GPTnaming(apiKey="sk-proj-L19IhpKWkjF8KZfBjtAvT3BlbkFJ5a1Ixe0wl4YZm9AhCS1b", format=format,
+        naming = GPTnaming(apiKey="", format=format,
                            sampling=sampling, sampling_number=sampling_number, header=header, table_names=names)
         cluster_df = read_clusters_tables(hp.dataset,cluster)
         reply = naming.generate_answers(cluster_df, task, reply=None, instructions= instruction, shorts = shorts, AI_instructions=AI_instruction, newMessage=True)
@@ -64,7 +77,7 @@ def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sam
         for index, table_name in enumerate(cluster):
             overall_dict[key]['table types'][table_name]={}
             table_df = cluster_df[index]
-            type_gpt = TableType(apiKey="sk-proj-L19IhpKWkjF8KZfBjtAvT3BlbkFJ5a1Ixe0wl4YZm9AhCS1b", table=table_df)
+            type_gpt = TableType(apiKey="", table=table_df)
             type_specific = type_gpt.table_type()
             print(f"{table_df.head(3)} \n specific type's candidate of table is :\n{type_specific}")
             overall_dict[key]['table types'][table_name]['specific type']=type_specific
@@ -79,6 +92,3 @@ def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sam
 
 
 
-# self key: #sk-proj-L19IhpKWkjF8KZfBjtAvT3BlbkFJ5a1Ixe0wl4YZm9AhCS1b
-#first key: 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
-#sk-proj-z9R7s0PtleBV4LikrljfT3BlbkFJ5M3rllWyfqqmStjbBlBd
