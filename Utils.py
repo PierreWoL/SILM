@@ -1,5 +1,6 @@
 import os
 import pickle
+import random
 
 import numpy as np
 import pandas as pd
@@ -79,13 +80,12 @@ def subjectColDetection(DATA_PATH, RESULT_PATH=None):
     if 'dict.pickle' in os.listdir(RESULT_PATH):
         with open(os.path.join(RESULT_PATH, 'dict.pickle'), "rb") as f:
             table_dict = pickle.load(f)
-
     else:
         table_dict = {}
         table_names = [i for i in os.listdir(DATA_PATH) if i.endswith(".csv")]
         for tableName in table_names:
             table_dict[tableName] = []
-            table_ori = pd.read_csv(os.path.join(DATA_PATH, tableName))
+            table_ori = pd.read_csv(os.path.join(DATA_PATH, tableName), encoding="latin1")
             annotation_table = TA(table_ori, SearchingWeb=False)
             annotation_table.subcol_Tjs()
             table_dict[tableName].append(annotation_table.annotation)
@@ -96,15 +96,22 @@ def subjectColDetection(DATA_PATH, RESULT_PATH=None):
     return table_dict
 
 
+def childList(cut_list, select_length):
+    if len(cut_list) < select_length:
+        return cut_list
+    return random.sample(cut_list, select_length)
+
+
 def subjectCol(table: pd.DataFrame):
     sub_cols_header = []
     annotation_table = TA(table, SearchingWeb=False)
     annotation_table.subcol_Tjs()
     NE_column_score = annotation_table.column_score
-    max_score = max(NE_column_score.values())
-    subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
-    for index in subcol_index:
-        sub_cols_header.append(table.columns[index])
+    if len(NE_column_score) > 0:
+        max_score = max(NE_column_score.values())
+        subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
+        for index in subcol_index:
+            sub_cols_header.append(table.columns[index])
     return sub_cols_header
 
 
@@ -118,6 +125,7 @@ def findSubCol(table_path: str, table: str):
         subcol_index = [key for key, value in NE_column_score.items() if value == max_score]
         for index in subcol_index:
             sub_cols_header.append(df_table.columns[index])
+    del df_table,SubjectCol_dict,annotation, NE_column_score
     return sub_cols_header
 
 

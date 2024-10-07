@@ -287,8 +287,9 @@ def mix_drawing(file, table, colors):
            "starmie_sample", "starmie_shuffle"
 """
 #
-choices = [ "WholeTable", "SubCol"]
+"""choices = [ "WholeTable", "SubCol"]
 # dfs_sum(is_sub)
 for i in DATA_PATH:
     for choice in choices:
         star_pic(mode=i, choose=choice)
+"""

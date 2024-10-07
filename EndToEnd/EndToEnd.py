@@ -8,6 +8,7 @@ import pandas as pd
 
 from EndToEnd.T import generateUML
 from EndToEnd.UML import savefig_uml
+from Naming import GPTnaming
 from interactiveFigure import draw_interactive_graph
 from clustering import most_frequent_list, clustering, data_classes
 from ClusterHierarchy.ClusterDecompose import tree_consistency_metric
@@ -48,8 +49,11 @@ def find_node_tables(G, N):
     return children_with_type_data
 
 
-def checkTree(tree: nx.DiGraph(), colDict):
-    draw_interactive_graph(tree)
+def checkTree(tree: nx.DiGraph(), colDict,name=None):
+    """if name!=None:
+        draw_interactive_graph(tree,file_path=f"result/EndToEnd/WDC/{name}.html")
+    else:
+        draw_interactive_graph(tree)"""
     for node in tree.nodes():
         if tree.nodes[node].get("type") != 'data':
             tables = find_node_tables(tree, node)
@@ -107,12 +111,13 @@ def find_cluster_embeddings(cluster, content, filepath: str):
     names = []
     input_data = []
     for table_name in cluster:
-        column_table = pd.read_csv(os.path.join(filepath, table_name + ".csv")).columns
-        subcols = findSubCol(filepath, table_name + ".csv")
-        column_table_combine = [f"{table_name}.{i}" for i in column_table if i not in subcols]
-        # names.extend(column_table)
-        names.extend(column_table_combine)
-        input_data.extend([embed for key, embed in content.items() if key in column_table_combine])
+        if table_name+".csv" in os.listdir(os.path.join(filepath)):
+            column_table = pd.read_csv(os.path.join(filepath, table_name + ".csv")).columns
+            subcols = findSubCol(filepath, table_name + ".csv")
+            column_table_combine = [f"{table_name}.{i}" for i in column_table if i not in subcols]
+            # names.extend(column_table)
+            names.extend(column_table_combine)
+            input_data.extend([embed for key, embed in content.items() if key in column_table_combine])
     return input_data, names
 
 
@@ -149,7 +154,8 @@ def hierarchy(cluster_dict, hp: Namespace, name_dict, limit=39):
         jaccard_score = JaccardMatrix(colcluster_dict, data_path)[2]
         simple_tree = None
         if len(cluster) > limit:
-            print(f'\n{cluster_dict[name]["name"][0]} \n {cluster_dict[name]["TopLabel"]}  '
+            print(f'hierarchy'
+                  f'\n{cluster_dict[name]["name"][0]} \n {cluster_dict[name]["TopLabel"]}  '
                   f'{cluster_dict[name]["TPurity"] / len(cluster_dict[name]["cluster"])} '
                   f'{cluster_dict[name]["LowLabel"]} {cluster_dict[name]["LPurity"] / len(cluster_dict[name]["cluster"])} \n '  # {tables} \n
                   f'{SA_name_attri} ({len(cluster_dict[name]["subjectAttribute"]["attributes"])})')
@@ -321,3 +327,172 @@ def endToEnd(hp: Namespace):
     #uml_code,sub_umls = generateUML(cluster_dict_all, hp.dataset, hp.estimateNumber)
     #mkdir(f"result/EndToEnd/{hp.dataset}/{hp.estimateNumber}")
     #savefig_uml(uml_code, os.getcwd(), fileName=f"result/EndToEnd/{hp.dataset}/{hp.estimateNumber}/all.uml")
+
+
+def hierarchy_new(cluster_dict, hp: Namespace, limit=39):
+    filepath = f"datasets/{hp.dataset}/Test/"
+    content = read_col_Embeddings(hp.P23Embed, hp.dataset)
+    store_path = f"result/EndToEnd/{hp.dataset}/"
+    mkdir(store_path)
+    topType_dict = {}
+    for name in cluster_dict.keys():
+        cluster_info = cluster_dict[name]
+        cluster = cluster_info["cluster"]
+        input_data, names = find_cluster_embeddings(cluster, content, filepath)
+        MIN = math.ceil(len(input_data) / 40) if math.ceil(len(input_data) / 40) > 2 else 2
+        colcluster_dict = clustering(input_data, names, MIN, hp.clustering,
+                                     max=2 * MIN + 5)
+        # print("attribute clusters ", len(colcluster_dict))
+        colcluster_dict = dict(sorted(colcluster_dict.items(), key=lambda item: len(item[1]), reverse=True))
+        SA_name_attri = cluster_dict[name]["subjectAttribute"]["name"][0] if len(
+            cluster_dict[name]["subjectAttribute"]["name"]) > 0 else "? Name"
+        gt_clusters_low = \
+            data_classes(f"datasets/{hp.dataset}/Test", f"datasets/{hp.dataset}/groundTruth.csv", superclass=False)[0]
+        tables = {i: gt_clusters_low[i] for i in cluster_dict[name]["cluster"]}
+        topType_dict[name] = {'name':cluster_dict[name]["name"][0], 'Size':len(cluster_dict[name]["cluster"])}
+        colCluster = {index: {'name': name_type([i.split(".")[1] for i in cluster]), 'cluster': cluster} for
+                      index, cluster in colcluster_dict.items()}
+        #print(cluster_info["name"],len(cluster), )
+        #for key, info in colCluster.items():
+            #print(info['name'])
+        data_path = os.getcwd() + "/datasets/%s/Test/" % hp.dataset
+        jaccard_score = JaccardMatrix(colcluster_dict, data_path)[2]
+        simple_tree = None
+        
+        if len(cluster) > limit:
+            for index, colcluster_info in colCluster.items():
+                name_attri = colcluster_info['name'][0] if len(colcluster_info['name']) > 0 else "Unnamed attribute"
+                #print(f"{name_attri} ({len(colcluster_info['cluster'])})")
+            # print(len(colCluster), colCluster, )
+            # print("\n", name, cluster_info["TopLabel"], cluster_info["LowLabel"], cluster_info["name"][0])
+
+            TCS, ALL_path, simple_tree = tree_consistency_metric(cluster, jaccard_score, hp.P23Embed,
+                                                                 hp.dataset, sliceInterval=hp.intervalSlice,
+                                                                 delta=hp.delta,
+                                                                 store_results=False)
+            if simple_tree is not None:
+                    for node in simple_tree.nodes():
+                        tables = find_node_tables(simple_tree, node)
+                        cluster_df = read_clusters_tables(hp.dataset, tables)
+                        co_index, attri_keys = find_attribute(tables, colcluster_dict, filepath)
+                        simple_tree.nodes[node]['attributes'] = co_index
+                        simple_tree.nodes[node]['attributes_dict'] = {key: value for key, value in attri_keys.items() if
+                                                               key in co_index}
+                        names_node = gptname(cluster_df, format=3, sampling=None, sampling_number=5,
+                                             header=True, table_names=names, instruction=instruction, shorts=None,
+                                             AI_instruction=AI_Ins)
+                        simple_tree.nodes[node]['name'] = names_node
+
+        cluster_dict[name]["attributes"] = colCluster
+        cluster_dict[name]["tree"] = simple_tree
+        if simple_tree is not None:
+            name_cluster = cluster_info["name"]
+            checkTree(simple_tree, colCluster,name=f"{name}_{name_cluster}")
+    #print(topType_dict)
+    df = pd.DataFrame.from_dict(topType_dict, orient='index')
+    df.reset_index(inplace=True)
+    df.rename(columns={'index': 'ID'}, inplace=True)
+def gptname(cluster_df,format =1, sampling=None,sampling_number=5,  header=True, table_names=None, instruction = None, shorts = None, AI_instruction=None):
+        task_element = ""
+        if format == 2:
+            task_element = "tables"
+        elif format == 3:
+            task_element = "tables with <sc> and </sc> marking the subject attributes"
+        elif format == 4:
+            task_element = "subject attributes of tables"
+        naming = GPTnaming(apiKey="sk-proj-L19IhpKWkjF8KZfBjtAvT3BlbkFJ5a1Ixe0wl4YZm9AhCS1b", format=format,
+                           sampling=sampling, sampling_number=sampling_number, header=header, table_names=table_names)
+        task = (
+            f"Given a cluster of {task_element} separated by <table> ... </table>, identify and provide a name for the conceptual type that best describes the tables in the cluster.")
+        reply = naming.generate_answers(cluster_df, task, reply=None, instructions=instruction, shorts=shorts,
+                                        AI_instructions=AI_instruction, newMessage=True)
+        return reply
+
+
+dataset="WDC"
+with open(f"datasets/{dataset}/graphGroundTruth.pkl", "rb") as f:
+    graph = pickle.load(f)
+top_level_nodes = [node for node, in_degree in graph.in_degree() if in_degree == 0]
+
+AI_Ins = [
+        f"The tables are web tables. The cluster possibly indicates an top level conceptual type in Schema.org. Schema.org's top-level types are {top_level_nodes}"]  # their closest children types
+instruction = [
+        "Background: The cluster of tables is derived from a hierarchical clustering algorithm applied to the embeddings of tables."
+        "This clustering indicates a mutual conceptual entity type among the tables.",
+        "Data Provided: all tables in the cluster."
+        "Each table is separated by <table> </table> ."
+        "Each TABLE follows the format: <table> TABLE_INDEX: HEADER1|HEADER2|HEADER3|\n Instance11| Instance12|Instance13| \n Instance21| Instance22|Instance23| \n....</table>.",
+
+        "Task: Analyze the topic/theme of each of the provided table within the cluster."
+        "Based on the context and theme of the tables, determine the mutual entity type of the tables. Provide a suitable name that describes this mutual entity type.",
+
+        "Expected Output: The output should be a single word or a short phrase that clearly describes the mutual "
+        "entity type of the tables in the cluster."
+        "The name should be descriptive and relevant to the context of the data. AND NO OTHER TEXT!"]
+
+names_all = pd.read_csv(f"datasets/{dataset}/naming.csv")
+name_dict = {str(iter_n[0])[:-4]: iter_n[1] for index, iter_n in names_all.iterrows()}
+
+
+def read_clusters_tables(dataset, cluster):
+    tables = []
+    for table_name in cluster:
+        table = pd.read_csv(f"datasets/{dataset}/Test/{table_name}.csv")
+        tables.append(table)
+    return tables
+def ttt(hp: Namespace):
+    cluster_dict = typeInference(hp.P1Embed, hp)["Agglomerative"]
+    print(cluster_dict)
+    results = pd.read_csv(f"result/P1/{hp.dataset}/All/{hp.P1Embed[:-4]}/purityCluster1.csv")
+    naming5_dict = {}
+    # 遍历DataFrame的每一行
+    for index, row in results.iterrows():
+        naming5_value = row['Naming5']
+        cluster_id = row['Cluster id']
+
+        # 如果Naming5值尚未在字典中，则初始化一个空列表
+        if naming5_value not in naming5_dict:
+            naming5_dict[naming5_value] = []
+
+        # 将当前行的Cluster id添加到对应的Naming5值的列表中
+        naming5_dict[naming5_value].append(cluster_id)
+
+    # 打印生成的字典
+    #print(naming5_dict)
+    new_clusters = {}
+    for name, ids in naming5_dict.items():
+        if len(ids) ==1:
+            new_clusters[ids[0]] = {}
+            new_clusters[ids[0]]["cluster"] = cluster_dict[ids[0]]
+        else:
+            id_new = ids[0]
+            new_clusters[id_new] = {}
+            new_clusters[ids[0]]["cluster"] = cluster_dict[id_new]
+            for id in ids[1:]:
+                new_clusters[id_new]["cluster"].extend(cluster_dict[id])
+    for id in new_clusters.keys():
+        cluster_info = new_clusters[id]
+        # print(id, cluster_info)
+        names = [name_dict[i] for i in cluster_info["cluster"]]
+        cluster_df = read_clusters_tables(hp.dataset,cluster_info["cluster"])
+        reply = gptname(cluster_df, format=3,sampling=None,sampling_number=5,
+                        header=True, table_names=names, instruction = instruction, shorts = None, AI_instruction=AI_Ins)
+        new_clusters[id]["name"]=reply
+
+        subCols = []
+        for table_name in cluster_info["cluster"]:
+            per_sub_cols = findSubCol(f"datasets/{hp.dataset}/Test/", table_name+".csv")
+            if per_sub_cols is not []:
+                subCols.extend([f"{table_name}.{per_sub_col}" for per_sub_col in per_sub_cols])
+        subcol_name = name_type([i.split(".")[1] for i in subCols])
+        new_clusters[id]["subjectAttribute"] = {'name': subcol_name, 'attributes': subCols}
+
+
+        # print(id,reply, len(cluster_df) )
+    hierarchy_new(new_clusters, hp)
+    endToEndRelationship(hp, new_clusters)
+    with open(f"result/P1/{hp.dataset}/All/{hp.P1Embed[:-4]}/merged.pkl", "wb") as f:
+        pickle.dump(new_clusters, f)
+    #uml_code, sub_umls = generateUML(new_clusters, hp.dataset, hp.estimateNumber)
+    #mkdir(f"result/EndToEnd/{hp.dataset}/{hp.estimateNumber}")
+    #savefig_uml(uml_code, os.getcwd(), fileName=f"result/EndToEnd/{hp.dataset}/{hp.estimateNumber}/allSwAV.uml")

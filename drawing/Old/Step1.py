@@ -3,8 +3,52 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from Step2_1 import reName
-
+#from drawing.Step2_1 import reName
+def reName(fileName:str):
+    print(fileName)
+    re_name = ""
+    if fileName.startswith("cl_"):
+        fileName = fileName[3:]
+        fileName_split = fileName.split("_lm_")
+        Aug_op = fileName_split[0]
+        txt = fileName_split[1]
+        split_txt =  txt.split("_")
+        is_SubCol = False
+        is_col = False
+        if split_txt[-1] == "subCol":
+            LM, metadata = split_txt[0], split_txt[-2]
+            is_SubCol = True
+        elif split_txt[-1] == "column":
+            LM, metadata = split_txt[0], split_txt[-2]
+            is_col = True
+        else:
+            LM, metadata = split_txt[0], split_txt[-1]
+        meta = ""
+        if metadata == "none":
+            meta = "I"
+        elif metadata == "header":
+            meta = "HI"
+        elif metadata == "subjectheader":
+            meta = "SHI"
+        re_name = Aug_op + "_" + LM + "_" + meta
+        if is_SubCol is True:
+            re_name = Aug_op + "_" + LM + "_" + meta+"_"+"subAttr"
+        if is_col is True:
+            re_name = Aug_op + "_" + LM + "_" + meta+"_"+"Column"
+    elif fileName.startswith("Pretrain_"):
+        re_name+="Pre_"
+        fileName = fileName.split("Pretrain_")[1].split("_")
+        meta = ""
+        if fileName[-2] =="none":
+            meta = "I"
+        elif   fileName[-2] == "header":
+            meta = "HI"
+        elif fileName[-2] =="subjectheader":
+            meta = "SHI"
+        re_name +=fileName[0]+"_"+meta
+    elif fileName.startswith("D3L"):
+        re_name += "D3L"
+    return re_name
 data_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                          "result/starmie/TabFact/Subject_Col/summarize.xlsx")
 metric = ['Rand Index', 'Purity']
@@ -31,7 +75,6 @@ def data_summarize(path):
 
     RI = pd.DataFrame(list(Results['Rand Index'].items()), columns=['Embedding Methods', 'Rand Index'])
     purity = pd.DataFrame(list(Results['Purity'].items()), columns=['Embedding Methods', 'Purity'])
-    #ACCS = pd.DataFrame(list(Results['ACCS'].items()), columns=['Embedding Methods', 'Average cluster consistency score'])
 
     def to_xlsx(df1=None, df2=None, df3=None, file_path='', n1='Rand Index', n2='Purity' ,n3 = 'ACCS'):
         with pd.ExcelWriter(file_path) as writer:
@@ -75,9 +118,9 @@ def metric_ALL(tar_path, index, embeddingMethods: list, fileName, colors, title,
     plt.show()
 
 
-dataset = "GDS"  # TabFact GoogleSearch
+dataset = "WDC"  # TabFact GoogleSearch
 Table_content = "All"  # Subject_Col All
-subCol_path = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())), os.path.join("result/starmie", dataset, Table_content))
+subCol_path = "E:/Project/CurrentDataset/result/P1/WDC/Subject_Col"
 #subCol_path= os.path.join(f"C:/Users/1124a/Desktop/Experiments/P1-120/TabFact/{Table_content}")
 print(subCol_path)
 data_summarize(subCol_path)

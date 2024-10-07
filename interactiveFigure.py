@@ -38,7 +38,7 @@ def draw_interactive_graph(graph, file_path=None):
         node_trace['x'] += tuple([x])
         node_trace['y'] += tuple([y])
         node_info = f"Node: {node}"
-        for key in ['type', 'label', 'Purity']:  # 'tables'
+        for key in ['type', 'label', 'Purity','name']:  # 'tables'
             if key in graph.nodes[node]:
                 node_info += f"<br>{key}: {graph.nodes[node][key]}"
         node_trace['text'] += tuple([node_info])

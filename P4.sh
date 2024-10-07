@@ -1,16 +1,27 @@
-models=("sbert" "bert" "roberta")
-datasets=("GDS" "WDC")
+#!/bin/bash --login
+#$ -cwd     # For 32GB per core, any of the CPU types below (system chooses)
+#$ -l mem512
+
+module load libs/cuda
+conda activate py39
+source /mnt/iusers01/fatpou01/compsci01/c29770zw/test/CurrentDataset/datavenv/bin/activate
+
+models=("sbert")
+datasets=("WDC")
 for data in "${datasets[@]}"
 do
-for i in $(seq 0.7 0.1 0.9)
+for i in $(seq 0.8 0.1 0.9)
 do
-  for p in $(seq 0.1 0.1 0.9)
+  for p in $(seq 0.6 0.1 0.9)
   do
-    for lm in "${models[@]}"
+for psa in $(seq 0.05 0.05 0.25)
+do   
+ for lm in "${models[@]}"
       do
-        echo $i $lm $p
-      /mnt/c/Users/Pierre/AppData/Local/Programs/Python/Python311/python.exe main.py --step 4 --dataset $data --similarity $i --portion $p --embed $lm --baseline
+        echo $i $lm $p $psa
+     python main.py --step 4 --dataset $data --similarity $i --portion $p --portionSA $psa --embed $lm --baseline
       done
-    done
 done
+done   
+ done
 done

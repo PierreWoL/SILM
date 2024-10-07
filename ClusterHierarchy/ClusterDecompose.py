@@ -304,7 +304,7 @@ def tree_consistency_metric(tables, JaccardMatrix, embedding_file, dataset,
     Create folder for the results
     """
     if store_results is True:
-        result_folder = os.path.join("result/SILM/", dataset, Naming, cluster_name)
+        result_folder = os.path.join("result/P4/", dataset, Naming, cluster_name)
         file_path = os.path.join(result_folder, embedding_file)
         mkdir(file_path)
         mkdir(f"result/SILM/{dataset}/{Naming}/{cluster_name}")
@@ -321,12 +321,12 @@ def tree_consistency_metric(tables, JaccardMatrix, embedding_file, dataset,
 def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
 
-    datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+    datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                  "All/" + embedding_file + "/column")
     data_path = os.getcwd() + "/datasets/%s/Test/" % hp.dataset
     # Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
 
-    target_path = os.getcwd() + "/result/SILM/Column/" + \
+    target_path = os.getcwd() + "/result/P2/Column/" + \
                   hp.dataset + "/_gt_cluster.pickle"
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
@@ -344,9 +344,9 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
     if len(tables) > 1:
         jaccard_score = JaccardMatrix(col_cluster[clustering], data_path)[2]
         # print(jaccard_score)
-        TCS, ALL_path = tree_consistency_metric(tables, jaccard_score, embedding_file, hp.dataset,
+        TCS, ALL_path,simple_tree = tree_consistency_metric(tables, jaccard_score, embedding_file, hp.dataset,
                                                 cluster_name=clustering, Naming=str(index_cols),
-                                                sliceInterval=hp.intervalSlice, delta=hp.delta)[:1]
+                                                sliceInterval=hp.intervalSlice, delta=hp.delta)#[:1]
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'), index_col=0)
         else:

@@ -6,6 +6,7 @@ import random
 import pandas as pd
 import os
 from sentence_transformers import SentenceTransformer
+from Utils import childList
 
 from Utils import subjectCol
 from torch.utils import data
@@ -35,35 +36,47 @@ class  PretrainTableDataset(data.Dataset):
                  subject_column=False,
                  header=False,
                  pretrain=False,
+                 deepjoin=False,
+                 dpPath = None,
                  sample_meth='wordProb',
                  table_order='column',
-                 check_subject_Column='subjectheader'):
+                 check_subject_Column='subjectheader',
+                 select = -1):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
                                                        selectable_pos=1)
         # pretained-LM
         self.pretrain = pretrain
+        self.deepjoin = deepjoin
         self.lm = lm
         self.model = None
-
-        if lm == 'roberta' or lm == 'bert':
-            special_tokens_dict = {
-                'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
-            self.header_token = ('<header>', '</header>')
-            self.SC_token = ('<subjectcol>', '</subjectcol>')
-
-            if self.pretrain:
-                print("ROBERTa")
-                self.model = AutoModel.from_pretrained(lm_mp[lm])
-                tokenizer_vocab_size = self.tokenizer.vocab_size + len(special_tokens_dict['additional_special_tokens'])
-                self.model.resize_token_embeddings(new_num_tokens=tokenizer_vocab_size)
-
-        else:
+        self.dpPath = dpPath
+        if self.deepjoin is True:
             special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
             self.header_token = ('[header]', '[/header]')
             self.SC_token = ('[subjectcol]', '[/subjectcol]')
-            if self.pretrain:
-                print("SentenceTransformer")
-                self.model = SentenceTransformer(lm_mp[lm])
+            self.model = SentenceTransformer(self.dpPath)
+            print("load DP successfully")
+        else:
+            if lm == 'roberta' or lm == 'sbert':
+                special_tokens_dict = {
+                    'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
+                self.header_token = ('<header>', '</header>')
+                self.SC_token = ('<subjectcol>', '</subjectcol>')
+
+                if self.pretrain:
+                    print("ROBERTa")
+                    self.model = AutoModel.from_pretrained(lm_mp[lm])
+                    tokenizer_vocab_size = self.tokenizer.vocab_size + len(special_tokens_dict['additional_special_tokens'])
+                    self.model.resize_token_embeddings(new_num_tokens=tokenizer_vocab_size)
+
+            else:
+                special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
+                self.header_token = ('[header]', '[/header]')
+                self.SC_token = ('[subjectcol]', '[/subjectcol]')
+                if self.pretrain:
+                    print("SentenceTransformer")
+                    self.model = SentenceTransformer(lm_mp[lm])
+
 
         self.tokenizer.add_special_tokens(special_tokens_dict)
         self.tokenizer.special_tokens_map.items()
@@ -75,6 +88,9 @@ class  PretrainTableDataset(data.Dataset):
         self.isCombine = False
 
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
+        if select!=-1:
+            self.tables = childList(self.tables , select)
+        print(len(self.tables))
         
         self.columns = []
         # only keep the first n tables
@@ -143,8 +159,11 @@ class  PretrainTableDataset(data.Dataset):
                                     sample_meth=hp.sample_meth,
                                     table_order=hp.table_order,
                                     header=hp.header,
+                                    dpPath=hp.DPpath,
                                     pretrain=hp.pretrain,
-                                    check_subject_Column=hp.check_subject_Column)
+                                    deepjoin=hp.deepjoin,
+                                    check_subject_Column=hp.check_subject_Column,
+                                    select=hp.datasetSize)
 
     def _read_table(self, table_id):
         """Read a table"""
@@ -153,10 +172,6 @@ class  PretrainTableDataset(data.Dataset):
         else:
             fn = os.path.join(self.path, self.tables[table_id])
             table = pd.read_csv(fn)  # encoding="latin-1",
-
-            """if self.isCombine:
-                table = table.iloc[:, 1:]  # encoding="latin-1","""
-
             self.table_cache[table_id] = table
         return table
 
@@ -187,8 +202,7 @@ class  PretrainTableDataset(data.Dataset):
         res = []
         max_tokens = self.max_len * 2 // len(table.columns) if len(table.columns) != 0 else 512
         budget = max(1, self.max_len // len(table.columns) - 1) if len(table.columns) != 0 else self.max_len
-        tfidfDict = computeTfIdf(table,
-                                 isCombine=self.isCombine) if "tfidf" in self.sample_meth else None  # from preprocessor.py
+        tfidfDict = computeTfIdf(table) if "tfidf" in self.sample_meth else None
         # a map from column names to special token indices
         column_mp = {}
 
@@ -196,7 +210,6 @@ class  PretrainTableDataset(data.Dataset):
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens)
-
             for column, col_text in col_texts.items():
                 column_mp[column] = len(res)
                 encoding = self.tokenizer.encode(text=col_text,
@@ -274,7 +287,6 @@ class  PretrainTableDataset(data.Dataset):
                         col_text += self.SC_token[0] + " " + string_token + " " + self.SC_token[1] + " "  #
                     else:
                         col_text += string_token + " "
-
                 col_texts[column] = col_text
             # average embedding of tokens mode
             else:
@@ -362,19 +374,19 @@ class  PretrainTableDataset(data.Dataset):
                     table_ori = table_ori[cols]
             embedding = self._encode(table_ori, Token=setting)
             table_encodings.append((self.tables[idx], np.array(embedding)))
-
-        output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (self.lm, self.sample_meth,
+        lm = self.lm if self.deepjoin is False else "DP"
+        output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (lm, self.sample_meth,
                                                        self.table_order, self.check_subject_Column, setting)
         if self.single_column:
-            output_file = "Pretrain_%s_%s_%s_%s_%s_singleCol.pkl" % (self.lm, self.sample_meth,
+            output_file = "Pretrain_%s_%s_%s_%s_%s_singleCol.pkl" % (lm, self.sample_meth,
                                                                      self.table_order, self.check_subject_Column,
                                                                      setting)
         if self.subject_column:
-            output_file = "Pretrain_%s_%s_%s_%s_%s_subCol.pkl" % (self.lm, self.sample_meth,
+            output_file = "Pretrain_%s_%s_%s_%s_%s_subCol.pkl" % (lm, self.sample_meth,
                                                                   self.table_order, self.check_subject_Column, setting)
 
         if self.header:
-            output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (self.lm, self.sample_meth,
+            output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (lm, self.sample_meth,
                                                                   self.table_order, self.check_subject_Column, setting)
 
         target_path = os.path.join(output_path, output_file)

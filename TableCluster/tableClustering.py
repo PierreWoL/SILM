@@ -17,14 +17,14 @@ def P1(hp: Namespace):
     # F_graph = open(os.path.join(os.getcwd(),  "datasets/" + hp.dataset, "graphGroundTruth.pkl"), 'rb')
     # graph_gt = pickle.load(F_graph)
     files = [fn for fn in os.listdir(datafile_path) if
-             '.pkl' in fn and f"_{hp.embed}_" in fn and not fn.endswith('_column.pkl')]
+             '.pkl' in fn and f"_{hp.embed}_" in fn and not fn.endswith('_column.pkl')] #
     print(files)
     for file in files:
         typeInference(file, hp)
 
 
 def read_embeddings_P1(embedding_file, isSubCol, dataset, SelectType="", SelectedNumber=0):
-    print(embedding_file, isSubCol)
+
     datafile_path = os.getcwd() + "/result/embedding/" + dataset + "/"
     if isSubCol:
         dataPath = os.path.join("datasets", dataset, "Test")
@@ -93,7 +93,7 @@ def typeInference(embedding_file, hp: Namespace):
             for i in range(0, hp.iteration):
                 new_path = os.path.join(store_path, embedding_file[:-4])
                 mkdir(new_path)
-                print("numE", numE)
+
                 cluster_dict, metric_dict = clustering_results(Z, T, data_path, method, groundTruth=ground_truth,
                                                                folderName=new_path,
                                                                numEstimate=numE)  # , graph=graph_gt
@@ -109,7 +109,7 @@ def typeInference(embedding_file, hp: Namespace):
             e_df = pd.concat([e_df, v.rename(i)], axis=1)
         if hp.SelectType == "":
             e_df.to_csv(store_path + embedding_file[:-4] + '_metrics.csv', encoding='utf-8')
-        print(e_df)
+        print(embedding_file[:-4], e_df)
     except ValueError as e:
         print(e)
     return dict_file
@@ -230,10 +230,10 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None):
 
         checkfile = f"{index}_colcluster_dict.pickle"
         if "D3L" in embedding_file:
-            datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+            datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                          "All/" + embedding_file + "/column")
         else:
-            datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+            datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                          "All/" + embedding_file[:-4] + "/column")
         if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
             startTimeTH = time.time()
@@ -242,7 +242,7 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None):
             TimespanTH = endTimeTH - startTimeTH
             timing = pd.DataFrame({'Column clustering': TimespanCC, 'Hierarchy Inference ': TimespanTH},
                                   columns=['type', 'time'])
-            timing.to_csv(os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+            timing.to_csv(os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                        "All/" + embedding_file[:-4], "timing.csv"))
 
 
@@ -256,15 +256,19 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
     with open(os.path.join(target_path, '_gt_cluster.pickle'),
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(gt_cluster_dict)
+
     clustering_method = ["Agglomerative"]  #
 
     for index, clu in enumerate(list(gt_cluster_dict.keys())):
+        print( f"Clustering {clu}")
         checkfile = f"{index}_colcluster_dict.pickle" if hp.phaseTest is False else f"{index}_colcluster_dictGT.pickle"
-        datafile_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
+        datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
                                      "All/" + embedding_file[:-4] + "/column")
-        print(os.path.join(datafile_path, checkfile))
-        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
 
+
+        if os.path.isfile(os.path.join(datafile_path, checkfile)):  # 816 1328
+            print(os.path.join(datafile_path, checkfile))
             if hp.phaseTest is True:
                 clustering_method = ["groundTruth"]
                 store_path = os.path.join(os.getcwd(), "result/SILM/", hp.dataset,
@@ -279,10 +283,10 @@ def inferenceHierarchy(embedding_file: str, hp: Namespace):
                     # print(path)
                     with open(path, 'wb') as handle:
                         pickle.dump(dict_groundTruth, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            try:
-                ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
-            except:
-                print("error", index, clu)
+            #try:
+            ClusterDecompose(clustering_method, index, embedding_file, Ground_t, hp)
+            #except:
+               # print("error", index, clu)
 
 
 def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_path, hp, embedding_file, gt_clusters,
@@ -294,9 +298,9 @@ def colCluster(clustering_method, index, clu, content, Ground_t, Zs, Ts, data_pa
     if embedding_file.endswith("_column.pkl"):
         tables = [i for i in os.listdir(f"datasets/{hp.dataset}/Test/") if i.endswith(".csv")]
         for table in tables:
-            subcols = findSubCol(f"datasets/{hp.dataset}/Test/", table)
-            if subcols is not []:
-                for subcol in subcols:
+            table_subCol = findSubCol(f"datasets/{hp.dataset}/Test/", table)
+            if table_subCol is not []:
+                for subcol in table_subCol:
                     subcols.append(f"{table[:-4]}.{subcol}")
     for vector in content:
         if embedding_file.endswith("_column.pkl"):
@@ -390,7 +394,7 @@ def P2(hp: Namespace):
         conceptualAttri(hp)
     else:
         files = [fn for fn in os.listdir(datafile_path) if
-                 '.pkl' in fn and f"_{hp.embed}_" in fn and 'subCol' not in fn and '8' in fn]
+                 '.pkl' in fn and f"_{hp.embed}_" in fn]# and '_column.pkl' in fn
         # if fn.endswith('_column.pkl') and hp.embed in fn] and 'Pretrain' in fn and 'subCol' not in fn
         # if fn.endswith("_column.pkl") and '8' in fn
         files = [fn for fn in files]
@@ -403,8 +407,8 @@ def P3(hp: Namespace):
     datafile_path = os.getcwd() + "/result/embedding/" + hp.dataset + "/"
     files = [fn for fn in os.listdir(datafile_path) if
              fn.endswith('.pkl') and f"_{hp.embed}_" in fn]  # and 'SCT6' in fn and 'header' not in fn
-    files = [fn for fn in files if not fn.endswith("_column.pkl") and 'Pretrain' not in fn]
+    files = [fn for fn in files if not fn.endswith("_column.pkl") and 'Pretrain'  in fn]#
     #[hp.slice_start:hp.slice_stop]
-    print(files, len(files))
+    print("P3",files, len(files))
     for file in files:  # [hp.slice_start:hp.slice_stop]:
         inferenceHierarchy(file, hp)

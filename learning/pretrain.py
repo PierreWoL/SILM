@@ -14,7 +14,6 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from typing import List
 
 
- 
 def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
     """
     Perform a single training step
@@ -55,8 +54,6 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
             cls_indices = batch[-1]
             #print(cls_indices)
             # Compute all unique combinations of x_vals and calculate loss
-            #losses = [model(x_vals[j], x_vals[k],tuple(cls_indices[j],cls_indices[k]), mode='simclr') for j in range(len(x_vals)) for k in
-                   #   range(j + 1, len(x_vals))] 
             losses = []
             for j in range(len(x_vals)):
                for k in range(j + 1, len(x_vals)):
@@ -64,8 +61,12 @@ def train_step(train_iter, model, optimizer, scheduler, scaler, hp):
                    #print(cls_indices_ij)
                    loss = model(x_vals[j], x_vals[k],cls_indices_ij, mode='simclr')
                    losses.append(loss)
-        avg_loss = sum(losses) / len(losses)
+        #avg_loss = sum(losses) / len(losses)
+        # 使用 torch.stack 将这些张量堆叠成一个新的张量
+        stacked_tensors = torch.stack(losses)
 
+        # 计算平均值
+        avg_loss = torch.mean(stacked_tensors)
         if hp.fp16:
             with torch.cuda.amp.autocast():
                 loss_model_fp16(avg_loss)
@@ -195,7 +196,6 @@ def inference_on_tables(tables: List[pd.DataFrame],
         # print(tid, table)
         if subject_column is True:
             cols = subjectCol(table)
-
             if len(cols) > 0:
                     table = table[cols]
         x, _ = unlabeled._tokenize(table)
