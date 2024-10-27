@@ -55,7 +55,7 @@ For the second proportion (0.3 from percentage_crops), generate 0 views.
 * `--augment_op`: augmentation operator for contrastive learning. Using "sample cells TFIDF", uses sample_cells_TFIDF; Using "sample cells", using sample_cells
 * `--fp16`: half-precision training (always turn this on)
 * `--save_model`: whether to save the vectors in a pickle file, which is then used in the online processing
-
+`[swavEncoder.py](swavEncoder.py)` is used to encode tables, it provides a simple example at the end.
 
 ### P1-P4
 
