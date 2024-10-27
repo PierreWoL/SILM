@@ -21,16 +21,33 @@ https://drive.google.com/file/d/1nW2zvw_m9RL_GZQetSQYC6Sp_WyPt0ef/view?usp=drive
 ### Running the offline pre-training pipeline:
 
 
-The main entry point is `pretrain_all.py`.
+The main entry point is `SwAV.py` (For serial running, please use `Serial_swav.py`). For slurm system, please see the heading 
+of the script from the SwAV [Github](https://github.com/facebookresearch/swav/tree/main/scripts).
+Our script is for PBS system which uses qsub.
 If you only want to train using subject attributes, please write `--subject_column \` in the script.
-Script for fine-tuned training and encoding is `train.sh`, script for pretrain language models encoding
+Script for fine-tuned training and encoding is `swav.sh`, script for pretrain language models encoding
 is `pretrain.sh`.
-Script for fine-tuning training and encoding using different augmentation times is `Aug.sh`.
+
+We uploaded the model in the hugging face.
 
 
 Hyperparameters:
 
-* `--batch_size`, `--lr`, `--n_epochs`, `--max_len`: standard batch size, learning rate, number of training epochs, max sequence length
+* `--batch_size`, `--base_lr`, `--n_epochs`, `--max_len`: standard batch size, learning rate, number of training epochs, max sequence length
+* `--datasetSize`: the total number of tables from the given datasets
+* `--percentage_crops`: the proportion of cells chosen from the each column based on TFIDF scores of each tokenized cell,
+percentage_crops is a list, you can put several proportion for training. (default number: [0.5, 0.3])
+* `--nmb_crops`: The --nmb_crops parameter specifies the number of views (or "crops") 
+to be generated from the input tables based on the proportions defined in the --percentage_crops parameter. 
+Each element in the list corresponds to a specific proportion of cells to be selected from each column, 
+as defined by the percentage_crops parameter.
+Example:
+If the default value [2, 0] is used, it means:
+For the first proportion (0.5 from percentage_crops), generate 2 views.
+For the second proportion (0.3 from percentage_crops), generate 0 views.
+
+* `--epsilon`: please see SwAV paper, we recommend 0.01/ 0.03 in the test.
+* `--nmb_prototypes`: the total number of prototypes (cluster centers)
 * `--lm`: the language model (we use roberta for all the experiments)
 * `--size`: the maximum number of tables/columns used during pre-training
 * `--projector`: the dimension of projector
