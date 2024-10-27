@@ -23,6 +23,7 @@ https://drive.google.com/file/d/1nW2zvw_m9RL_GZQetSQYC6Sp_WyPt0ef/view?usp=drive
 
 The main entry point is `SwAV.py` (For serial running, please use `Serial_swav.py`). For slurm system, please see the heading 
 of the script from the SwAV [Github](https://github.com/facebookresearch/swav/tree/main/scripts).
+The specific implementation of SwAV for tables is in `learning` folder.
 Our script is for PBS system which uses qsub.
 If you only want to train using subject attributes, please write `--subject_column \` in the script.
 Script for fine-tuned training and encoding is `swav.sh`, script for pretrain language models encoding
@@ -55,7 +56,7 @@ For the second proportion (0.3 from percentage_crops), generate 0 views.
 * `--augment_op`: augmentation operator for contrastive learning. Using "sample cells TFIDF", uses sample_cells_TFIDF; Using "sample cells", using sample_cells
 * `--fp16`: half-precision training (always turn this on)
 * `--save_model`: whether to save the vectors in a pickle file, which is then used in the online processing
-`[swavEncoder.py](swavEncoder.py)` is used to encode tables, it provides a simple example at the end.
+`swavEncoder.py` is used to encode tables, it provides a simple example at the end.
 
 ### P1-P4
 
