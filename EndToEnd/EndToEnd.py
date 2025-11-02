@@ -404,7 +404,7 @@ def gptname(cluster_df,format =1, sampling=None,sampling_number=5,  header=True,
             task_element = "tables with <sc> and </sc> marking the subject attributes"
         elif format == 4:
             task_element = "subject attributes of tables"
-        naming = GPTnaming(apiKey="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", format=format,
+        naming = GPTnaming(apiKey="", format=format,
                            sampling=sampling, sampling_number=sampling_number, header=header, table_names=table_names)
         task = (
             f"Given a cluster of {task_element} separated by <table> ... </table>, identify and provide a name for the conceptual type that best describes the tables in the cluster.")
