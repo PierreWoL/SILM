@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_epochs", type=int, default=10)
     parser.add_argument("--lm", type=str, default='sbert')
     parser.add_argument("--pretrain", dest="pretrain", action="store_true")
+    parser.add_argument("--llama", dest="llama", action="store_true")
     parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF')  #
@@ -50,11 +51,11 @@ if __name__ == '__main__':
     hp = parser.parse_args()
 
     # mlflow logging
-    for variable in ["method", "batch_size", "lr", "n_epochs", "augment_op", "sample_meth", "table_order"]:
-        mlflow.log_param(variable, getattr(hp, variable))
+    #for variable in ["method", "batch_size", "lr", "n_epochs", "augment_op", "sample_meth", "table_order"]:
+       # mlflow.log_param(variable, getattr(hp, variable))
 
-    if hp.mlflow_tag:
-        mlflow.set_tag("tag", hp.mlflow_tag)
+    #if hp.mlflow_tag:
+       # mlflow.set_tag("tag", hp.mlflow_tag)
 
     # set seed
     seed = hp.run_id
@@ -78,6 +79,12 @@ if __name__ == '__main__':
     if hp.pretrain:
         start_time_pretrain = time.time()
         trainset.encodings(output_path, setting=hp.NoContext)
+        end_time_pretrain = time.time()
+        time_difference_pretrain = end_time_pretrain - start_time_pretrain
+        print(f"Encode time: {time_difference_pretrain}\n ")
+    elif hp.llama:
+        start_time_pretrain = time.time()
+        trainset.llama_encoding(output_path)
         end_time_pretrain = time.time()
         time_difference_pretrain = end_time_pretrain - start_time_pretrain
         print(f"Encode time: {time_difference_pretrain}\n ")

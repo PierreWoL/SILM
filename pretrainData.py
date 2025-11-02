@@ -7,7 +7,7 @@ import pandas as pd
 import os
 from sentence_transformers import SentenceTransformer
 from Utils import childList
-
+from langchain_community.embeddings import OllamaEmbeddings
 from Utils import subjectCol
 from torch.utils import data
 from transformers import AutoTokenizer, AutoModel
@@ -22,7 +22,7 @@ lm_mp = {'roberta': 'roberta-base',
          'sbert': 'sentence-transformers/all-mpnet-base-v2'}
 
 
-class  PretrainTableDataset(data.Dataset):
+class PretrainTableDataset(data.Dataset):
     """Table dataset for pre-training"""
 
     def __init__(self,
@@ -37,13 +37,13 @@ class  PretrainTableDataset(data.Dataset):
                  header=False,
                  pretrain=False,
                  deepjoin=False,
-                 dpPath = None,
+                 dpPath=None,
                  sample_meth='wordProb',
                  table_order='column',
                  check_subject_Column='subjectheader',
-                 select = -1):
+                 select=-1):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
-                                                       selectable_pos=1)
+                                                       selectable_pos=1, use_auth_token="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")
         # pretained-LM
         self.pretrain = pretrain
         self.deepjoin = deepjoin
@@ -57,26 +57,26 @@ class  PretrainTableDataset(data.Dataset):
             self.model = SentenceTransformer(self.dpPath)
             print("load DP successfully")
         else:
-            if lm == 'roberta' or lm == 'sbert':
+            if lm == 'roberta' or lm == 'bert':
                 special_tokens_dict = {
                     'additional_special_tokens': ["<subjectcol>", "<header>", "</subjectcol>", "</header>"]}
                 self.header_token = ('<header>', '</header>')
                 self.SC_token = ('<subjectcol>', '</subjectcol>')
 
                 if self.pretrain:
-                    print("ROBERTa")
-                    self.model = AutoModel.from_pretrained(lm_mp[lm])
-                    tokenizer_vocab_size = self.tokenizer.vocab_size + len(special_tokens_dict['additional_special_tokens'])
+                    self.model = AutoModel.from_pretrained(lm_mp[lm], use_auth_token="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")
+                    tokenizer_vocab_size = self.tokenizer.vocab_size + len(
+                        special_tokens_dict['additional_special_tokens'])
                     self.model.resize_token_embeddings(new_num_tokens=tokenizer_vocab_size)
 
             else:
-                special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
+                special_tokens_dict = {
+                    'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
                 self.header_token = ('[header]', '[/header]')
                 self.SC_token = ('[subjectcol]', '[/subjectcol]')
                 if self.pretrain:
                     print("SentenceTransformer")
-                    self.model = SentenceTransformer(lm_mp[lm])
-
+                    self.model = SentenceTransformer(lm_mp[lm], use_auth_token="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")
 
         self.tokenizer.add_special_tokens(special_tokens_dict)
         self.tokenizer.special_tokens_map.items()
@@ -88,10 +88,10 @@ class  PretrainTableDataset(data.Dataset):
         self.isCombine = False
 
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
-        if select!=-1:
-            self.tables = childList(self.tables , select)
+        if select != -1:
+            self.tables = childList(self.tables, select)
         print(len(self.tables))
-        
+
         self.columns = []
         # only keep the first n tables
         if size is not None:
@@ -135,7 +135,7 @@ class  PretrainTableDataset(data.Dataset):
                 for col in columns:
                     self.columns.append(f"{fn}|{col}")
                 del columns
-
+        self.llama = OllamaEmbeddings(model="llama3.1")
 
     @staticmethod
     def from_hp(path: str, hp: Namespace):
@@ -258,7 +258,7 @@ class  PretrainTableDataset(data.Dataset):
         self.log_cnt += 1
         if self.log_cnt % 5000 == 0:
             print(self.tokenizer.decode(res))
-        
+
         return res, column_mp
 
     def _column_stratgy(self, Sub_cols_header, table, tfidfDict, max_tokens, NoToken=False):
@@ -298,7 +298,7 @@ class  PretrainTableDataset(data.Dataset):
                     col_texts[column] = [str(i) for i in list_values]
         return col_texts
 
-    def _encode(self, table: pd.DataFrame, Token=False):
+    def _encode(self, table: pd.DataFrame, Token=False, isLLama=False):
         """Use pretrained model to encode one table/dataframe
                 Args:
                     table: table to encode
@@ -312,41 +312,48 @@ class  PretrainTableDataset(data.Dataset):
         # a map from column names to special token indices
         Sub_cols_header = subjectCol(table)
         embeddings = []
+
         # column-ordered preprocessing
         if self.table_order == 'column':
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens, NoToken=Token)
 
             for column, col_text in col_texts.items():
-                if self.lm == "sbert":
-                    embedding = self.model.encode(col_text)
-                    if Token is False:
-                        embeddings.append(embedding)
-                    else:
-                        average = np.mean(embedding, axis=0)
-                        embeddings.append(average)
+                #print("col_text",col_text)
+                if isLLama is False:
+                    if self.lm == "sbert" or self.deepjoin is True:
+                        embedding = self.model.encode(col_text)
+                        if Token is False:
+                            embeddings.append(embedding)
+                        else:
+                            average = np.mean(embedding, axis=0)
+                            embeddings.append(average)
 
-                else: #elif self.lm == "roberta":
-                    if Token is False:
-                        tokens = self.tokenizer.encode_plus(col_text, add_special_tokens=True, max_length=512,
-                                                            truncation=True, return_tensors="pt")
-                        # Perform the encoding using the model
-                        with torch.no_grad():
-                            outputs = self.model(**tokens)
-                        # Extract the last hidden state (embedding) from the outputs
-                        last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
-                        embeddings.append(np.array(last_hidden_state))
-                    else:
-                        embeddings_per_col = []
-                        for text in col_text:
-                            tokens = self.tokenizer.encode_plus(text, add_special_tokens=True, max_length=512,
+                    else:  # elif self.lm == "roberta":
+                        if Token is False:
+                            tokens = self.tokenizer.encode_plus(col_text, add_special_tokens=True, max_length=512,
                                                                 truncation=True, return_tensors="pt")
+                            # Perform the encoding using the model
                             with torch.no_grad():
                                 outputs = self.model(**tokens)
+                            # Extract the last hidden state (embedding) from the outputs
                             last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
-                            embeddings_per_col.append(last_hidden_state)
-                        stacked_embeddings = torch.stack(embeddings_per_col)
-                        average_encoding = torch.mean(stacked_embeddings, dim=0)
-                        embeddings.append(np.array(average_encoding))
+                            embeddings.append(np.array(last_hidden_state))
+                        else:
+                            embeddings_per_col = []
+                            for text in col_text:
+                                tokens = self.tokenizer.encode_plus(text, add_special_tokens=True, max_length=512,
+                                                                    truncation=True, return_tensors="pt")
+                                with torch.no_grad():
+                                    outputs = self.model(**tokens)
+                                last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
+                                embeddings_per_col.append(last_hidden_state)
+                            stacked_embeddings = torch.stack(embeddings_per_col)
+                            average_encoding = torch.mean(stacked_embeddings, dim=0)
+                            embeddings.append(np.array(average_encoding))
+                else:
+                    embedding = self.llama.embed_query(col_text)
+                    embeddings.append(embedding)
+
         return embeddings
 
     def encodings(self, output_path, setting=False):
@@ -372,6 +379,7 @@ class  PretrainTableDataset(data.Dataset):
                 cols = subjectCol(table_ori)
                 if len(cols) > 0:
                     table_ori = table_ori[cols]
+            print(idx, self.deepjoin,self.tables[idx])
             embedding = self._encode(table_ori, Token=setting)
             table_encodings.append((self.tables[idx], np.array(embedding)))
         lm = self.lm if self.deepjoin is False else "DP"
@@ -388,6 +396,51 @@ class  PretrainTableDataset(data.Dataset):
         if self.header:
             output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (lm, self.sample_meth,
                                                                   self.table_order, self.check_subject_Column, setting)
+
+        target_path = os.path.join(output_path, output_file)
+        pickle.dump(table_encodings, open(target_path, "wb"))
+        return table_encodings
+
+    def llama_encoding(self, output_path):
+        """
+        Use pretrained model to encode one table/dataframe
+                 Args:
+                     table: table to encode
+
+                 Returns:
+                    Embeddings of the table/dataframe
+                 """
+        table_encodings = []
+        for idx in range(len(self.tables)):
+            print(idx)
+            fn = os.path.join(self.path, self.tables[idx])
+            table_ori = pd.read_csv(fn)
+            if "row" in self.table_order:
+                tfidfDict = computeTfIdf(table_ori)
+                table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
+            if self.single_column:
+                col = random.choice(table_ori.columns)
+                table_ori = table_ori[[col]]
+            if self.subject_column:
+                cols = subjectCol(table_ori)
+                if len(cols) > 0:
+                    table_ori = table_ori[cols]
+            embedding = self._encode(table_ori,  isLLama=True)
+            table_encodings.append((self.tables[idx], np.array(embedding)))
+        lm = self.lm if self.deepjoin is False else "DP"
+        output_file = "Pretrain_%s_%s_%s_%s.pkl" % ("llama", self.sample_meth,
+                                                       self.table_order, self.check_subject_Column)
+        if self.single_column:
+            output_file = "Pretrain_%s_%s_%s_%s_singleCol.pkl" % ("llama", self.sample_meth,
+                                                                     self.table_order, self.check_subject_Column
+                                                                     )
+        if self.subject_column:
+            output_file = "Pretrain_%s_%s_%s_%s_subCol.pkl" % ("llama", self.sample_meth,
+                                                                  self.table_order, self.check_subject_Column)
+
+        if self.header:
+            output_file = "Pretrain_%s_%s_%s_%s_header.pkl" % ("llama", self.sample_meth,
+                                                                  self.table_order, self.check_subject_Column)
 
         target_path = os.path.join(output_path, output_file)
         pickle.dump(table_encodings, open(target_path, "wb"))
@@ -427,7 +480,7 @@ class  PretrainTableDataset(data.Dataset):
 
         tables = [table_ori]
         for aug in augs:
-            tables.append(augment(tables[0], aug)) #-1
+            tables.append(augment(tables[0], aug))  # -1
         if self.pos_pair < 2:
             tables = tables[:2]
         else:

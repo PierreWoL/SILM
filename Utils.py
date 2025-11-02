@@ -40,7 +40,6 @@ def most_frequent(list1, isFirst=True):
     """
     count the most frequent occurring annotated label in the cluster
     """
-
     count = Counter(list1)
     if isFirst is True:
         return count.most_common(1)[0][0]

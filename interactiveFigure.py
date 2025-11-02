@@ -1,7 +1,7 @@
 import networkx as nx
 import plotly.graph_objs as go
 import os
-
+import pickle
 os.environ['PATH'] += r';C:\Program Files\Graphviz\bin'
 
 
@@ -57,3 +57,15 @@ def draw_interactive_graph(graph, file_path=None):
     fig.show()
     if file_path is not None:
         fig.write_html(file_path)
+
+test_path = f"datasets/GDS/"
+with open(os.path.join(test_path, "graphGroundTruth.pkl"),"rb") as f:
+    data = pickle.load(f)
+draw_interactive_graph(data, os.path.join(test_path, "tree.html"))
+"""numbers = [0,1,2]
+dataset="WDC"
+for i in numbers:
+    test_path = f"E:/SILLM/Result/{dataset}/Detail/COL_Zero/{str(i)}/"
+    with open(os.path.join(test_path, "tree.pkl"),"rb") as f:
+        data = pickle.load(f)
+    draw_interactive_graph(data, os.path.join(test_path, "tree.html"))"""

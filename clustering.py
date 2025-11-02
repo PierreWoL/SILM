@@ -663,12 +663,9 @@ def clustering_results(input_data, tables, data_path, clusteringName, groundTrut
                        numEstimate=0):  # , graph = None
     star_time = time.time()
 
-    number_estimate = numEstimate  # len(gt_cluster_dict) if numEstimate==0 else numEstimate
-    # print(number_estimate)
-
+    number_estimate = numEstimate
     min = number_estimate
     max = 3 * number_estimate
-    # cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
     cluster_dict = clustering(input_data, tables, min, clusteringName, max=max)
     print(cluster_dict)
     end_time = time.time()

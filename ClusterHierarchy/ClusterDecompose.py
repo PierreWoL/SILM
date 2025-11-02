@@ -347,6 +347,9 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
         TCS, ALL_path,simple_tree = tree_consistency_metric(tables, jaccard_score, embedding_file, hp.dataset,
                                                 cluster_name=clustering, Naming=str(index_cols),
                                                 sliceInterval=hp.intervalSlice, delta=hp.delta)#[:1]
+
+        depth = nx.dag_longest_path_length(simple_tree)
+        print("current tree nodes and depth: ",len(simple_tree.nodes), depth)
         if 'TreeConsistencyScore.csv' in os.listdir(score_path):
             df = pd.read_csv(os.path.join(score_path, 'TreeConsistencyScore.csv'), index_col=0)
         else:

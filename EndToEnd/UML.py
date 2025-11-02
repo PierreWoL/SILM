@@ -2,9 +2,7 @@ import plantuml
 import os
 
 def savefig_uml(UML_Code, target_path, fileName = "diagram.uml"):
-    # 创建一个PlantUML对象，指定使用公共服务器
     plantuml_obj = plantuml.PlantUML(url='http://www.plantuml.com/plantuml/img/')
-    # 使用直接定义的UML代码生成图片，并返回图片的URL
     generated_diagram_url = plantuml_obj.processes(UML_Code)
     print("Diagram URL:", generated_diagram_url)
     # 或者保存到文件并生成图

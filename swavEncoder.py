@@ -65,6 +65,7 @@ def encoding(dataPath, isTransfer="",cls=True):
     state_dict_model = remove_module_prefix(state_dict_model)
     args = checkpoint['args']
     print(args)
+    """
     if 'transformer.embeddings.position_ids' in state_dict_model:
         del state_dict_model['transformer.embeddings.position_ids']
     if isTransfer != "":
@@ -106,16 +107,16 @@ def encoding(dataPath, isTransfer="",cls=True):
         dataEmbeds.append((file, cl_features_file))
     print( dataEmbeds[0],dataEmbeds[0][1].shape)
     return dataEmbeds
-
+    """
 """
 The following is a simple example of how to use the generated fine-tuned model to encode dataset.
 """
 dataset = "WDC"
-output_path_embedding = f"model/SwAV/{dataset}/42HTT/" #
+output_path_embedding = f"model/SwAV/{dataset}/53num50hTT/" #
 encode_path = f"datasets/{dataset}/Test/"#
 embeddings = encoding(output_path_embedding,encode_path,cls=False)
 out = f"result/embedding/{dataset}/"
 mkdir(out)
-embedding_name = f"{dataset}_sbert_42HTT_column.pkl"
-with open(os.path.join(out,embedding_name), "wb") as f:
-    pickle.dump(embeddings, f)
+#embedding_name = f"{dataset}_sbert_42HTT_column.pkl"
+#with open(os.path.join(out,embedding_name), "wb") as f:
+  #  pickle.dump(embeddings, f)

@@ -34,9 +34,9 @@ def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sam
         print(cluster_dict_all)"""
         #with open(f"datasets/{hp.dataset}/naming", "rb") as f:
             #cluster_dict = pickle.load(open(f"datasets/{hp.dataset}"))
-        results = pd.read_csv(f"result/P1/{hp.dataset}/All/{hp.P1Embed[:-4]}/purityCluster1.csv", index_col=0)
+        results = pd.read_csv(f"result/P1/{hp.dataset}/All/{hp.P1Embed[:-4]}/purityCluster.csv", index_col=0)
     else:
-        gt_df = pd.read_csv("datasets/WDC/groundTruth.csv")
+        gt_df = pd.read_csv(f"datasets/{hp.dataset}/groundTruth.csv")
         gt_df["fileName"] = gt_df["fileName"].apply(lambda x: x[:-4])
         print(gt_df)
         cluster_dict = gt_df.groupby('superclass')['fileName'].apply(list).to_dict()
@@ -63,7 +63,7 @@ def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sam
         names = None
         if table_names is not None:
             names = [table_names[i] for i in cluster]
-        naming = GPTnaming(apiKey="", format=format,
+        naming = GPTnaming(apiKey="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", format=format,
                            sampling=sampling, sampling_number=sampling_number, header=header, table_names=names)
         cluster_df = read_clusters_tables(hp.dataset,cluster)
         reply = naming.generate_answers(cluster_df, task, reply=None, instructions= instruction, shorts = shorts, AI_instructions=AI_instruction, newMessage=True)
