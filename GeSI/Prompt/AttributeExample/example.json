@@ -1,0 +1,119 @@
+[
+  {
+    "table": "Actor.csv",
+    "type": "Actor",
+    "attrs": [
+      "actor_name",
+      "film_title",
+      "release_year",
+      "base_salary_usd",
+      "total_income_usd",
+      "total_income_inr_cleaned"
+    ],
+    "attrs_hier": [
+      "Thing -> Name -> Person Name -> Actor Name",
+      "Thing -> Time -> Calendar Year -> Release Year",
+      "Thing -> Quantity -> Salary -> Base Salary",
+      "Thing -> Quantity -> Monetary Amount -> Income -> Total Income",
+      "Thing -> Quantity -> Monetary Amount -> Income -> Total Income"
+    ]
+  },
+  {
+    "table": "CollegeOrUniversity.csv",
+    "type": "CollegeOrUniversity",
+     "attrs": [
+       "college_id",
+      "college_name",
+      "campus_address",
+      "contact_phone",
+      "college_description",
+      "college_identifier",
+      "college_website_url",
+      "geo_latitude",
+      "geo_longitude"
+    ],
+    "attrs_hier": [
+      "Thing -> Identifier -> Institutional Identifier -> College ID",
+      "Thing -> Name -> Institutional Name -> College Name",
+      "Thing -> Location -> Address -> Campus Address",
+      "Thing -> Contact Information -> Phone Number -> Contact Phone",
+      "Thing -> Description -> Institutional Description -> College Description",
+      "Thing -> Identifier -> Institutional Identifier -> College Identifier",
+      "Thing -> Contact Information -> Web Address -> College Website URL",
+      "Thing -> Location -> Geographic Coordinate -> Latitude",
+      "Thing -> Location -> Geographic Coordinate -> Longitude"
+    ]
+  },
+  {
+    "table": "Event.csv",
+    "type": "Event",
+    "attrs": [
+      "event_id",
+      "event_start_datetime",
+      "event_name",
+      "event_end_datetime",
+      "event_description",
+      "event_page_url",
+      "event_location_name",
+      "offer_valid_from",
+      "offer_price_currency",
+      "offer_name",
+      "offer_availability_url",
+      "offer_price"
+    ],
+    "attrs_hier": [
+       "Thing -> Identifier -> Event Identifier -> Event ID",
+      "Thing -> Time -> Datetime -> Event Start Datetime",
+      "Thing -> Name -> Event Name",
+      "Thing -> Time -> Datetime -> Event End Datetime",
+      "Thing -> Description -> Event Description",
+      "Thing -> Contact Information -> Web Address -> Event Page URL",
+      "Thing -> Location -> Location Name -> Event Location Name",
+      "Thing -> Time -> Datetime -> Offer Valid From",
+      "Thing -> Unit -> Currency Code -> Offer Price Currency",
+      "Thing -> Name -> Offer Name",
+      "Thing -> Contact Information -> Web Address -> Offer Availability URL",
+      "Thing -> Quantity -> Monetary Amount -> Offer Price"
+    ]
+  },
+  {
+    "table": "Movie.csv",
+    "type": "Movie",
+    "attrs": [
+      "poster_url",
+      "movie_title",
+      "release_year",
+      "age_certificate",
+      "runtime_minutes",
+      "genres",
+      "imdb_rating",
+      "movie_overview",
+      "metacritic_score",
+      "director_name",
+      "lead_actor_1",
+      "lead_actor_2",
+      "supporting_actor_1",
+      "supporting_actor_2",
+      "num_votes",
+      "gross_revenue_usd"
+    ],
+    "attrs_hier": [
+       "Thing -> Media Resource -> Image URL -> Movie Poster URL",
+      "Thing -> Name -> Creative Work Name -> Movie Title",
+      "Thing -> Time -> Calendar Year -> Release Year",
+      "Thing -> Category -> Content Rating -> Age Certificate",
+      "Thing -> Quantity -> Duration -> Runtime",
+      "Thing -> Category -> Creative Work Genre -> Movie Genre",
+      "Thing -> Score -> Review Score -> IMDb Rating",
+      "Thing -> Description -> Creative Work Description -> Movie Overview",
+      "Thing -> Score -> Review Score -> Metacritic Score",
+      "Thing -> Name -> Person Name -> Director Name",
+      "Thing -> Name -> Person Name -> Actor Name -> Lead Actor Name -> Lead Actor 1",
+      "Thing -> Name -> Person Name -> Actor Name -> Lead Actor Name -> Lead Actor 2",
+      "Thing -> Name -> Person Name -> Actor Name -> Supporting Actor Name -> Supporting Actor 1",
+      "Thing -> Name -> Person Name -> Actor Name -> Supporting Actor Name -> Supporting Actor 2",
+      "Thing -> Quantity -> Count -> Vote Count -> Number of Votes",
+      "Thing -> Quantity -> Monetary Amount -> Revenue -> Gross Revenue"
+    ]
+  }
+]
