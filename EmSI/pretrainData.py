@@ -43,7 +43,7 @@ class PretrainTableDataset(data.Dataset):
                  check_subject_Column='subjectheader',
                  select=-1):
         self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
-                                                       selectable_pos=1, use_auth_token="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")
+                                                       selectable_pos=1, use_auth_token="")
         # pretained-LM
         self.pretrain = pretrain
         self.deepjoin = deepjoin
@@ -64,7 +64,7 @@ class PretrainTableDataset(data.Dataset):
                 self.SC_token = ('<subjectcol>', '</subjectcol>')
 
                 if self.pretrain:
-                    self.model = AutoModel.from_pretrained(lm_mp[lm], use_auth_token="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")
+                    self.model = AutoModel.from_pretrained(lm_mp[lm], use_auth_token="")
                     tokenizer_vocab_size = self.tokenizer.vocab_size + len(
                         special_tokens_dict['additional_special_tokens'])
                     self.model.resize_token_embeddings(new_num_tokens=tokenizer_vocab_size)
@@ -76,7 +76,7 @@ class PretrainTableDataset(data.Dataset):
                 self.SC_token = ('[subjectcol]', '[/subjectcol]')
                 if self.pretrain:
                     print("SentenceTransformer")
-                    self.model = SentenceTransformer(lm_mp[lm], use_auth_token="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")
+                    self.model = SentenceTransformer(lm_mp[lm], use_auth_token="")
 
         self.tokenizer.add_special_tokens(special_tokens_dict)
         self.tokenizer.special_tokens_map.items()

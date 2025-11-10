@@ -63,7 +63,7 @@ def testNaming(hp: Namespace,  groundtruth = False, format=4, sampling=None, sam
         names = None
         if table_names is not None:
             names = [table_names[i] for i in cluster]
-        naming = GPTnaming(apiKey="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", format=format,
+        naming = GPTnaming(apiKey="", format=format,
                            sampling=sampling, sampling_number=sampling_number, header=header, table_names=names)
         cluster_df = read_clusters_tables(hp.dataset,cluster)
         reply = naming.generate_answers(cluster_df, task, reply=None, instructions= instruction, shorts = shorts, AI_instructions=AI_instruction, newMessage=True)

@@ -11,7 +11,7 @@ def count_overlapping_nodes(tree1_nodes, tree2_nodes, similarity_threshold=0.9):
     :param similarity_threshold: Minimum similarity score to consider nodes as overlapping
     :return: Count of overlapping nodes and the matched node pairs
     """
-    token = "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"
+    token = ""
 
     model = SentenceTransformer('all-MiniLM-L6-v2',token = token)  # Use a lightweight SBERT model
 
