@@ -4,11 +4,11 @@ import re
 
 import numpy as np
 import pandas as pd
-from Sampling.Features import derive_meta_features
-from Sampling.columnSampling import value_frequency, random_keys_by_frequency
-from Sampling.TFIDF_sampling import compute_avg_tfidf
-from Sampling.Token import tokenize
-from Sampling.dataTypes import determine_data_type
+from GeSI.Sampling.Features import derive_meta_features
+from GeSI.Sampling.columnSampling import value_frequency, random_keys_by_frequency
+from GeSI.Sampling.TFIDF_sampling import compute_avg_tfidf
+from GeSI.Sampling.Token import tokenize
+from GeSI.Sampling.dataTypes import determine_data_type
 import re
 import nltk
 from nltk.tokenize import word_tokenize

@@ -98,7 +98,7 @@ def InferAttribute(dataset, output_dir, llm_model, seed):
 
 def main(_):
     dataset = "GDS"
-    key = "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"
+    key = "key"
     client = OpenAI(api_key=key)
     output_dir = f"Result/{dataset}/Step2/MA/1/qwen/"
     seed = 0

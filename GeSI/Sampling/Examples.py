@@ -2,7 +2,7 @@ import os
 import pickle
 import random
 
-from Sampling.Table import example_data
+from GeSI.Sampling.Table import example_data
 import networkx as nx
 import pandas as pd
 

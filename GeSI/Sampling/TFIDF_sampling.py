@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import math
 from typing import Iterable
-from Sampling.Token import tokenize
+from GeSI.Sampling.Token import tokenize
 
 
 def compute_avg_tfidf(column):

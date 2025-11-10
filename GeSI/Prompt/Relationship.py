@@ -1,4 +1,4 @@
-from utils import load_template
+from GeSI.utils import load_template
 _TopKFilter = """
 You are given an attribute of an entity type and a list of candidate entity types.\
  The attribute includes a name and a set of sample values.

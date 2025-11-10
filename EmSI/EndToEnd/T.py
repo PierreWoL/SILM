@@ -1,8 +1,8 @@
 import os
 import pickle
 
-from EndToEnd.UML import savefig_uml
-from Utils import mkdir
+from EmSI.EndToEnd.UML import savefig_uml
+from EmSI.Utils import mkdir
 
 
 # from UML import savefig_uml,save_svg_from_plantuml

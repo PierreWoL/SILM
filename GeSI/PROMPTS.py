@@ -1,4 +1,4 @@
-from utils import load_template
+from GeSI.utils import load_template
 
 _PROMPT_TEMPLATE = """Table: {{ table }}"""
 PROMPT_TEMPLATE = load_template(_PROMPT_TEMPLATE)
