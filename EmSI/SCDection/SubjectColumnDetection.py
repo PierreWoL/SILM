@@ -1,15 +1,15 @@
 import string
 import pandas as pd
 from typing import Iterable
-import SCDection.Utils as func
-from d3l.input_output.dataloaders import CSVDataLoader
+import EmSI.SCDection.Utils as func
+from EmSI.d3l.input_output.dataloaders import CSVDataLoader
 import os
 import datetime
 from typing import Any
 from enum import Enum
 import random
 import statistics
-from d3l.utils.constants import STOPWORDS
+from EmSI.d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
 
 """
@@ -102,6 +102,7 @@ class ColumnDetection:
                     # TODO : I think this needs further modification later Currently set to 10 just in case
                     if ave_token_number > 15:
                         type_count[ColumnType.long_text.value] = temp_count_text_cell
+                        #print(index, element,ave_token_number )
                     else:
                         type_count[ColumnType.named_entity.value] = type_count[ColumnType.named_entity.value] + \
                                                                     temp_count_text_cell
@@ -124,7 +125,6 @@ class ColumnDetection:
                 else:
                     type_count[ColumnType.number.value] += 1
                     continue
-
             else:
                 # judge string type
                 # print(token, token_with_number)
@@ -163,7 +163,6 @@ class ColumnDetection:
                             if ele_origin not in STOPWORDS and ele_origin != 'yes' and ele_origin != 'no':
                                 type_count[ColumnType.named_entity.value] += 1
                                 continue
-
                             else:
                                 type_count[ColumnType.other.value] += 1
                     if func.is_valid_url(element) is True:
@@ -211,7 +210,6 @@ class ColumnDetection:
 
                         total_token_number = total_token_number + len(token)
                         temp_count_text_cell = temp_count_text_cell + 1
-
             # stop iteration to the 1/3rd cell and judge what type occupies the most in columns
         self.acronym_id_num = type_count[ColumnType.other.value]
         self.col_type = ColumnType(col_type)
@@ -245,7 +243,7 @@ class ColumnDetection:
         for ele in self.column:
             if func.is_empty(ele):
                 empty_cell_count += 1
-        self.emc = empty_cell_count / len(self.column)
+        self.emc = empty_cell_count / len(self.column) if len(self.column) > 0 else 0
         return self.emc
 
     def uc_cal(self):
@@ -257,7 +255,7 @@ class ColumnDetection:
         """
         column_tmp = self.column
         column_tmp.drop_duplicates()
-        self.uc = len(column_tmp) / len(self.column)
+        self.uc = len(column_tmp) / len(self.column) if len(self.column) > 0 else 0
 
     def ac_cal(self):
         """
@@ -265,7 +263,8 @@ class ColumnDetection:
         or id
         -------
         """
-        if self.acronym_id_num / len(self.column) > 0.5:
+        ac = self.acronym_id_num / len(self.column) if len(self.column) > 0 else 0
+        if ac > 0.5:
             self.ac = 1
 
     def df_cal(self, index: int, annotation_dict: dict):
@@ -274,8 +273,12 @@ class ColumnDetection:
         the distance between this NE column and the first NE column
         -------
          """
-        first_NE_column_index = [index for index, value in annotation_dict.items() if value == ColumnType.named_entity][
-            0]
+
+        first_NE_column = [index for index, value in annotation_dict.items() if value == ColumnType.named_entity]
+        if first_NE_column != []:
+            first_NE_column_index = first_NE_column[0]
+        else:
+            first_NE_column_index = 0
         if self.col_type == ColumnType.named_entity:
             first_pair = first_NE_column_index
             self.df = index - int(first_pair)

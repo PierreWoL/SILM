@@ -1,4 +1,4 @@
-from utils import load_template
+from GeSI.utils import load_template
 
 _COL_TEMP_FULL = """
 The following is a column, and its belonging table's entity type. Your task is to assign this column to \

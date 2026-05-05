@@ -5,7 +5,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from d3l.utils.functions import token_stop_word
+from EmSI.d3l.utils.functions import token_stop_word
 import SCDection.TableAnnotation as TA
 
 lm_mp = {'roberta': 'roberta-base',
@@ -69,7 +69,7 @@ def split(column: pd.Series):
         # return column.tolist()
 
 
-from SCDection.TableAnnotation import TableColumnAnnotation as TA
+from EmSI.SCDection.TableAnnotation import TableColumnAnnotation as TA
 
 
 def subjectColDetection(DATA_PATH, RESULT_PATH=None):

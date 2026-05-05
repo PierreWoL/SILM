@@ -6,13 +6,13 @@ from pathlib import Path
 from absl import app, logging
 from langchain_ollama import OllamaLLM
 from openai import OpenAI
-from Prompt.Step2 import MERGE_PROMPT
+from GeSI.Prompt.Step2 import MERGE_PROMPT
 from response import get_model_answer
-from utils import setup_logging
-from utils.folder import mkdir
+from GeSI.utils import setup_logging
+from GeSI.utils.folder import mkdir
 import ast
-from AttributeResolution import fill_missing_attributes
-from traverseGraph import build_complete_bottom_up_levels
+from GeSI.AttributeResolution import fill_missing_attributes
+from GeSI.traverseGraph import build_complete_bottom_up_levels
 
 
 # deepseek-r1:8b

@@ -5,6 +5,7 @@ import torch
 import random
 import pandas as pd
 import os
+from EmSI.weighted import weights_data
 from sentence_transformers import SentenceTransformer
 from Utils import childList
 from langchain_community.embeddings import OllamaEmbeddings
@@ -15,12 +16,15 @@ from learning.augment import augment
 from learning.preprocessor import computeTfIdf, tfidfRowSample, preprocess
 import d3l.utils.functions as fun
 from Utils import split
+from openai import OpenAI
+
 
 lm_mp = {'roberta': 'roberta-base',
          'bert': 'bert-base-uncased',
          'distilbert': 'distilbert-base-uncased',
-         'sbert': 'sentence-transformers/all-mpnet-base-v2'}
-
+         'sbert': 'sentence-transformers/all-mpnet-base-v2',
+         'sbertS': 'sentence-transformers/all-MiniLM-L6-v2'}
+#         'gpt3Large':"text-embedding-3-large"
 
 class PretrainTableDataset(data.Dataset):
     """Table dataset for pre-training"""
@@ -37,19 +41,27 @@ class PretrainTableDataset(data.Dataset):
                  header=False,
                  pretrain=False,
                  deepjoin=False,
+                 Apikey=None,
                  dpPath=None,
+                 LLM=None,
+                 weighted = False,
+                 noise=0,
                  sample_meth='wordProb',
                  table_order='column',
                  check_subject_Column='subjectheader',
                  select=-1):
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm],
-                                                       selectable_pos=1, use_auth_token="")
+        self.tokenizer = AutoTokenizer.from_pretrained(lm_mp[lm], selectable_pos=1, use_auth_token="")
         # pretained-LM
         self.pretrain = pretrain
         self.deepjoin = deepjoin
         self.lm = lm
         self.model = None
+        self.noise = noise
+        self.weighted = weighted
+        self.Apikey = Apikey
         self.dpPath = dpPath
+        self.LLM = None
+
         if self.deepjoin is True:
             special_tokens_dict = {'additional_special_tokens': ["[subjectcol]", "[header],[/subjectcol],[/header]"]}
             self.header_token = ('[header]', '[/header]')
@@ -83,6 +95,7 @@ class PretrainTableDataset(data.Dataset):
         self.max_len = max_len
         self.pos_pair = 1
         self.path = path
+
         # assuming tables are in csv format
         self.subjectColumn_path = os.path.join(self.path[:-4], "SubjectColumn")
         self.isCombine = False
@@ -90,7 +103,6 @@ class PretrainTableDataset(data.Dataset):
         self.tables = [fn for fn in os.listdir(path) if '.csv' in fn]
         if select != -1:
             self.tables = childList(self.tables, select)
-        print(len(self.tables))
 
         self.columns = []
         # only keep the first n tables
@@ -135,7 +147,17 @@ class PretrainTableDataset(data.Dataset):
                 for col in columns:
                     self.columns.append(f"{fn}|{col}")
                 del columns
-        self.llama = OllamaEmbeddings(model="llama3.1")
+        if LLM is not None:
+            if "llama" in LLM:
+                self.LLM = OllamaEmbeddings(model="llama3.1")
+                self.lm = "llama"
+            else:
+                if self.Apikey!="":
+                    self.LLM = OpenAI(api_key=self.Apikey)  # 默认读 OPENAI_API_KEY
+                    self.lm = "gpt3"
+                    print("current llm is gpt3")
+
+
 
     @staticmethod
     def from_hp(path: str, hp: Namespace):
@@ -160,7 +182,10 @@ class PretrainTableDataset(data.Dataset):
                                     table_order=hp.table_order,
                                     header=hp.header,
                                     dpPath=hp.DPpath,
+                                    noise = hp.noise,
+                                    Apikey=hp.Apikey,
                                     pretrain=hp.pretrain,
+                                    LLM=hp.LLM,
                                     deepjoin=hp.deepjoin,
                                     check_subject_Column=hp.check_subject_Column,
                                     select=hp.datasetSize)
@@ -185,7 +210,6 @@ class PretrainTableDataset(data.Dataset):
             fn = os.path.join(self.path, table)
             column = pd.read_csv(fn)[column]  # encoding="latin-1",
             column = pd.DataFrame(column)
-
             self.column_cache[column_id] = column
         return column
 
@@ -298,7 +322,9 @@ class PretrainTableDataset(data.Dataset):
                     col_texts[column] = [str(i) for i in list_values]
         return col_texts
 
-    def _encode(self, table: pd.DataFrame, Token=False, isLLama=False):
+
+
+    def _encode(self, table: pd.DataFrame, Token=False):
         """Use pretrained model to encode one table/dataframe
                 Args:
                     table: table to encode
@@ -318,16 +344,15 @@ class PretrainTableDataset(data.Dataset):
             col_texts = self._column_stratgy(Sub_cols_header, table, tfidfDict, max_tokens, NoToken=Token)
 
             for column, col_text in col_texts.items():
-                #print("col_text",col_text)
-                if isLLama is False:
-                    if self.lm == "sbert" or self.deepjoin is True:
+                if self.LLM is None:
+                    if self.lm in ["sbert","sbertS"] or self.deepjoin is True:
                         embedding = self.model.encode(col_text)
+
                         if Token is False:
                             embeddings.append(embedding)
                         else:
                             average = np.mean(embedding, axis=0)
                             embeddings.append(average)
-
                     else:  # elif self.lm == "roberta":
                         if Token is False:
                             tokens = self.tokenizer.encode_plus(col_text, add_special_tokens=True, max_length=512,
@@ -337,7 +362,8 @@ class PretrainTableDataset(data.Dataset):
                                 outputs = self.model(**tokens)
                             # Extract the last hidden state (embedding) from the outputs
                             last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
-                            embeddings.append(np.array(last_hidden_state))
+                            embedding_ori = np.array(last_hidden_state)
+                            embeddings.append(embedding_ori)
                         else:
                             embeddings_per_col = []
                             for text in col_text:
@@ -346,13 +372,23 @@ class PretrainTableDataset(data.Dataset):
                                 with torch.no_grad():
                                     outputs = self.model(**tokens)
                                 last_hidden_state = outputs.last_hidden_state.mean(dim=1)[0]
-                                embeddings_per_col.append(last_hidden_state)
+                                embeddings_per_col.append(np.array(last_hidden_state))
                             stacked_embeddings = torch.stack(embeddings_per_col)
                             average_encoding = torch.mean(stacked_embeddings, dim=0)
                             embeddings.append(np.array(average_encoding))
                 else:
-                    embedding = self.llama.embed_query(col_text)
-                    embeddings.append(embedding)
+                    if 'gpt' in self.lm:
+                        try:
+                            embedding = self.LLM.embeddings.create(
+                                model="text-embedding-3-large",
+                                input=col_text
+                            )
+                            embeddings.append(embedding.data[0].embedding)
+                        except Exception as e:
+                            print(e)
+                    if 'llama' in self.lm:
+                        embedding = self.LLM.embed_query(col_text)
+                        embeddings.append(embedding)
 
         return embeddings
 
@@ -368,7 +404,7 @@ class PretrainTableDataset(data.Dataset):
         table_encodings = []
         for idx in range(len(self.tables)):
             fn = os.path.join(self.path, self.tables[idx])
-            table_ori = pd.read_csv(fn)
+            table_ori = pd.read_csv(fn,encoding="latin1")
             if "row" in self.table_order:
                 tfidfDict = computeTfIdf(table_ori)
                 table_ori = tfidfRowSample(table_ori, tfidfDict, 0)
@@ -380,7 +416,12 @@ class PretrainTableDataset(data.Dataset):
                 if len(cols) > 0:
                     table_ori = table_ori[cols]
             print(idx, self.deepjoin,self.tables[idx])
+
             embedding = self._encode(table_ori, Token=setting)
+            if self.weighted:
+                weights = weights_data(table_ori)
+                weighted_X = embedding * weights.reshape(-1, 1)
+                embedding = weighted_X.sum(axis=0, keepdims=True)
             table_encodings.append((self.tables[idx], np.array(embedding)))
         lm = self.lm if self.deepjoin is False else "DP"
         output_file = "Pretrain_%s_%s_%s_%s_%s.pkl" % (lm, self.sample_meth,
@@ -396,6 +437,11 @@ class PretrainTableDataset(data.Dataset):
         if self.header:
             output_file = "Pretrain_%s_%s_%s_%s_%s_header.pkl" % (lm, self.sample_meth,
                                                                   self.table_order, self.check_subject_Column, setting)
+        if self.weighted:
+            output_file = "Pretrain_%s_%s_%s_%s_%s_weighted.pkl" % (lm, self.sample_meth,
+                                                                  self.table_order, self.check_subject_Column, setting)
+
+
 
         target_path = os.path.join(output_path, output_file)
         pickle.dump(table_encodings, open(target_path, "wb"))
@@ -412,7 +458,7 @@ class PretrainTableDataset(data.Dataset):
                  """
         table_encodings = []
         for idx in range(len(self.tables)):
-            print(idx)
+            print("llama",idx)
             fn = os.path.join(self.path, self.tables[idx])
             table_ori = pd.read_csv(fn)
             if "row" in self.table_order:
@@ -425,7 +471,7 @@ class PretrainTableDataset(data.Dataset):
                 cols = subjectCol(table_ori)
                 if len(cols) > 0:
                     table_ori = table_ori[cols]
-            embedding = self._encode(table_ori,  isLLama=True)
+            embedding = self._encode(table_ori)
             table_encodings.append((self.tables[idx], np.array(embedding)))
         lm = self.lm if self.deepjoin is False else "DP"
         output_file = "Pretrain_%s_%s_%s_%s.pkl" % ("llama", self.sample_meth,

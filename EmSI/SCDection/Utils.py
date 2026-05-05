@@ -10,7 +10,7 @@ import string
 from dateutil.parser import parse
 import pandas as pd
 from typing import Iterable, Any
-from d3l.utils.constants import STOPWORDS
+from EmSI.d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
 from urllib.parse import urlparse
 from country_list import countries_for_language

@@ -2,8 +2,9 @@ import argparse
 import numpy as np
 import random
 import torch
-import mlflow
 import time
+
+from EmSI.Utils import mkdir
 from pretrainData import PretrainTableDataset
 from learning.pretrain import train
 from Encodings import table_features
@@ -12,7 +13,7 @@ from Utils import subjectColDetection
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", type=str, default="starmie")  # Valerie starmie
-    parser.add_argument("--dataset", type=str, default="GDS")  # TabFact open_data WDC
+    parser.add_argument("--dataset", type=str, default="AddedExp/noiseLevel/30_pct")  # TabFact open_data WDC
     parser.add_argument("--logdir", type=str, default="model/")
     parser.add_argument("--run_id", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=8)
@@ -20,9 +21,9 @@ if __name__ == '__main__':
     parser.add_argument("--size", type=int, default=10000)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--Apikey", type=str, default="")
     parser.add_argument("--lm", type=str, default='sbert')
     parser.add_argument("--pretrain", dest="pretrain", action="store_true")
-    parser.add_argument("--llama", dest="llama", action="store_true")
     parser.add_argument("--NoContext", dest="NoContext", action="store_true")
     parser.add_argument("--projector", type=int, default=768)
     parser.add_argument("--augment_op", type=str, default='sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF,sample_cells_TFIDF')  #
@@ -30,6 +31,10 @@ if __name__ == '__main__':
     parser.add_argument("--fp16", dest="fp16", action="store_true")
     # column header-only mode without table context
     parser.add_argument("--header", dest="header", action="store_true")
+    parser.add_argument("--noise", type=float, default=0.0)
+    parser.add_argument("--LLM", type=str, default=None)
+    parser.add_argument("--weighted", type=bool, default=False)
+
     parser.add_argument("--pos_pair", type=int, default=0)
     # single-column mode without table context
     parser.add_argument("--single_column", dest="single_column", action="store_true")
@@ -68,26 +73,22 @@ if __name__ == '__main__':
     subjectColDetection('datasets/%s/' % hp.dataset)
     path = 'datasets/%s/Test' % hp.dataset
     start_time_preprocess = time.time()
-
     trainset = PretrainTableDataset.from_hp(path, hp)
-    #print(len(trainset),trainset[0])
+    print(len(trainset),trainset[0])
     end_time_preprocess = time.time()
     time_difference_pre = end_time_preprocess - start_time_preprocess
     print(f"Preprocess time: {time_difference_pre}\n")
-
     output_path = 'result/embedding/%s' % hp.dataset
+
+    mkdir(output_path)
     if hp.pretrain:
         start_time_pretrain = time.time()
+        print(path)
         trainset.encodings(output_path, setting=hp.NoContext)
         end_time_pretrain = time.time()
         time_difference_pretrain = end_time_pretrain - start_time_pretrain
         print(f"Encode time: {time_difference_pretrain}\n ")
-    elif hp.llama:
-        start_time_pretrain = time.time()
-        trainset.llama_encoding(output_path)
-        end_time_pretrain = time.time()
-        time_difference_pretrain = end_time_pretrain - start_time_pretrain
-        print(f"Encode time: {time_difference_pretrain}\n ")
+
     elif hp.deepjoin:
         start_time_pretrain = time.time()
         trainset.encodings(output_path, setting=hp.NoContext)
@@ -95,7 +96,7 @@ if __name__ == '__main__':
         time_difference_pretrain = end_time_pretrain - start_time_pretrain
         print(f"Encode time: {time_difference_pretrain}\n ")
     else:
-
+        print("Start fine-tuning...")
         start_time_train = time.time()
         train(trainset, hp)
         end_time_train = time.time()
@@ -107,3 +108,11 @@ if __name__ == '__main__':
         end_time_encode = time.time()
         time_difference_encode = end_time_encode - start_time_encode
         print(f"Encode time: {time_difference_encode} \n ")
+"""
+    elif hp.llama:
+        start_time_pretrain = time.time()
+        trainset.llama_encoding(output_path)
+        end_time_pretrain = time.time()
+        time_difference_pretrain = end_time_pretrain - start_time_pretrain
+        print(f"Encode time: {time_difference_pretrain}\n ")
+"""

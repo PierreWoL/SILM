@@ -2,12 +2,14 @@ import networkx as nx
 import plotly.graph_objs as go
 import os
 import pickle
+from networkx.drawing.nx_pydot import graphviz_layout
+
 os.environ['PATH'] += r';C:\Program Files\Graphviz\bin'
 
 
 def draw_interactive_graph(graph, file_path=None):
-    graph_layout = nx.drawing.nx_agraph.graphviz_layout(graph, prog="dot", args="-Grankdir=TB")
-
+    #graph_layout = nx.drawing.nx_agraph.graphviz_layout(graph, prog="dot", args="-Grankdir=TB")
+    graph_layout = graphviz_layout(graph, prog="dot")
     edge_trace = go.Scatter(
         x=[],
         y=[],
@@ -58,7 +60,7 @@ def draw_interactive_graph(graph, file_path=None):
     if file_path is not None:
         fig.write_html(file_path)
 
-test_path = f"datasets/GDS/"
+test_path = f"E:/Project/CurrentDataset/datasets/OD_Small/"
 with open(os.path.join(test_path, "graphGroundTruth.pkl"),"rb") as f:
     data = pickle.load(f)
 draw_interactive_graph(data, os.path.join(test_path, "tree.html"))

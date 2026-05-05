@@ -2,7 +2,7 @@ from openai import OpenAI
 
 
 def get_chatgpt_response(gpt_model, messages, is4=False):
-    if is4 is True:
+    if is4 is False:
         model = "gpt-3.5-turbo-1106"
     else:
         model = "gpt-4-1106-preview"
@@ -21,7 +21,10 @@ def get_llama_answer(model, messages):
 def get_model_answer(model, messages, is4=False):
     response = ""
     if isinstance(model, OpenAI):
-        response = get_chatgpt_response(model, messages, is4=is4)
+        try:
+            response = get_chatgpt_response(model, messages, is4=is4)
+        except Exception as e:
+            print(e)
     else:
         response = get_llama_answer(model, messages)
     return response

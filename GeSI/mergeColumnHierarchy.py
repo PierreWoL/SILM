@@ -151,13 +151,11 @@ def merge(dataset, target_path, json_file):
         for dict_path in attrs_dict:
             col_name = dict_path["column"]
             path = dict_path.get("value", dict_path.get("paths"))
-
             if path is None:
                 continue
             #paths = path.strip().split("\n")
             paths = re.findall(r'Thing ->[^\n#]*', path)
-            print(paths)
-
+            #print(paths)
             cols_hierarchy[f"{table_id}.{col_name}"] = paths
     G = nx.DiGraph()
     G.graph["root"] = "Thing"
@@ -167,7 +165,6 @@ def merge(dataset, target_path, json_file):
     print(json_file)
     for col_name, paths in cols_hierarchy.items():
         for path in paths:
-            print("Path ",path)
             nodes = path.split(" -> ")[1:]
             average += len(nodes)
             number += 1
@@ -234,17 +231,16 @@ def merge(dataset, target_path, json_file):
         return all_paths, max_depth, output_file
 
     paths, depth, file_path = find_paths_and_depth(tree)
-    print(f"\nDiGraph 的最大深度为：{depth}")
-    print(f"路径已保存至文件：{file_path}")
+    print(f"\nDiGraph's maximum depth is：{depth}")
+    print(f"File has been saved to path：{file_path}")
     target_f = f"Result/{dataset}/Step2/Prompt0/0/{model}/hierarchyExample/"
     os.makedirs(target_f, exist_ok=True)
 
     def findTables():
-        reference_path = f"datasets/{dataset}/"
+        reference_path = f"E:/Project/CurrentDataset/datasets/{dataset}/"
         gt_csv = pd.read_csv(os.path.join(reference_path, "groundTruth.csv"))
         class_to_files = gt_csv.groupby('superclass')['fileName'].apply(set).to_dict()
         return class_to_files
-
     class_file_Dict = findTables()
 
     def split_column_grouping_by_table_group(table_grouping, column_grouping):
@@ -288,6 +284,7 @@ def merge(dataset, target_path, json_file):
 
 
 # 'results', 'results_constraintSTL','results_constraintFET', 'results_constraintFull', 'results_constraintABS'
+"""
 json_types = ['results']
 dataset_p = "WDC"
 model = "gpt3.5"  # GPT3
@@ -296,4 +293,13 @@ for json_type in json_types:
     target_p = f"Result/{dataset_p}/Step2/Prompt0/0/{model}/"
     mkdir(target_p)
     json_file_p = os.path.join(f"Result/{dataset_p}/Step2/Prompt0/0/{model}/", f"{json_type}.jsonl")
+    merge(dataset_p, target_p, json_file_p)
+"""
+json_types = ['results']
+dataset_p = "AddedExp/attribute_overlap/D_50"
+model = "gpt3"  # GPT3
+for json_type in json_types:
+    target_p = f"E:/Project/CurrentDataset/result/GeSI/{dataset_p}/Attribute/3/{model}"
+    mkdir(target_p)
+    json_file_p = os.path.join(target_p, f"{json_type}.jsonl")
     merge(dataset_p, target_p, json_file_p)

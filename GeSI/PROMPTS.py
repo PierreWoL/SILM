@@ -9,7 +9,7 @@ An entity type is typically defined as a word or a short phrase representing the
  An entity type hierarchy is represented by a collection of paths starting from the generic root type,  "Thing," \
 to a specific type most appropriate for the table. As you move from the root to the leaf, \
  the topics in the hierarchy should progressively become more specific. \
-
+The depth of each path should not exceed {{Mdep}}.
 
 {% if examples|length > 0 %}
 {% for example in examples %}
@@ -52,6 +52,7 @@ to a specific type most appropriate for the table. As you move from the root to 
  the topics in the hierarchy should progressively become more specific. \
 The top-level type directly under "Thing" must not be an abstract type, i.e. \
 {{ abs_list | join(', ') }}.
+The depth of each path should not exceed {{Mdep}}.
 
 {% if examples|length > 0 %}
 {% for example in examples %}
@@ -104,6 +105,7 @@ must be the specific type(s) that is provided.
 **Fixed second-level type if multiple paths**: \
 If the inferred hierarchy of the table contains multiple paths, the second-level type in all paths \
 must be the same fixed type.
+The depth of each path should not exceed {{Mdep}}.
 
 {% if examples|length > 0 %}
 {% for example in examples %}
@@ -154,6 +156,7 @@ to a specific type most appropriate for the table. As you move from the root to 
 **Fixed second-level type if multiple paths**: \
 If the inferred hierarchy of the table contains multiple paths, the second-level type in all paths \
 must be the same fixed type.
+The depth of each path should not exceed {{Mdep}}.
 
 {% if examples|length > 0 %}
 {% for example in examples %}
@@ -199,6 +202,7 @@ to the given specific type(s) of the table. As you move from the root to the lea
  
 **Lowest-level type is given**: The leaf type (lowest level) in each inferred path \
 must be the specific type(s) that is provided.
+The depth of each path should not exceed {{Mdep}}.
 
 {% if examples|length > 0 %}
 {% for example in examples %}
