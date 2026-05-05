@@ -2,7 +2,7 @@ import ast
 import os
 import time
 from collections import Counter
-from Utils import most_frequent
+from EmSI.Utils import most_frequent
 from typing import Optional
 from scipy.spatial.distance import cosine, euclidean
 import experimentalData as ed
@@ -713,15 +713,13 @@ def clustering_results(input_data, tables, data_path, clusteringName, groundTrut
 def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, clusteringName, folderName=None,
                             filename=None):
     star_time = time.time()
-    number_estimate = len(gt_cluster_dict) // 2
-    min = number_estimate
-    max = 2 * number_estimate
+    number_estimate = len(gt_cluster_dict)
+    min = number_estimate -10 if  number_estimate -10 >0 else number_estimate
+    max = int(2.5 * number_estimate)
     cluster_dict = clustering(input_data, columns, min, clusteringName, max=max)
     end_time = time.time()
     time_difference_run = end_time - star_time
 
-    table_dict = None
-    table_dict = {columns[i]: input_data[i] for i in range(0, len(columns))}
     star_time_eva = time.time()
     metrics_value = evaluate_col_cluster(gt_clusters, gt_cluster_dict, cluster_dict, folderName, filename)
     end_time_eva = time.time()

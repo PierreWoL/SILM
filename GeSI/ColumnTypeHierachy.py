@@ -14,7 +14,6 @@ import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from tqdm import tqdm
 import json
-from collections import defaultdict
 
 parser = argparse.ArgumentParser(description="Please choose the optimal settings for the parameters")
 parser.add_argument('--test_dataset', type=str, default='WDC', help="Chosen dataset")
@@ -78,7 +77,7 @@ def llama_batch_infer(promptsDict: dict, output_path, batch_size=1):
             llm_int8_has_fp16_weight=False,
             llm_int8_skip_modules=None
         )
-        acess_token = "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"
+        acess_token = "transformer api key"
         tokenizer = AutoTokenizer.from_pretrained(model_id, padding_side="left", token=acess_token)
         model = AutoModelForCausalLM.from_pretrained(
             model_id,

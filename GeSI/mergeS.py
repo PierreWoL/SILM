@@ -1,6 +1,8 @@
 import json
 import os
 import pickle
+import re
+
 import pandas as pd
 from overlap import count_overlapping_nodes
 import networkx as nx
@@ -30,8 +32,10 @@ def merge_and_evaluate(dataset, target_path, json_file, test_threshold=0.6, test
         # print(entry)
         table_id = entry["id"]
         hierarchy = entry["hierarchy"]
-        paths = hierarchy.strip().split("\n")
-        selected = pd.read_csv(f"datasets/{dataset}/groundTruthSelected.csv")
+        #paths = hierarchy.strip().split("\n")
+        paths = re.findall(r'Thing ->[^\n#]*', hierarchy)
+
+        selected = pd.read_csv(f"E:/Project/CurrentDataset/datasets/{dataset}/groundTruth.csv")
         csv_selected  = selected["fileName"].to_csv()
         if table_id  in csv_selected:
             for path in paths:
@@ -100,20 +104,20 @@ def merge_and_evaluate(dataset, target_path, json_file, test_threshold=0.6, test
                                                               threshold=test_threshold,
                                                               whole =test_Whole )
     paths, depth, file_path = find_paths_and_depth(tree)
-    # print("所有路径：")
+    print("All paths：")
     for path in paths:
         print(path)
-    print(f"\nDiGraph 的最大深度为：{depth}")
-    print(f"路径已保存至文件：{file_path}")
+    print(f"\nDiGraph's maximu, depth is ：{depth}")
+    print(f"Path has been saved to ：{file_path}")
 
-    target_path_gt = f"datasets/{dataset}/"
+    target_path_gt = f"E:/Project/CurrentDataset/datasets/{dataset}/"
     with open(os.path.join(target_path_gt, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
 
     overlapping_count, matched_pairs = count_overlapping_nodes(G.nodes(), G_processed.nodes())
     print(overlapping_count, len(G.nodes()), matched_pairs)
 
-    file_path = f"Result/{dataset}/TCSThingRefine.csv"
+    file_path = f"E:/Project/CurrentDataset/result/{dataset}/TCSThingRefine.csv"
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
     else:

@@ -17,12 +17,13 @@ def get_random_elements(data, n):
 
 def example(shot=1):
     prompt = 'Prompt/AttributeExample/example.json'
-    with open(os.path.join(os.getcwd(), prompt), 'r') as file:
+    #with open(os.path.join(os.getcwd(), prompt), 'r') as file:
+    with open(os.path.join("E:/Project/CurrentDataset/GeSI", prompt), 'r') as file:
         data = json.load(file)
     data = get_random_elements(data, shot)
     data_copy = []
     for dict_example in data:
-        table = pd.read_csv(os.path.join("Prompt/AttributeExample", dict_example['table']))
+        table = pd.read_csv(os.path.join("E:/Project/CurrentDataset/GeSI", "Prompt/AttributeExample", dict_example['table']))
         header = random.choice(table.columns.tolist())
         select_col = table[header].dropna().tolist()
         k = min(10, len(select_col) - 1)

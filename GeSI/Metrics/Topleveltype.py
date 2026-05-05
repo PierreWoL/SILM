@@ -1,14 +1,14 @@
 import pickle
 import pandas as pd
-from utils.folder import mkdir
+from GeSI.utils.folder import mkdir
 import os
-from Metrics.groundTruth import data_classes, evaluate_cluster
+from GeSI.Metrics.groundTruth import data_classes, evaluate_cluster
 
 
 def topLevelTypeTest(dataset, tree, output_dir=None):
 
-    groundTruth = f"datasets/{dataset}/groundTruthSelected.csv"
-    dataPath = f"datasets/{dataset}/Test/"
+    groundTruth = f"E:/Project/CurrentDataset/datasets/{dataset}/groundTruth.csv"
+    dataPath = f"E:/Project/CurrentDataset/datasets/{dataset}/Test/"
     if output_dir is not None:
         mkdir(output_dir)
     top_level_children = list(tree.successors("Thing"))
@@ -21,7 +21,7 @@ def topLevelTypeTest(dataset, tree, output_dir=None):
 
     new_row = {"Method": output_dir, "Rand Index": metrics_value["Random Index"], "Purity":metrics_value["Purity"]}
     mkdir(f"Result/{dataset}/")
-    file_path = f"Result/{dataset}/topLevelTypesSelected.csv"
+    file_path = f"Result/{dataset}/topLevelTypes.csv"
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
     else:

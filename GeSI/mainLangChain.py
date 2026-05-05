@@ -11,8 +11,7 @@ from PROMPTS import PROMPT_TEMPLATE_FULL, \
     PROMPT_TEMPLATE_CONSTRAINT_FULL, PROMPT_TEMPLATE_CONSTRAINTSET_FULL, \
     PROMPT_TEMPLATE_CONSTRAINTSTL_FULL, PROMPT_TEMPLATEABS_FULL
 from response import get_model_answer
-from utils import batch, setup_logging, textpbar
-from huggingface_hub import snapshot_download
+from utils import  setup_logging
 from utils.folder import mkdir
 from models import chooseLLM
 

@@ -21,7 +21,7 @@ def get_table_properties_and_descendants(G, node):
 
 def findnodeGTTypes(tree, dataset, node, isTop=True):
     names = []
-    groundTruth = f"datasets/{dataset}/groundTruthSelected.csv"
+    groundTruth = f"E:/Project/CurrentDataset/datasets/{dataset}/groundTruth.csv"
     csvgt = pd.read_csv(groundTruth)
     tables = list(set(get_table_properties_and_descendants(tree, node)))
 
@@ -223,7 +223,7 @@ def pathTableMatch(path, G1, G2):
 
 def TreeConsistencyScore(tree, dataset, threshold=0.6, whole=False):
     overall_path_score = 0
-    target_path = f"datasets/{dataset}/"
+    target_path = f"E:/Project/CurrentDataset/datasets/{dataset}/"
     if whole is True:
         with open(os.path.join(target_path, "wholeGroundTruth.pkl"), "rb") as file:
             groundTruthTree = pickle.load(file)
@@ -294,7 +294,7 @@ def get_cols_and_descendants(G, node):
 
 def findnodeGTColTypes(tree, dataset, node):
     names = []
-    groundTruth = f"datasets/{dataset}/column_gt.csv"
+    groundTruth = f"E:/Project/CurrentDataset/datasets/{dataset}/column_gt.csv"
     csvgt = pd.read_csv(groundTruth, encoding="latin1")
     columns = list(set(get_cols_and_descendants(tree, node)))
 
@@ -331,6 +331,6 @@ def updateGroundTruthColumnLabel(dataset, tree):
     for node in tree.nodes:
         if node != "Thing":
             llt = findnodeGTColTypes(tree, dataset, node)
-            print(node, llt)
+            # print(node, llt)
             tree.nodes[node]['label'] = llt
     return tree

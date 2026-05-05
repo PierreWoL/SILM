@@ -1,8 +1,8 @@
 from time import sleep
 
 import pandas as pd
-import SCDection.SubjectColumnDetection as SCD
-import SCDection.webSearchAPI as Search
+import EmSI.SCDection.SubjectColumnDetection as SCD
+import EmSI.SCDection.webSearchAPI as Search
 import math
 import Utils as util
 
@@ -59,11 +59,11 @@ class TableColumnAnnotation:
                                             column_index=i, top_K=top_n)
                     self.column_score[i] = sum(ws_Ci_dict.values())
 
-            # else:
-            # self.column_score[i] = 0
+            else:
+             self.column_score[i] = 0
 
     @staticmethod
-    def update_ws(current_state, new_pairs,**kwargs):
+    def update_ws(current_state, new_pairs):
         for cell, cell_score in new_pairs.items():
             current_state[cell] = cell_score
         return current_state
@@ -113,7 +113,7 @@ class TableColumnAnnotation:
                 countw_score += (2 * title_score + snippet_score) / len_bow_Tj
         return countw_score
 
-    def subcol_Tjs(self):
+    def subcol_Tjs(self, NE= True):
         """
         calculate all features of the columns
         Returns
@@ -125,11 +125,20 @@ class TableColumnAnnotation:
             for feature_ele in ['uc', 'cm', 'ws', 'emc']:
                 mean = sum(feature_df.values()) / len(feature_df.values())
                 std_deviation = math.sqrt(sum((x - mean) ** 2 for x in feature_df.values()) / len(feature_df.values()))
-                norm_df[feature_ele] = (feature_df[feature_ele] - mean) / std_deviation
+                norm_df[feature_ele] = (feature_df[feature_ele] - mean) / std_deviation if std_deviation > 0 else 0
             return norm_df
         self.ws_cal(top_n=3)
-        for i, candidate_type in self.annotation.items():
-            if candidate_type == SCD.ColumnType.named_entity:
+        if NE is True:
+            for i, candidate_type in self.annotation.items():
+                if candidate_type == SCD.ColumnType.named_entity:
+                    columnDetection = SCD.ColumnDetection(self.table.iloc[:, i], column_type=candidate_type)
+                    feature_dict = columnDetection.features(i, self.annotation)
+                    feature_dict['ws'] = self.column_score[i]
+                    norm = normalized(feature_dict)
+                    self.column_score[i] = (norm['uc'] + 2 * (norm['cm'] + norm['ws']) - norm['emc']) / (
+                        math.sqrt(feature_dict['df'] + 1))
+        else:
+            for i, candidate_type in self.annotation.items():
                 columnDetection = SCD.ColumnDetection(self.table.iloc[:, i], column_type=candidate_type)
                 feature_dict = columnDetection.features(i, self.annotation)
                 feature_dict['ws'] = self.column_score[i]

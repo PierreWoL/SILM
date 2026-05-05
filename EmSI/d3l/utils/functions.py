@@ -11,7 +11,7 @@ from typing import Iterable, Any
 from nltk import word_tokenize
 from sklearn.feature_extraction.text import CountVectorizer
 
-from d3l.utils.constants import STOPWORDS
+from EmSI.d3l.utils.constants import STOPWORDS
 from nltk.stem import WordNetLemmatizer
 from urllib.parse import urlparse
 

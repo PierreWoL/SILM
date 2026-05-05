@@ -260,7 +260,7 @@ def transform_data(df, sampling_s=0):
         return df
 
 
-def example_data(df, method='simple', sampling_s=0, sample_size=10, summ_stats=False, other_col=False, MAX_LEN=4000):
+def example_data(df, method='simple', sampling_s=0, sample_size=5, summ_stats=False, other_col=False, MAX_LEN=4000,  isText= True):
     # df = remove_empty_or_sparse_columns(df)
     tem_df = transform_data(df, sampling_s=sampling_s)
     if len(tem_df) <= sample_size:
@@ -275,23 +275,27 @@ def example_data(df, method='simple', sampling_s=0, sample_size=10, summ_stats=F
             sample_df = tem_df.head(sample_size)
         else:
             sample_df = tem_df
-        return sample_df
+        table_text = sample_df.to_csv(sep="|", index=False)
+        if isText is True:
+            return table_text
+        else:
+            return sample_df
 
 
-def load(dataset, sample_size=10, sample_s=0, summ_stats=False, other_col=False, MAX_LEN=4000):
+def load(dataset, sample_size=10, sample_s=0, summ_stats=False, other_col=False, MAX_LEN=4000, isText= True):
     json_datasets = []
-    reference_path = f"E:/Project/datasets/{dataset}/"
+    reference_path = f"E:/Project/CurrentDataset/datasets/{dataset}/"
     gt_csv = pd.read_csv(os.path.join(reference_path, "groundTruth.csv"))
     number = 0
     for table_name in gt_csv["fileName"]:
         if table_name in os.listdir(os.path.join(reference_path, "Test")):
             matching_row = gt_csv[gt_csv["fileName"] == table_name]
             class_value = matching_row.iloc[0]["class"]
-            data = pd.read_csv(os.path.join(reference_path, "Test", table_name))
+            data = pd.read_csv(os.path.join(reference_path, "Test", table_name), encoding='latin1')
             sample_df = example_data(data,
                                      method='simple', sampling_s=sample_s,
                                      sample_size=sample_size,
-                                     summ_stats=summ_stats, other_col=other_col, MAX_LEN=MAX_LEN)
+                                     summ_stats=summ_stats, other_col=other_col, MAX_LEN=MAX_LEN, isText=isText)
             json_datasets.append({'id': table_name, 'table': sample_df, 'type': class_value})
             number += 1
     return json_datasets

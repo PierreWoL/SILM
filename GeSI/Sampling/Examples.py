@@ -31,7 +31,7 @@ def sample_examples(n=3, dataset="WDC"):
     examples = []
     if n == 0:
         return examples
-    reference_path =f"E:/Project/datasets/{dataset}/"
+    reference_path =f"E:/Project/CurrentDataset/datasets/{dataset}/"
     gt_csv = os.path.join(reference_path, "groundTruth.csv")
     gt = pd.read_csv(gt_csv)
     unique_classes = gt['class'].unique()

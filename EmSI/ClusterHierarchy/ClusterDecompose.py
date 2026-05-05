@@ -5,10 +5,10 @@ import pandas as pd
 import os
 import networkx as nx
 from collections import Counter
-from ClusterHierarchy import sliceDendro
+from EmSI.ClusterHierarchy import sliceDendro
 import scipy.cluster.hierarchy as sch
-from ClusterHierarchy.JaccardMetric import JaccardMatrix
-from Utils import mkdir
+from EmSI.ClusterHierarchy.JaccardMetric import JaccardMatrix
+from EmSI.Utils import mkdir
 
 
 def find_frequent_labels(ancestors: list, G: nx.DiGraph()):
@@ -45,9 +45,9 @@ def ground_truth_labels(filename, mode=0, dataset="WDC"):
         print("wrong label mode!")
         return None
     ground_label_name1 = "groundTruth.csv"  #
-    data_path = os.path.join(os.getcwd(), "datasets/" + dataset, ground_label_name1)
+    data_path = os.path.join( "E:/Project/CurrentDataset/datasets/" + dataset, ground_label_name1)
     ground_truth_csv = pd.read_csv(data_path, encoding='latin-1')
-    target_path = os.path.join(os.getcwd(), "datasets/" + dataset)
+    target_path = os.path.join("E:/Project/CurrentDataset/datasets/" + dataset)
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
 
@@ -195,7 +195,7 @@ def simple_tree_with_cluster_label(threCluster_dict, table_names, dataset, Label
 
 def TreeConsistencyScore(tree, lowest_layer, top_layer, dataset):
     overall_path_score = 0
-    target_path = os.path.join(os.getcwd(), "datasets/" + dataset)
+    target_path = os.path.join( "E:/Project/CurrentDataset/datasets/" + dataset)
     with open(os.path.join(target_path, "graphGroundTruth.pkl"), "rb") as file:
         G = pickle.load(file)
 
@@ -321,12 +321,12 @@ def tree_consistency_metric(tables, JaccardMatrix, embedding_file, dataset,
 def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: Namespace):
     # os.path.abspath(os.path.dirname(os.getcwd()))
 
-    datafile_path = os.path.join(os.getcwd(), "result/P2/", hp.dataset,
+    datafile_path = os.path.join("E:/Project/CurrentDataset", "result/P2/", hp.dataset,
                                  "All/" + embedding_file + "/column")
-    data_path = os.getcwd() + "/datasets/%s/Test/" % hp.dataset
+    data_path =  "E:/Project/CurrentDataset/datasets/%s/Test/" % hp.dataset
     # Gt_clusters, Ground_t, Gt_cluster_dict = data_classes(data_path, ground_truth_table)
 
-    target_path = os.getcwd() + "/result/P2/Column/" + \
+    target_path = "E:/Project/CurrentDataset/result/P2/Column/" + \
                   hp.dataset + "/_gt_cluster.pickle"
     F_cluster = open(target_path, 'rb')
     KEYS = pickle.load(F_cluster)
@@ -338,7 +338,7 @@ def hierarchicalColCluster(clustering, filename, embedding_file, Ground_t, hp: N
 
     tables = Ground_t[str(KEYS[index_cols])]
     # print(str(KEYS[index_cols]), tables )
-    score_path = os.getcwd() + "/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
+    score_path =  "E:/Project/CurrentDataset/result/SILM/" + hp.dataset + "/" + embedding_file + "/"
     # print(score_path)
     mkdir(score_path)
     if len(tables) > 1:

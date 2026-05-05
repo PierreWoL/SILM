@@ -5,12 +5,13 @@ Based on https://github.com/megagonlabs/starmie/
 import torch
 import pandas as pd
 import os
-from Utils import simplify_string, subjectCol
+from EmSI.Utils import simplify_string, subjectCol
 from .model import BarlowTwinsSimCLR
-from pretrainData import PretrainTableDataset
+from EmSI.pretrainData import PretrainTableDataset
 from tqdm import tqdm
 from torch.utils import data
-from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import get_linear_schedule_with_warmup
+from torch.optim import AdamW
 from typing import List
 
 
