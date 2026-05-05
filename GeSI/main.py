@@ -17,16 +17,16 @@ from langchain_ollama import OllamaLLM
 from GeSI.utils.folder import mkdir
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("test_dataset", "AddedExp/noiseLevel/80_pct", "Path to the test dataset")
-flags.DEFINE_string("output_dir", "result/GeSI/AddedExp/noiseLevel/80_pct/Type/3/gpt3/", "Path to the output directory")
-flags.DEFINE_integer("k_shot", 3, "Number of samples to provie.")
+flags.DEFINE_string("test_dataset", "AddedExp/noiseLevel/20_pct", "Path to the test dataset")
+flags.DEFINE_string("output_dir", "result/GeSI/AddedExp/noiseLevel/20_pct/Type/3/qwen14/", "Path to the output directory")
+flags.DEFINE_integer("k_shot", 3, "Number of samples to provide.")
 flags.DEFINE_integer("MaxiDepth", 5, "Number of samples to provide.")
 
 flags.DEFINE_integer("seed", 0, "Random seed.")
 flags.DEFINE_bool("constraintFET", False, "constraint for the leaf type.")
 flags.DEFINE_bool("constraintSLT", False, "constraint for the second level.")
 flags.DEFINE_bool("constraintABS", True, "constraint for the second level not using abstract type.")
-flags.DEFINE_bool("gpt", True, "whether using gpt")
+flags.DEFINE_bool("gpt", False, "whether using gpt")
 
 abs_example = ['entity', 'something', 'unidentified entity', 'conceptual entity', 'certain thing', 'former entity',
                'named entity',
