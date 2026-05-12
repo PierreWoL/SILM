@@ -251,7 +251,7 @@ def TreeConsistencyScore(tree, dataset, threshold=0.6, whole=False):
     # print(device)
     device = get_least_used_gpu()
     model = SentenceTransformer(model_name)
-    #model = model.to(device)  # 把模型移到 GPU 上
+    #model = model.to(device) 
     """
     tree_nodes = list(groundTruthTree.nodes)
     print("Ground truth nodes", tree_nodes)
@@ -269,14 +269,16 @@ def TreeConsistencyScore(tree, dataset, threshold=0.6, whole=False):
 def updateGroundTruthLabel(dataset, tree):
     children = list(tree.successors("Thing"))
     lowest_layer = [node for node in tree.nodes if tree.out_degree(node) == 0]
+    tree.nodes["Thing"]['label'] = "Thing"
     for child in children:
         tlt = findnodeGTTypes(tree, dataset, child, isTop=True)
-        # print(child,tlt )
+        print("tlt,:" ,child,tlt )
         tree.nodes[child]['label'] = tlt
     for node in tree.nodes:
-        if node not in children:
+        if node not in children  and node!="Thing":
             llt = findnodeGTTypes(tree, dataset, node, isTop=False)
             tree.nodes[node]['label'] = llt
+            print(node, llt)
             #if node in lowest_layer:
                # print(node, llt)
     return tree

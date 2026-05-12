@@ -94,7 +94,6 @@ def perturb_dataframe_columns(
 
     for idx, col in enumerate(old_columns):
         col_str = str(col)
-
         # only perturb selected columns
         if idx in selected_indices:
             if choice == 1:
@@ -103,10 +102,9 @@ def perturb_dataframe_columns(
                 action = choice
 
             if action == 2:
-                if "_" in col_str or len(re.findall(r"[A-Z][^A-Z]*", col_str)) > 1:
-                    new_col = abbreviate(col_str)
-                else:
-                    new_col = col_str
+                new_col = abbreviate(col_str)
+                if new_col == "" or new_col == col_str:
+                    new_col = drop_vowels(col_str)
 
             elif action == 3:
                 new_col = drop_vowels(col_str)
@@ -361,10 +359,10 @@ def perturb_tables_and_update_column_gt(
 
 
 
-dataset = "OD_Small"
+dataset = "WDC"
 abs_path = "E:/Project/CurrentDataset/datasets/"
-output_path = f"datasets/AddedExp/noiseLevel"
-noise_levels = [0.6, 0.8]
+output_path = f"datasets/AddedExp/noiseLevel/"
+noise_levels = [0.1,0.2, 0.3, 0.4,0.5, 0.6, 0.8]
 for noise_ration in noise_levels:
     updated_gt, mapping_df, update_report_df = perturb_tables_and_update_column_gt(
         table_dir=os.path.join(abs_path, dataset, "Test"),
@@ -374,9 +372,10 @@ for noise_ration in noise_levels:
         choice=2,  # 1 = random choice, 2 = abbreviation, 3 = drop vowels
         noise_ratio=noise_ration,  # perturb 25% columns per table
         seed=42,
+        encoding="latin1"
     )
-    src_file_gt_table = os.path.join(abs_path, "OD_Small",  "groundTruth.csv")
-    src_file_graph = os.path.join(abs_path, "OD_Small",  "graphGroundTruth.pkl")
+    src_file_gt_table = os.path.join(abs_path,dataset,  "groundTruth.csv")
+    src_file_graph = os.path.join(abs_path, dataset,  "graphGroundTruth.pkl")
 
     check_graph = Path(os.path.join(output_path, f"{str(int(noise_ration * 100)) + "_pct"}", "graphGroundTruth.pkl"))
     check_gt = Path(os.path.join(output_path, f"{str(int(noise_ration * 100)) + "_pct"}", "groundTruth.csv"))

@@ -12,7 +12,7 @@ from TestNaming import testNaming
 # AddedExp/attribute_overlap/D_25 OD_Small
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default="OD_Small")#AddedExp/attribute_overlap/D_50 AddedExp/noiseLevel/20_pct AddedExp/schemaSize/tables_25pct/seed_42
+    parser.add_argument("--dataset", type=str, default="OD_Large")#AddedExp/attribute_overlap/D_50 AddedExp/noiseLevel/20_pct AddedExp/schemaSize/tables_25pct/seed_42
     parser.add_argument("--embed", type=str, default='sbert')
     parser.add_argument("--baseline", dest="baseline", action="store_true")
     parser.add_argument("--clustering", type=str, default='Agglomerative')
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--step", type=int, default=1)
     parser.add_argument("--phaseTest",dest="phaseTest", action="store_true")
     """ This is the parameter for P1"""
-    parser.add_argument("--estimateNumber", type=int, default=4) #4 for opendata 8 for others
+    parser.add_argument("--estimateNumber", type=int, default=8) #4 for opendata 8 for others
 
     """ Parameter for slicing the dendrogram in Step3 """
     parser.add_argument("--intervalSlice", type=int, default=10)

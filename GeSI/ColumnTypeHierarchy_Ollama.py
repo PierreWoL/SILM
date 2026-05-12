@@ -7,6 +7,7 @@ from absl import app, logging
 from openai import OpenAI
 from Sampling import Table
 from GeSI.Prompt.ColumnTypePrompts import COL_TEMP_FULL, COL_TEMP_TFULL
+from GeSI.Extraction import extract_thing_paths
 from GeSI.utils.folder import mkdir
 import argparse
 from tqdm import tqdm
@@ -14,8 +15,8 @@ import json
 from langchain_ollama import OllamaLLM
 
 parser = argparse.ArgumentParser(description="Please choose the optimal settings for the parameters")
-parser.add_argument('--test_dataset', type=str, default='AddedExp/noiseLevel/80_pct', help="Chosen dataset")
-parser.add_argument('--LLM', type=str, default='qwen14b', help="Chosen LLMs")
+parser.add_argument('--test_dataset', type=str, default='AddedExp/noiseLevel/60_pct', help="Chosen dataset")
+parser.add_argument('--LLM', type=str, default='gpt3.5', help="Chosen LLMs")
 parser.add_argument('--k_shot', type=int, default=3, help="# of samples to provide.")
 parser.add_argument('--seed', type=int, default=0, help="Random seed.")
 parser.add_argument('--trial', type=int, default=0, help="trial sequence.")
@@ -42,7 +43,7 @@ if args.gpt is True:
     llm = llm_gpt
     print("using gpt for inferring...")
 
-output_dir = f"E:/Project/CurrentDataset/result/GeSI/{args.test_dataset}/Attribute/{args.k_shot}/gpt3/" #{args.LLM}/
+output_dir = f"result/GeSI/{args.test_dataset}/Attribute/{args.k_shot}/gpt3/" #{args.LLM}/
 print(args.test_dataset, args.LLM, args.k_shot, args.seed, args.trial, args.Prompt, output_dir)
 
 
@@ -68,10 +69,11 @@ def llama_batch_infer(promptsDict: dict, output_path, batch_size=1):
                     # this is for individual inference
                     try:
                         decoded = get_model_answer(llm, messages)
+                        cleaned = extract_thing_paths(decoded)
                         # print(decoded)
                         result_cur_table["attrs"].append({
                             "column": col,
-                            "paths": decoded
+                            "paths": cleaned
                         })
                     except Exception as e:
                         print(f" {key} column {col} failed: {e}")
@@ -128,7 +130,7 @@ def main(_):
     # promptTemplate.render(examples=examples))
     computed = set()
     if out_file.exists():
-        with open(out_file, "r") as f:
+        with open(out_file, "r", encoding="utf-8") as f:
             computed.update({json.loads(line)["id"] for line in f})
     logging.info("Loaded %d computed pages", len(computed))
     test_pages = Table.load(args.test_dataset, sample_size=5, summ_stats=True, other_col=False, isText=False)

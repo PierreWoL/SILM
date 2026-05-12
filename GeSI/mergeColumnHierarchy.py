@@ -97,7 +97,11 @@ def get_specific_columns_and_types(G: nx.DiGraph):
                 # 找 root（假设只有一个入度为 0 的节点）
                 roots = [n for n in G.nodes if G.in_degree(n) == 0]
                 root = roots[0]  # 如有多个根，可以加逻辑选定或报错
-                path = nx.shortest_path(G, source=root, target=only_leaf)
+                try:
+                    path = nx.shortest_path(G, source=root, target=only_leaf)
+                except Exception as e:
+                    print(e)
+
                 ###TODO this needs refine
 
                 column_to_specific_type[col] = only_leaf
@@ -296,7 +300,7 @@ for json_type in json_types:
     merge(dataset_p, target_p, json_file_p)
 """
 json_types = ['results']
-dataset_p = "AddedExp/attribute_overlap/D_50"
+dataset_p = "AddedExp/noiseLevel/60_pct" #AddedExp/noiseLevel/10_pct
 model = "gpt3"  # GPT3
 for json_type in json_types:
     target_p = f"E:/Project/CurrentDataset/result/GeSI/{dataset_p}/Attribute/3/{model}"
