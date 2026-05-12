@@ -112,7 +112,7 @@ def create_schema_size_subsets(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     mapping_df = pd.read_csv(mapping_csv)
-    column_mapping_df = pd.read_csv(column_mapping_csv)
+    column_mapping_df = pd.read_csv(column_mapping_csv, encoding='latin1')
     mapping_df["superclass_parsed"] = mapping_df["superclass"].apply(parse_superclass)
 
     G = load_schema(schema_path)
@@ -218,8 +218,8 @@ def create_schema_size_subsets(
     )
 
 
-dataset = "OD_Small"
-absolute_path = "E:/Project/CurrentDataset/datasets"
+dataset = "WDC"
+absolute_path = ""
 
 
 create_schema_size_subsets(

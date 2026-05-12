@@ -70,18 +70,26 @@ def merge_and_evaluate(dataset, target_path, json_file, test_threshold=0.6, test
         roots = [node for node in digraph.nodes if digraph.in_degree(node) == 0]
         leaves = [node for node in digraph.nodes if digraph.out_degree(node) == 0]
         all_paths = []
+        all_gt_paths = []
         max_depth = 0
         for root in roots:
             for leaf in leaves:
                 if nx.has_path(digraph, root, leaf):
                     path = nx.shortest_path(digraph, source=root, target=leaf)
+                    gt_path = [str(tree.nodes[child]['label']) for child in path]
+                    print(gt_path)
                     all_paths.append(" -> ".join(path))
+                    all_gt_paths.append(" -> ".join(gt_path))
                     max_depth = max(max_depth, len(path) - 1)
         print(f"paths number {len(all_paths)}")
         output_file = os.path.join(target_path, "graph_paths.txt")
+        outputgt_file = os.path.join(target_path, "graph_paths_gt.txt")
         with open(output_file, "w", encoding="utf-8") as f:
             for path in all_paths:
                 f.write(path + "\n")
+        with open(outputgt_file, "w", encoding="utf-8") as f:
+            for path_gt in all_gt_paths:
+                f.write(path_gt + "\n")
         return all_paths, max_depth, output_file
 
     (overall_path_score, all_pathsN, path_tp,
@@ -90,10 +98,10 @@ def merge_and_evaluate(dataset, target_path, json_file, test_threshold=0.6, test
                                                               threshold=test_threshold,
                                                               whole =test_Whole )
     paths, depth, file_path = find_paths_and_depth(tree)
-    print("All paths：")
-    for path in paths:
-        print(path)
-    print(f"\nDiGraph's maximu, depth is ：{depth}")
+    #print("All paths：")
+    #for path in paths:
+        #print(path)
+    print(f"\nDiGraph's maximum depth is ：{depth}")
     print(f"Path has been saved to ：{file_path}")
 
     target_path_gt = f"E:/Project/CurrentDataset/datasets/{dataset}/"
@@ -137,10 +145,11 @@ def merge_and_evaluate(dataset, target_path, json_file, test_threshold=0.6, test
             merge_and_evaluate(dataset_p, target_p, json_file_p, test_threshold=thre, test_Whole=False)
 """
 
-dataset_p = "AddedExp/schemaSize/tables_75pct/seed_42" #
-model = "qwen14"  # gpt3 qwen14
+dataset_p = "WDC" #
+model = "gpt3"  # gpt3 qwen14
 
+#target_p = f"E:/Project/CurrentDataset/result/GeSI/{dataset_p}/Type/3/{model}"  # /refine
 target_p = f"E:/Project/CurrentDataset/result/GeSI/{dataset_p}/Type/3/{model}"  # /refine
 mkdir(target_p)
-json_file_p = f"{target_p}/results.jsonl"
+json_file_p = f"{target_p}/results_constraintABSselected.jsonl"
 merge_and_evaluate(dataset_p, target_p, json_file_p, test_threshold=0.5, test_Whole=False)

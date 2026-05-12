@@ -68,7 +68,7 @@ def read_table_attributes(attribute_path):
     Returns:
         attr_df
     """
-    df = pd.read_csv(attribute_path)
+    df = pd.read_csv(attribute_path, encoding='latin1')
 
     required_cols = {
         "fileName", "colName", "ColumnLabel", "LowestClass", "TopClass"
@@ -289,7 +289,7 @@ def create_attribute_overlap_variants(
         }
         # Save retained ground truth list
         groundTruth_df = pd.read_csv(table_type_path)
-        column_gt_df = pd.read_csv(attribute_path)
+        column_gt_df = pd.read_csv(attribute_path, encoding="latin1")
         gt_filtered = groundTruth_df[groundTruth_df["fileName"].isin(retained_tables)]
         column_gt_filtered  = column_gt_df[column_gt_df["fileName"].isin(retained_tables)]
         os.makedirs(os.path.join(output_dir, f"{variant_name}"), exist_ok=True)
@@ -357,7 +357,7 @@ def create_attribute_overlap_variants(
 
 import pickle
 
-dataset = "OD_Small"
+dataset = "WDC"
 absolute_path = "E:/Project/CurrentDataset/datasets"
 with open(os.path.join(absolute_path,dataset, "graphGroundTruth.pkl"), "rb") as f:
     G = pickle.load(f)

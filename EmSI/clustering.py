@@ -714,8 +714,9 @@ def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, c
                             filename=None):
     star_time = time.time()
     number_estimate = len(gt_cluster_dict)
-    min = number_estimate -10 if  number_estimate -10 >0 else number_estimate
-    max = int(2.5 * number_estimate)
+    min = number_estimate//2 -10 if  number_estimate//2 -10 >2 else 3
+    max = int(1 * number_estimate)-19 if int(1 * number_estimate) -19 < len(input_data)//2-1 and  int(1 * number_estimate) -19>2 else len(input_data)//2-1
+    print(min, max)
     cluster_dict = clustering(input_data, columns, min, clusteringName, max=max)
     end_time = time.time()
     time_difference_run = end_time - star_time
