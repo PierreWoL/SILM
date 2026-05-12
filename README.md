@@ -3,7 +3,7 @@
 
 ### Training Requirements
 
-* Python 3.11.0
+* Python 3.13.0
 * PyTorch 2.2.1
 * Transformers 4.38.2
 * NVIDIA Apex
@@ -15,7 +15,7 @@ pip install -r requirements
 
 ### Datasets
 All datasets, including GoogleSearch(for testing running time), WDC: 602 tables from Web Data Commons
-and GDS: 660 selected tables from Google Dataset Search, OpenData: 158 and 10361 tbales from Open Data can be downloaded via this link
+and GDS: 660 selected tables from Google Dataset Search, OpenData: 158 and 10361 tables from Open Data can be downloaded via this link
 https://drive.google.com/file/d/1nW2zvw_m9RL_GZQetSQYC6Sp_WyPt0ef/view?usp=drive_link.
 
 ### Running the offline pre-training pipeline of EmSI:
