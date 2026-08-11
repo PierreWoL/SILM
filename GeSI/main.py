@@ -45,7 +45,7 @@ options={
 )
 
 
-llm_gpt = OpenAI(api_key="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")
+llm_gpt = OpenAI(api_key="")
 
 
 def main(_):
