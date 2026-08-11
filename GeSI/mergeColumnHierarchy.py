@@ -267,12 +267,13 @@ def merge(dataset, target_path, json_file):
 
     #test_cols(dataset, result_dict, superClass=False,folder=target_f)
     gt_clusters, ground_t, gt_cluster_dict = column_gts(dataset, superclass=True)
-    # print(gt_clusters, ground_t, gt_cluster_dict )
+    print(fet_dict)
     results = []
     delete_id = []
     for fet, fet_result in fet_dict.items():
         fet_test_metrics = evaluate_col_cluster(gt_clusters[fet], gt_cluster_dict[fet],
                                                 fet_dict[fet], folder=target_f, fet=fet)
+
         print(fet_test_metrics)
         if fet_test_metrics is not None:
             results.append(fet_test_metrics)
@@ -296,8 +297,8 @@ for json_type in json_types:
     merge(dataset_p, target_p, json_file_p)
 """
 json_types = ['results']
-dataset_p = "AddedExp/attribute_overlap/D_50"
-model = "gpt3"  # GPT3
+dataset_p = "Vision"
+model = "gpt54"  # GPT3
 for json_type in json_types:
     target_p = f"E:/Project/CurrentDataset/result/GeSI/{dataset_p}/Attribute/3/{model}"
     mkdir(target_p)

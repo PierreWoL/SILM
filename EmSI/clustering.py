@@ -19,10 +19,7 @@ from sklearn.cluster import Birch
 from sklearn.cluster import OPTICS
 from sklearn.cluster import KMeans
 import numpy as np
-from d3l.indexing.similarity_indexes import NameIndex, FormatIndex, ValueIndex, EmbeddingIndex, DistributionIndex
-from d3l.input_output.dataloaders import CSVDataLoader
-from d3l.querying.query_engine import QueryEngine
-from d3l.utils.functions import pickle_python_object, unpickle_python_object
+
 
 
 
@@ -65,154 +62,6 @@ def rand_Index_custom(predicted_labels, ground_truth_labels):
     RI = (true_positive + true_negative) / all
     return RI
 
-
-def create_or_find_indexes(data_path, threshold, LM, subjectCol=False):
-    #  collection of tables
-
-    dataloader = CSVDataLoader(
-        root_path=data_path,
-        subjectCol=subjectCol,
-        encoding='latin1'
-
-    )
-
-    # NameIndex
-    name_lsh = os.path.join(data_path, f'./name_{str(LM)}.lsh') if subjectCol is False \
-        else os.path.join(data_path, f'./name_SubCol_{str(LM)}.lsh')
-    if os.path.isfile(name_lsh):
-        name_index = unpickle_python_object(name_lsh)
-    else:
-        name_index = NameIndex(dataloader=dataloader, index_similarity_threshold=threshold, model=LM)
-        pickle_python_object(name_index, name_lsh)
-
-    # FormatIndex
-    format_lsh = os.path.join(data_path, './format.lsh') if subjectCol is False \
-        else os.path.join(data_path, './format_SubCol.lsh')
-    if os.path.isfile(format_lsh):
-        format_index = unpickle_python_object(format_lsh)
-    else:
-        format_index = FormatIndex(dataloader=dataloader, index_similarity_threshold=threshold)
-        pickle_python_object(format_index, format_lsh)
-
-    # ValueIndex
-    value_lsh = os.path.join(data_path, './value.lsh') if subjectCol is False \
-        else os.path.join(data_path, './value_SubCol.lsh')
-    if os.path.isfile(value_lsh):
-        value_index = unpickle_python_object(value_lsh)
-    else:
-        value_index = ValueIndex(dataloader=dataloader, index_similarity_threshold=threshold)
-        pickle_python_object(value_index, value_lsh)
-
-    # DistributionIndex
-    distribution_lsh = os.path.join(data_path, './distribution.lsh') if subjectCol is False \
-        else os.path.join(data_path, './distribution_SubCol.lsh')
-    if os.path.isfile(distribution_lsh):
-        distribution_index = unpickle_python_object(distribution_lsh)
-    else:
-        distribution_index = DistributionIndex(dataloader=dataloader, index_similarity_threshold=threshold)
-        pickle_python_object(distribution_index, distribution_lsh)
-
-    # EmbeddingIndex
-    embed_name = './embedding_' + str(LM) + '.lsh' if subjectCol is False \
-        else './embedding_' + str(LM) + '_SubCol.lsh'
-    embedding_lsh = os.path.join(data_path, embed_name) if subjectCol is False \
-        else os.path.join(data_path, embed_name)
-
-    if os.path.isfile(embedding_lsh):
-        embeddingIndex = unpickle_python_object(embedding_lsh)
-    else:
-        embeddingIndex = EmbeddingIndex(dataloader=dataloader, model=LM,
-                                        index_similarity_threshold=threshold)
-        pickle_python_object(embeddingIndex, embedding_lsh)
-
-    return [distribution_index, format_index, value_index, name_index, embeddingIndex]  #
-
-
-def initialise_distance_matrix(dataloader, data_path, indexes, k, column=False):
-    # print(L)
-    T = ed.get_files(data_path)
-    columns = []
-    if column is True:
-        for t in T:
-            table = dataloader.read_table(table_name=t)
-            column_t = table.columns
-            for col in column_t:
-                columns.append((f"{t}.{col}", table[col]))
-        dim = len(columns)
-        D = np.ones((dim, dim))
-        np.fill_diagonal(D, 0)
-        L = {tuple[0]: index for index, tuple in enumerate(columns)}
-        for col_tuple in columns:
-            col_name, column = col_tuple
-            qe = QueryEngine(*indexes)
-            Neighbours = qe.column_query(col_tuple[1], aggregator=None, k=k)
-            for n in Neighbours:
-                (name, similarities) = n
-                # print(name, similarities)
-                if name in L and col_name != name:
-                    # print(L[t], L[name])
-                    # print(L[name], L[t])
-
-                    D[L[col_name], L[name]] = 1 - statistics.mean([float(sim) for sim in similarities])
-                    D[L[name], L[col_name]] = 1 - statistics.mean([float(sim) for sim in similarities])
-                    # print(L[col_name], L[name],similarities, D[L[col_name], L[name]] )
-
-        cols = [i[0] for i in columns]
-        # for row in D:
-        # print(row)
-        return D, cols
-
-    else:
-        dim = len(T)
-        D = np.ones((dim, dim))
-        np.fill_diagonal(D, 0)
-        L = {t: i for i, t in enumerate(T)}
-        #  Neighbours = qe.column_query(column=,aggregator=None, k=k)
-        for t in T:
-            qe = QueryEngine(*indexes)
-            Neighbours = qe.table_query(table=dataloader.read_table(table_name=t),
-                                        aggregator=None, k=k)
-            for n in Neighbours:
-                (name, similarities) = n
-                if name in L and t != name:
-                    # print(L[t], L[name])
-                    # print(L[name], L[t])
-                    D[L[t], L[name]] = 1 - statistics.mean(similarities)
-                    D[L[name], L[t]] = 1 - statistics.mean(similarities)
-
-        return D, T
-
-
-def distance_matrix(data_path, index, k, column=False):
-    # print(index)
-    dataloader = CSVDataLoader(root_path=(data_path), encoding='latin1')
-    # before_distance_matrix = time()
-    D, T = initialise_distance_matrix(dataloader, data_path, index, k, column=column)
-    # after_distance_matrix = time()
-    # print("Building distance matrix took ",{after_distance_matrix-before_distance_matrix}," sec to run.")
-    Z_df = pd.DataFrame(D)
-    return Z_df, T
-
-
-def inputData(data_path, threshold, k, LM, subjectCol=False, column=False):
-    # print("embed mode is ", embedding_mode)
-    if subjectCol is False:
-        if column is True:
-            ZT_Files = os.path.join(data_path, f"D3L_{LM}_column.pkl")
-        else:
-            ZT_Files = os.path.join(data_path, f"D3L_{LM}.pkl")
-    else:
-        ZT_Files = os.path.join(data_path, f"D3L_subCol_{LM}.pkl")
-    if os.path.isfile(ZT_Files):
-        Z, T = unpickle_python_object(ZT_Files)
-    else:
-        indexes = create_or_find_indexes(data_path, threshold, LM=LM,
-                                         subjectCol=subjectCol)
-        Z, T = distance_matrix(data_path, indexes, k, column=column)
-        # print("Z,T is ", Z, T)
-        file = (Z, T)
-        pickle_python_object(file, ZT_Files)
-    return Z, T
 
 
 def dbscan_param_search(input_data):
@@ -716,7 +565,7 @@ def clusteringColumnResults(input_data, columns, gt_clusters, gt_cluster_dict, c
     number_estimate = len(gt_cluster_dict)
     min = number_estimate -10 if  number_estimate -10 >0 else number_estimate
     max = int(2.5 * number_estimate)
-    cluster_dict = clustering(input_data, columns, min, clusteringName, max=max)
+    cluster_dict = clustering(input_data, columns, 5, clusteringName, max=28)
     end_time = time.time()
     time_difference_run = end_time - star_time
 

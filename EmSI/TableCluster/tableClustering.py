@@ -6,7 +6,7 @@ import pickle
 from argparse import Namespace
 import os
 
-from EmSI.clustering import clustering_results, data_classes, clusteringColumnResults, inputData
+from EmSI.clustering import clustering_results, data_classes, clusteringColumnResults
 from EmSI.Utils import mkdir, findSubCol, subjectColDetection
 from EmSI.ClusterHierarchy.ClusterDecompose import hierarchicalColCluster
 
@@ -126,49 +126,6 @@ def typeInference(embedding_file, hp: Namespace):
     return dict_file
 
 
-def baselineP1(hp: Namespace):
-    #data_path = os.getcwd() + "/datasets/" + hp.dataset + "/Test/"
-    data_path = "E:/Project/CurrentDataset/datasets/" + hp.dataset + "/Test/"
-    isTabFact, subCol = False, False
-    store_path = os.getcwd() + "/result/P1/" + hp.dataset + "/"
-    if hp.subjectCol is True:
-        subCol = True
-        store_path += "Subject_Col/"
-    else:
-        store_path += "All/"
-    ground_truth = os.getcwd() + "/datasets/" + hp.dataset + "/groundTruth.csv"
-    dict_file = {}
-    Z, T = inputData(data_path, 0.6, 5, hp.embed, subjectCol=subCol)
-    print(Z, T)
-    try:
-        clustering_method = ["Agglomerative"]  # , "BIRCH"
-        methods_metrics = {}
-        for method in clustering_method:
-            print(method)
-            metric_value_df = pd.DataFrame(
-                columns=["Random Index", "Purity"])
-            for i in range(0, hp.iteration):
-                new_path = os.path.join(store_path, "D3L")
-                mkdir(new_path)
-                cluster_dict, metric_dict = clustering_results(Z, T, data_path, method, groundTruth=ground_truth)
-                # print(cluster_dict)
-                metric_df = pd.DataFrame([metric_dict])
-                metric_value_df = pd.concat([metric_value_df, metric_df])
-                if hp.iteration == 1:
-                    dict_file[method] = cluster_dict
-
-            mean_metric = metric_value_df.mean()
-            methods_metrics[method] = mean_metric
-        e_df = pd.DataFrame()
-        for i, v in methods_metrics.items():
-            e_df = pd.concat([e_df, v.rename(i)], axis=1)
-        e_df.to_csv(store_path + f"D3L_{hp.embed}_metrics.csv", encoding='utf-8') if subCol is False \
-            else e_df.to_csv(store_path + f"D3LSubCol_{hp.embed}_metrics.csv", encoding='utf-8')
-        print(e_df)
-    except ValueError as e:
-        print(e)
-    return dict_file
-
 
 def column_gts(dataset):
     """
@@ -219,16 +176,9 @@ def conceptualAttri(hp: Namespace, embedding_file: str = None):
               'wb') as handle:
         pickle.dump(list(gt_cluster_dict.keys()), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    if embedding_file is None:
-        Z, T = inputData(data_path, 0.6, 5, hp.embed, column=True)
-        content = []
-        for index, col in enumerate(Z.columns):
-            content.append((T[index], np.array(Z[col])))
-        embedding_file = f"D3L_{hp.embed}"
-        print(embedding_file)
-    else:
-        F = open(datafile_path + embedding_file, 'rb')
-        content = pickle.load(F)
+
+    F = open(datafile_path + embedding_file, 'rb')
+    content = pickle.load(F)
         # content is the embeddings for all datasets
     Zs = {}
     Ts = {}

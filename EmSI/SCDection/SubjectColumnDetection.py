@@ -2,16 +2,17 @@ import string
 import pandas as pd
 from typing import Iterable
 import EmSI.SCDection.Utils as func
-from EmSI.d3l.input_output.dataloaders import CSVDataLoader
 import os
 import datetime
 from typing import Any
 from enum import Enum
 import random
 import statistics
-from EmSI.d3l.utils.constants import STOPWORDS
-from nltk.stem import WordNetLemmatizer
 
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+
+STOPWORDS = list(set(stopwords.words('english')))
 """
 This combines the features to detection subject columns of tables
 both in tableMiner+ and recovering semantics of data on the web
@@ -364,7 +365,6 @@ def datasets(root_path):
     if root_path[-1] != "/":
         root_path = root_path + "/"
     tables = {}
-    dataloader = CSVDataLoader(root_path=root_path, encoding='latin-1')
     T = os.listdir(root_path)
     T = [t[:-4] for t in T if t.endswith('.csv')]
     if len(T) > 1:
@@ -381,7 +381,7 @@ def datasets(root_path):
                         Table_names.append(t + "/" + file)
         T = Table_names.copy()
     for t in T:
-        table = dataloader.read_table(table_name=t)
+        table = pd.read_csv(os.path.join(root_path, t + "/" + t+".csv"))
         # print(table.iloc[:,1])
         tables[t] = table
     return tables

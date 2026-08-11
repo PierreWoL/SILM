@@ -3,7 +3,7 @@ import pickle
 
 import pandas as pd
 
-from TableCluster.tableClustering import P1, P2, P3, baselineP1
+from TableCluster.tableClustering import P1, P2, P3
 from EndToEnd.EndToEnd import endToEnd,ttt
 from RelationshipSearch.SearchRelationship import relationshipDiscovery
 from Runtime import Running
@@ -12,7 +12,7 @@ from TestNaming import testNaming
 # AddedExp/attribute_overlap/D_25 OD_Small
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default="OD_Small")#AddedExp/attribute_overlap/D_50 AddedExp/noiseLevel/20_pct AddedExp/schemaSize/tables_25pct/seed_42
+    parser.add_argument("--dataset", type=str, default="HiraTest")#AddedExp/attribute_overlap/D_50 AddedExp/noiseLevel/20_pct AddedExp/schemaSize/tables_25pct/seed_42
     parser.add_argument("--embed", type=str, default='sbert')
     parser.add_argument("--baseline", dest="baseline", action="store_true")
     parser.add_argument("--clustering", type=str, default='Agglomerative')
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--step", type=int, default=1)
     parser.add_argument("--phaseTest",dest="phaseTest", action="store_true")
     """ This is the parameter for P1"""
-    parser.add_argument("--estimateNumber", type=int, default=4) #4 for opendata 8 for others
+    parser.add_argument("--estimateNumber", type=int, default=2) #4 for opendata 8 for others
 
     """ Parameter for slicing the dendrogram in Step3 """
     parser.add_argument("--intervalSlice", type=int, default=10)
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if hp.step == 0:
         Running(hp)
     if hp.step == 1:
-        P1(hp) if hp.baseline is False else baselineP1(hp)
+        P1(hp)
     elif hp.step == 2:
         P2(hp)
     elif hp.step == 3:

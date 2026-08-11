@@ -17,8 +17,8 @@ from langchain_ollama import OllamaLLM
 from GeSI.utils.folder import mkdir
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("test_dataset", "AddedExp/noiseLevel/20_pct", "Path to the test dataset")
-flags.DEFINE_string("output_dir", "result/GeSI/AddedExp/noiseLevel/20_pct/Type/3/qwen14/", "Path to the output directory")
+flags.DEFINE_string("test_dataset", "Vision", "Path to the test dataset")
+flags.DEFINE_string("output_dir", "result/GeSI/Vision/gpt54", "Path to the output directory")
 flags.DEFINE_integer("k_shot", 3, "Number of samples to provide.")
 flags.DEFINE_integer("MaxiDepth", 5, "Number of samples to provide.")
 
@@ -26,7 +26,7 @@ flags.DEFINE_integer("seed", 0, "Random seed.")
 flags.DEFINE_bool("constraintFET", False, "constraint for the leaf type.")
 flags.DEFINE_bool("constraintSLT", False, "constraint for the second level.")
 flags.DEFINE_bool("constraintABS", True, "constraint for the second level not using abstract type.")
-flags.DEFINE_bool("gpt", False, "whether using gpt")
+flags.DEFINE_bool("gpt", True, "whether using gpt")
 
 abs_example = ['entity', 'something', 'unidentified entity', 'conceptual entity', 'certain thing', 'former entity',
                'named entity',
@@ -45,7 +45,7 @@ options={
 )
 
 
-llm_gpt = OpenAI(api_key="")
+llm_gpt = OpenAI(api_key="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")
 
 
 def main(_):
@@ -152,7 +152,7 @@ def main(_):
         """
         cleaned = ""
         for attempt in range(3):
-            hierarchy = get_model_answer(llm, messages)
+            hierarchy = get_model_answer(llm, messages, is4=False)
             cleaned = extract_thing_paths(hierarchy)
             if cleaned != "":
                 result = {"id": table["id"], "hierarchy": cleaned}

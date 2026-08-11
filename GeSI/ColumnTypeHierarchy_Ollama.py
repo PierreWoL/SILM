@@ -15,7 +15,7 @@ import json
 from langchain_ollama import OllamaLLM
 
 parser = argparse.ArgumentParser(description="Please choose the optimal settings for the parameters")
-parser.add_argument('--test_dataset', type=str, default='AddedExp/noiseLevel/60_pct', help="Chosen dataset")
+parser.add_argument('--test_dataset', type=str, default='Vision', help="Chosen dataset")
 parser.add_argument('--LLM', type=str, default='gpt3.5', help="Chosen LLMs")
 parser.add_argument('--k_shot', type=int, default=3, help="# of samples to provide.")
 parser.add_argument('--seed', type=int, default=0, help="Random seed.")
@@ -36,14 +36,15 @@ llm_ollama = OllamaLLM(
     base_url=ollama_base_url,
     model= model_name
 )
-llm_gpt = OpenAI(api_key="")
+
+llm_gpt = OpenAI(api_key="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")
 
 llm = llm_ollama
 if args.gpt is True:
     llm = llm_gpt
     print("using gpt for inferring...")
 
-output_dir = f"result/GeSI/{args.test_dataset}/Attribute/{args.k_shot}/gpt3/" #{args.LLM}/
+output_dir = f"result/GeSI/{args.test_dataset}/Attribute/{args.k_shot}/gpt54/" #{args.LLM}/
 print(args.test_dataset, args.LLM, args.k_shot, args.seed, args.trial, args.Prompt, output_dir)
 
 

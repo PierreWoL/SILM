@@ -3,7 +3,7 @@ from openai import OpenAI
 
 def get_chatgpt_response(gpt_model, messages, is4=False):
     if is4 is False:
-        model = "gpt-3.5-turbo-1106"
+        model = "gpt-5.4" #-nano
     else:
         model = "gpt-4-1106-preview"
     response = gpt_model.chat.completions.create(

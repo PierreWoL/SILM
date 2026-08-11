@@ -14,7 +14,7 @@ from torch.utils import data
 from transformers import AutoTokenizer, AutoModel
 from learning.augment import augment
 from learning.preprocessor import computeTfIdf, tfidfRowSample, preprocess
-import d3l.utils.functions as fun
+import EmSI.Utils as fun
 from Utils import split
 from openai import OpenAI
 

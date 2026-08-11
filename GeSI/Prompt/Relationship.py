@@ -1,4 +1,26 @@
-from GeSI.utils import load_template
+import re
+
+
+class SimpleTemplate:
+    def __init__(self, text: str):
+        self.text = text
+
+    def render(self, **kwargs):
+        rendered = re.sub(
+            r"{{\s*(\w+)\s*\|\s*join\('([^']*)'\)\s*}}",
+            lambda match: match.group(2).join(str(item) for item in kwargs.get(match.group(1), [])),
+            self.text,
+        )
+        rendered = re.sub(
+            r"{{\s*(\w+)\s*}}",
+            lambda match: str(kwargs.get(match.group(1), "")),
+            rendered,
+        )
+        return rendered
+
+def load_template(s: str):
+    s = s.lstrip("\n")
+    return SimpleTemplate(s)
 _TopKFilter = """
 You are given an attribute of an entity type and a list of candidate entity types.\
  The attribute includes a name and a set of sample values.
